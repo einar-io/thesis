@@ -26,6 +26,7 @@ source-repository head
 library
   exposed-modules:
       Lib
+      Linear
   other-modules:
       Paths_futhy
   hs-source-dirs:
