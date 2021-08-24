@@ -1,22 +1,64 @@
-module Lib
-    ( someFunc
-    ) where
+module Lib where
+
+import Prelude
+
+type RealNumb = Float
+
+-- TODO: Maybe these should just be Lists?
+data Var
+  = Scalar RealNumb
+  | Tensor [Var]
+  deriving (Show, Eq)
+
+data LFun
+  = Id
+  | Scale RealNumb
+  | Comp LFun LFun
+  | RSec Var BiOp
+  | LSec BiOp Var
+  deriving (Show, Eq)
+
+data BiOp
+  = Mult
+  | Outer
+  deriving (Show, Eq)
+
+outer :: Var -> Var -> Var
+outer (Scalar x) (Scalar y) = Scalar $ x * y
+outer x@(Scalar _) (Tensor ys) = Tensor $ map (outer x) ys
+outer (Tensor xs) v = Tensor $ map (outer v) xs
+
+-- dotproduct :: Var -> Var -> Var
+-- dotproduct (Tensor a) (Tensor b) = Scalar $ sum $ a * b
+
+-- works for dot product, matrix multiplication, 'binary tensor contraction' at https://www.tensors.net/p-tutorial-1
+-- pairs last dimension of first variable with first dimension of second tensor
+-- please dont use it on scalars...
+generalContraction :: Var -> Var -> Var
+generalContraction a b = case (a,b) of
+  (Tensor x, Tensor y) -> undefined
+  _ -> undefined -- error
+
+applyOp :: BiOp -> Var -> Var -> Var
+applyOp op a b = case op of
+  Mult -> undefined
+  Outer -> outer a b
+
+interpret :: LFun -> Var -> Var
+interpret f v = case f of
+  Id -> v
+  Comp f1 f2 -> interpret f2 (interpret f1 v)
+  Scale r -> outer (Scalar r) v
+  RSec v0 op -> applyOp op v0 v
+  LSec op v0 -> applyOp op v v0
+
+eval :: LFun -> Var -> String
+eval f v = show (interpret f v)
+
+
+
+
+
 
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"
-
-data LFun a b
-  = Scale Real
-
- Real -> LFun v v
-
---int :: LFun a b -> (a -> b)
---comp :: LFun a b -> Futh a b
-
-IMPLEMENT A WAY TO EXPRESS LINEAR MAPS
-
---data LFun a b where
---Scale :: Real -> LFun V V
---Vectors used from some
-
---int id x = x
