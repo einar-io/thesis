@@ -53,27 +53,27 @@ inttests = testGroup "interpretor"
       (Tensor [Scalar 1.0, Scalar 2.0])
       (Tensor [Scalar 147.0, Scalar 294.0])
     , goodCase "Outer product scalar scalar"
-      (RSec (Scalar 2.0) Outer)
+      (LSec (Scalar 2.0) Outer)
       (Scalar 2.0)
       (Scalar 4.0)
     , goodCase "Outer product vector scalar"
-      (RSec (Tensor [Scalar 1.0, Scalar 2.0]) Outer)
+      (LSec (Tensor [Scalar 1.0, Scalar 2.0]) Outer)
       (Scalar 3.0)
       (Tensor [Scalar 3.0, Scalar 6.0])
     , goodCase "Outer product scalar vector"
-      (RSec (Scalar 2.0) Outer)
+      (LSec (Scalar 2.0) Outer)
       (Tensor [Scalar 2.0, Scalar 3.0])
       (Tensor [Scalar 4.0, Scalar 6.0])
     , goodCase "Outer product vector vector"
-      (RSec (Tensor [Scalar 2.0, Scalar 3.0]) Outer)
+      (LSec (Tensor [Scalar 2.0, Scalar 3.0]) Outer)
       (Tensor [Scalar 4.0, Scalar 5.0])
       (Tensor [Tensor [Scalar 8.0, Scalar 10.0], Tensor [Scalar 12.0, Scalar 15.0]])
     , goodCase "2 {outer product} 3 -> 2x3"
-      (RSec (Tensor [Scalar 2.0, Scalar 3.0]) Outer)
+      (LSec (Tensor [Scalar 2.0, Scalar 3.0]) Outer)
       (Tensor [Scalar 4.0, Scalar 5.0, Scalar 6.0])
       (Tensor [Tensor [Scalar 8.0, Scalar 10.0, Scalar 12.0], Tensor [Scalar 12.0, Scalar 15.0, Scalar 18.0]])
     , goodCase "3 {outer product} 2 -> 3x2"
-      (LSec Outer (Tensor [Scalar 2.0, Scalar 3.0]))
+      (RSec Outer (Tensor [Scalar 2.0, Scalar 3.0]))
       (Tensor [Scalar 4.0, Scalar 5.0, Scalar 6.0])
       (Tensor [Tensor [Scalar 8.0, Scalar 12.0], Tensor [Scalar 10.0, Scalar 15.0], Tensor [Scalar 12.0, Scalar 18.0]])
     ]
