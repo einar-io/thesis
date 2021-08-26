@@ -10,7 +10,7 @@ tests :: TestTree
 tests = testGroup "All tests"
   [inttests]
 
-goodCase :: TestName -> LFun -> Var -> Var -> TestTree
+goodCase :: TestName -> LFun -> Val -> Val -> TestTree
 goodCase name lfun vin vout = testCase name $ interpret lfun vin @?= vout
 
 inttests :: TestTree
@@ -76,5 +76,17 @@ inttests = testGroup "interpretor"
       (RSec Outer (Tensor [Scalar 2.0, Scalar 3.0]))
       (Tensor [Scalar 4.0, Scalar 5.0, Scalar 6.0])
       (Tensor [Tensor [Scalar 8.0, Scalar 12.0], Tensor [Scalar 10.0, Scalar 15.0], Tensor [Scalar 12.0, Scalar 18.0]])
+    , goodCase "Id (+) K0 (3.0, 5.0) -> (3.0, 0.0)"
+      (SunCross Id KZero)
+      (Pair (Scalar 3.0) (Scalar 5.0))
+      (Pair (Scalar 3.0) (Scalar 0.0))
+    , goodCase "Id ^+ K0 6.0 -> 6.0"
+      (HatPlus Id KZero)
+      (Scalar 6.0)
+      (Scalar 6.0)
+    , goodCase "(Scale (-3.0)) ^+ (Scale 5.0) 7.0 -> 14.0"
+      (HatPlus (Scale (-3.0)) (Scale 5.0))
+      (Scalar 7.0)
+      (Scalar 14.0)
     ]
   ]
