@@ -11,7 +11,7 @@ data Val
   deriving (Show, Eq)
 
 -- These are listed as linear map expressions
--- [POPL, p. 21] 
+-- [POPL, p. 21]
 data LFun -- expr
   = LSec Val BilOp
   | RSec BilOp Val
@@ -25,7 +25,7 @@ data LFun -- expr
   deriving (Show, Eq)
 
 -- These are bilinear operators
--- listed on [POPL, p. 20] 
+-- listed on [POPL, p. 20]
 data BilOp
   = ScalarProd
   | TensorProd
