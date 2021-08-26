@@ -49,15 +49,18 @@ applyOp op a b = case op of
 
 π1 :: Val -> Val
 π1 (Pair l _) = l
+π1 _ = undefined
 
 π2 :: Val -> Val
 π2 (Pair _ r) = r
+π2 _ = undefined
 
 vectorspacePlus :: Val -> Val -> Val
 vectorspacePlus left right = case (left, right) of
    (Scalar l, Scalar r)     -> Scalar $ l + r
    (Tensor ls, Tensor rs)   -> Tensor $ ls ++ rs  -- what is this `tensor plus` supposed to do?`
    (Pair ll lr, Pair rl rr) -> Pair (ll `vectorspacePlus` rl) (lr `vectorspacePlus` rr)
+   _ -> undefined
 
 interpret :: LFun -> Val -> Val
 interpret f v = case f of
