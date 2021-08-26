@@ -72,6 +72,7 @@ interpret f v = case f of
                          ; right = interpret rfn v}
                          in left `vectorspacePlus` right
   SunCross lfn rfn -> Pair (interpret lfn $ π1 v) (interpret rfn $ π2 v)
+  -- SunCross {}  -> undefined
   Scale s      -> outer (Scalar s) v
   KConst _     -> undefined
   KZero        -> Scalar 0.0
