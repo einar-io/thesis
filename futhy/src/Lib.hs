@@ -36,16 +36,16 @@ data BilOp
   deriving (Show, Eq)
 
 -- general implementation - outer product, no contraction
-mult :: Val -> Val -> Val
-mult (Scalar x) (Scalar y) = Scalar $ x * y
-mult x@(Scalar _) (Tensor ys) = Tensor $ map (mult x) ys
-mult (Tensor xs) y = Tensor $ map (mult y) xs
-mult _ _ = undefined
+outer :: Val -> Val -> Val
+outer (Scalar x) (Scalar y) = Scalar $ x * y
+outer x@(Scalar _) (Tensor ys) = Tensor $ map (outer x) ys
+outer (Tensor xs) y = Tensor $ map (outer y) xs
+outer _ _ = undefined
 
 applyOp :: BilOp -> Val -> Val -> Val
 applyOp op a b = case op of
-  Mult -> undefined
-  Outer -> mult a b
+  Outer -> outer a b
+  _ -> undefined
 
 π1 :: Val -> Val
 π1 (Pair l _) = l
@@ -70,7 +70,7 @@ interpret f v = case f of
                          in left `vectorspacePlus` right
   SunCross lfn rfn -> Pair (interpret lfn $ π1 v) (interpret rfn $ π2 v)
   SunCross {}  -> undefined
-  Scale s      -> mult (Scalar s) v
+  Scale s      -> outer (Scalar s) v
   KConst _     -> undefined
   KZero        -> Scalar 0.0
   Comp lfn rfn -> interpret lfn (interpret rfn v)
