@@ -46,3 +46,9 @@ eval f v = show (interpret f v)
 
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"
+
+
+-- error types!
+data Error
+  = Something String
+  deriving (Show, Eq)
