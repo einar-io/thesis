@@ -1,20 +1,19 @@
-import Lib
-import Test.Tasty
 import Test.Tasty.HUnit
+import Test.Tasty
 import Prelude
+
+-- our libs
+import Interpretor
+import Types
 
 main :: IO ()
 main = defaultMain $ localOption (mkTimeout 1000000) tests
 
-tests :: TestTree
-tests = testGroup "All tests"
-  [inttests]
-
 goodCase :: TestName -> LFun -> Val -> Val -> TestTree
 goodCase name lfun vin vout = testCase name $ interpret lfun vin @?= vout
 
-inttests :: TestTree
-inttests = testGroup "interpretor"
+tests :: TestTree
+tests = testGroup "interpretor"
   [ testGroup "branch tests"
     [ goodCase "Id scalar"
       (Id)

@@ -21,8 +21,8 @@ executables:
     - futhy
 
 tests:
-  futhy-test:
-    main:                Whitebox.hs
+  interpretor-tests:
+    main:                Interpretor-tests.hs
     source-dirs:         test
     ghc-options:
     - -threaded

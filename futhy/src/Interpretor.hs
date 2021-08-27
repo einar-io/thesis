@@ -1,39 +1,7 @@
 {-# LANGUAGE GADTs #-}
 
-module Lib where
-
-type RealNumb = Float
-
-data Val
-  = Scalar RealNumb
-  | Tensor [Val]
-  | Pair Val Val
-  deriving (Show, Eq)
-
--- These are listed as linear map expressions
--- [POPL, p. 21]
-data LFun -- expr
-  = LSec Val BilOp
-  | RSec BilOp Val
-  | Id
-  | HatPlus  LFun LFun -- Fritz says "lifted" addition sometimes
-  | SunCross LFun LFun
-  | Scale RealNumb
-  | KConst Val
-  | KZero
-  | Comp LFun LFun
-  deriving (Show, Eq)
-
--- These are bilinear operators
--- listed on [POPL, p. 20]
-data BilOp
-  = ScalarProd
-  | TensorProd
-  | MatrixMult
-  | DotProd
-  | Mult
-  | Outer
-  deriving (Show, Eq)
+module Interpretor where
+import Types
 
 -- general implementation - outer product, no contraction
 outer :: Val -> Val -> Val
@@ -74,18 +42,9 @@ interpret f v = case f of
   SunCross lfn rfn -> Pair (interpret lfn $ π1 v) (interpret rfn $ π2 v)
   -- SunCross {}  -> undefined
   Scale s      -> outer (Scalar s) v
-  KConst _     -> undefined
   KZero        -> Scalar 0.0
   Comp lfn rfn -> interpret lfn (interpret rfn v)
+  Red _ -> undefined
 
 eval :: LFun -> Val -> String
 eval f v = show (interpret f v)
-
-someFunc :: IO ()
-someFunc = putStrLn "someFunc"
-
-
--- error types!
-data Error
-  = Something String
-  deriving (Show, Eq)
