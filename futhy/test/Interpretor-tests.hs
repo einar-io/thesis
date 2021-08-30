@@ -48,9 +48,9 @@ tests = testGroup "interpretor"
       (Scalar 10.0)
       (Scalar (-140.0))
     , goodCase "Comp scale scale scale on vector"
-      (Comp  (Comp  (Scale 3.0) (Scale 7.0)) (Scale 7.0))
+      (Comp  (Comp  (Scale 3.0) (Scale 7.0)) (Scale 8.0))
       (Tensor [Scalar 1.0, Scalar 2.0])
-      (Tensor [Scalar 147.0, Scalar 294.0])
+      (Tensor [Scalar 168.0, Scalar 336.0])
     , goodCase "Outer product scalar scalar"
       (LSec (Scalar 2.0) Outer)
       (Scalar 2.0)
