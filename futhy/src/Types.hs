@@ -14,16 +14,26 @@ data LFun -- expr
   = LSec Val BilOp
   | RSec BilOp Val
   | Id
-  | HatPlus  LFun LFun -- Fritz says "lifted" addition sometimes
-  | SunCross LFun LFun
+  | Lplus LFun LFun -- lifted addition
+  | Oplus LFun LFun
   | Scale RealNumb
-  | KZero
+  | Zero
   | Comp LFun LFun
   | Red Rel
+  | Dup Int
+  | Add Int
+  | Prj Int Int
+  | LMap LFun
+  | Zip [LFun]
   deriving (Show, Eq)
 
 data Rel
-  = Permute [(Int, Int)]
+  = List [(Int, Int)]
+  | Func RelFun
+  deriving (Show, Eq)
+
+data RelFun
+  = Const Int
   deriving (Show, Eq)
 
 -- These are bilinear operators

@@ -36,13 +36,13 @@ interpret f v = case f of
   RSec op r -> applyOp op v r
   Id        -> v
   --HatPlus {} -> undefined
-  HatPlus lfn rfn -> let { left  = interpret lfn v
+  Lplus lfn rfn -> let { left  = interpret lfn v
                          ; right = interpret rfn v}
                          in left `vectorspacePlus` right
-  SunCross lfn rfn -> Pair (interpret lfn $ π1 v) (interpret rfn $ π2 v)
+  Oplus lfn rfn -> Pair (interpret lfn $ π1 v) (interpret rfn $ π2 v)
   -- SunCross {}  -> undefined
   Scale s      -> outer (Scalar s) v
-  KZero        -> Scalar 0.0
+  Zero        -> Scalar 0.0
   Comp lfn rfn -> interpret lfn (interpret rfn v)
   Red _ -> undefined
 

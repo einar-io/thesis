@@ -76,15 +76,15 @@ tests = testGroup "interpretor"
       (Tensor [Scalar 4.0, Scalar 5.0, Scalar 6.0])
       (Tensor [Tensor [Scalar 8.0, Scalar 12.0], Tensor [Scalar 10.0, Scalar 15.0], Tensor [Scalar 12.0, Scalar 18.0]])
     , goodCase "Id (+) K0 (3.0, 5.0) -> (3.0, 0.0)"
-      (SunCross Id KZero)
+      (Oplus Id Zero)
       (Pair (Scalar 3.0) (Scalar 5.0))
       (Pair (Scalar 3.0) (Scalar 0.0))
     , goodCase "Id ^+ K0 6.0 -> 6.0"
-      (HatPlus Id KZero)
+      (Lplus Id Zero)
       (Scalar 6.0)
       (Scalar 6.0)
     , goodCase "(Scale (-3.0)) ^+ (Scale 5.0) 7.0 -> 14.0"
-      (HatPlus (Scale (-3.0)) (Scale 5.0))
+      (Lplus (Scale (-3.0)) (Scale 5.0))
       (Scalar 7.0)
       (Scalar 14.0)
     ]
