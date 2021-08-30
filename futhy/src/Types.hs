@@ -47,7 +47,3 @@ data BilOp
   | Outer
   deriving (Show, Eq)
 
--- error types!
-data Error
-  = Something String
-  deriving (Show, Eq)
