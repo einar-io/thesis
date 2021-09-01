@@ -4,7 +4,7 @@ open import "lmaplib"
 --FUN: (Comp  (Comp  (Scale 3.0) (Scale 7.0)) (Scale 8.0))
 --RES: (Tensor [Scalar 168.0, Scalar 336.0])
 
-let ARG : []f32 = [1.0,2.0]
+let ARG = [1.0f32,2.0f32]
 
 let FUN1 = (sv 3.0)
 let FUN2 = (sv 7.0)
