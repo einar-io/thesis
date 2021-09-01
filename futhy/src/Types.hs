@@ -18,9 +18,10 @@ data LFun -- expr
   | Oplus LFun LFun
   | Scale RealNumb
   | Zero
+  | Para LFun LFun -- apply to each of pair
   | Comp LFun LFun
   | Red Rel
-  | Dup Int
+  | Dup
   | Add Int
   | Prj Int Int
   | LMap LFun
@@ -46,4 +47,3 @@ data BilOp
   | Mult
   | Outer
   deriving (Show, Eq)
-
