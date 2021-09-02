@@ -4,13 +4,14 @@ import Prelude
 
 -- our libs
 import Types
+import Utils
 import Compiler
 
 main :: IO ()
 main = defaultMain $ localOption (mkTimeout 1000000) tests
 
 just_lfun :: LFun -> String
-just_lfun f = snd $ lfun f 1
+just_lfun f = let (_, r, _) = lfun f 1 (Atom 0) in r
 
 goodCaseProgram :: TestName -> LFun -> Val -> String -> TestTree
 goodCaseProgram name lf vin vout = testCase name $ program lf vin @?= vout
@@ -45,18 +46,22 @@ tests = testGroup "compiler"
               "let FUN1 = (dupe)\n"
             , goodCaseLFun "scale"
               (Scale 3.0)
-              "let FUN1 = (sv 3.0)\n"
+              "let FUN1 = (outer_0_0 3.0f32)\n"
             , goodCaseLFun "comp"
               (Comp  (Comp  (Scale 3.0) (Scale 7.0)) (Scale 8.0))
-              "let FUN1 = (sv 3.0)\nlet FUN2 = (sv 7.0)\nlet FUN3 = (comp FUN1 FUN2)\nlet FUN4 = (sv 8.0)\nlet FUN5 = (comp FUN3 FUN4)\n"
+              "let FUN3 = (outer_0_0 3.0f32)\nlet FUN2 = (outer_0_0 7.0f32)\nlet FUN4 = (comp FUN3 FUN2)\nlet FUN1 = (outer_0_0 8.0f32)\nlet FUN5 = (comp FUN4 FUN1)\n"
             , goodCaseLFun "para"
               (Comp  (Para  (Scale 3.0) (Scale 7.0)) Dup)
-              "let FUN1 = (sv 3.0)\nlet FUN2 = (sv 7.0)\nlet FUN3 = (para FUN1 FUN2)\nlet FUN4 = (dupe)\nlet FUN5 = (comp FUN3 FUN4)\n"
+              "let FUN3 = (outer_0_0 3.0f32)\nlet FUN2 = (outer_0_0 7.0f32)\nlet FUN4 = (para FUN3 FUN2)\nlet FUN1 = (dupe)\nlet FUN5 = (comp FUN4 FUN1)\n"
             ]
           , testGroup "whole program tests"
             [ goodCaseProgram "Id scalar"
               (Id)
               (Scalar 15.0)
               "open import \"lmaplib\"\n\nlet ARG = 15.0f32\n\nlet FUN1 = (id)\n\nentry main = FUN1 ARG"
+            , goodCaseProgram "complex"
+              (Comp  (Para  (LSec (Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]) Outer ) (Comp  (Para  (LSec (Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]) Outer ) (Scale 7.0)) Dup)) Dup)
+              (Tensor [Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0], Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0], Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]])
+              "open import \"lmaplib\"\n\nlet ARG = [[1.0f32, 2.0f32, 3.0f32], [1.0f32, 2.0f32, 3.0f32], [1.0f32, 2.0f32, 3.0f32]]\n\nlet FUN7 = (outer_1_2 [1.0f32, 2.0f32, 3.0f32])\nlet FUN4 = (outer_1_2 [1.0f32, 2.0f32, 3.0f32])\nlet FUN3 = (outer_0_2 7.0f32)\nlet FUN5 = (para FUN4 FUN3)\nlet FUN2 = (dupe)\nlet FUN6 = (comp FUN5 FUN2)\nlet FUN8 = (para FUN7 FUN6)\nlet FUN1 = (dupe)\nlet FUN9 = (comp FUN8 FUN1)\n\nentry main = FUN9 ARG"
             ]
           ]
