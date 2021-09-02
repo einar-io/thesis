@@ -5,8 +5,13 @@ import Utils
 -- TODO: clean the whole thing.
 -- reminder that <> is prettier than ++
 
+
+
 nl :: String
 nl = "\n"
+
+spacefun :: String
+spacefun = " fun"
 
 datatype :: String
 datatype = "f32"
@@ -21,10 +26,10 @@ val v = case v of
   Tensor ls -> "[" <> (val $ head ls) <> (concatMap (\w -> ", " <> val w) (tail ls)) <> "]"
 
 arg :: Val -> String
-arg v = "let ARG = " <> (val v) <> nl <> nl
+arg v = "let arg = " <> (val v) <> nl <> nl
 
 entry :: Int -> String
-entry count = "entry main = FUN" <> show(count-1) <> " ARG"
+entry count = "entry main =" <> spacefun <> show(count-1) <> " arg"
 
 -- TODO: implement these in the futhark library
 -- please let the biop data types have the same name as the lib func
@@ -43,7 +48,7 @@ biop b a1 a2 =  let base = case b of
 -- int used to make function name unique
 -- string is the partially applied function (without parens)
 gen_sloc :: Int -> String -> Arity -> (Int, String, Arity)
-gen_sloc c futfun a = (c+1, "let FUN" <> show(c) <> " = (" <> futfun <> ")" <> nl, a)
+gen_sloc c futfun a = (c+1, "let" <> spacefun <> show(c) <> " = (" <> futfun <> ")" <> nl, a)
 
 -- receives an LFUN and a counter and generates any necessary subprograms, and then combines all of it to the new loc (preceded by any subprograms) and returns it with the new counter
 -- the counter the number of total funs defined at a given point and preceding it, that are necessary to make the current one evaluable
@@ -61,14 +66,14 @@ lfun linfun c1 a1 = case linfun of
   Dup -> gen_sloc c1 "dupe" (P a1 a1)
   Comp lf2 lf1 -> let (c2, subprog1, a2) = lfun lf1 c1 a1 in
                   let (c3, subprog2, a3) = lfun lf2 c2 a2 in
-                  let (c4, nloc, a4) = gen_sloc c3 ("comp" <> " FUN" <> show(c3-1) <> " FUN" <> show(c2-1)) a3
+                  let (c4, nloc, a4) = gen_sloc c3 ("comp" <> spacefun <> show(c3-1) <> spacefun <> show(c2-1)) a3
                   in (c4, subprog2 <> subprog1 <> nloc, a4)
   Para lf2 lf1 ->
     case a1 of
       (P a3 a2) ->
         let (c2, subprog1, a4) = lfun lf1 c1 a2 in
         let (c3, subprog2, a5) = lfun lf2 c2 a3 in
-        let (c4, nloc, a6) = gen_sloc c3 ("para" <> " FUN" <> show(c3-1) <> " FUN" <> show(c2-1)) (P a5 a4)
+        let (c4, nloc, a6) = gen_sloc c3 ("para" <> spacefun <> show(c3-1) <> spacefun <> show(c2-1)) (P a5 a4)
         in (c4, subprog2 <> subprog1 <> nloc, a6)
       _ -> undefined --ERROR, argument to para must be a Pair of Vals
   LSec v b -> gen_sloc c1 (biop b (val_arity v) a1 <> " " <> val v) a1
