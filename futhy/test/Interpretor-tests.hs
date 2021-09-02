@@ -76,7 +76,7 @@ tests = testGroup "interpretor"
       (Tensor [Scalar 4.0, Scalar 5.0, Scalar 6.0])
       (Tensor [Tensor [Scalar 8.0, Scalar 12.0], Tensor [Scalar 10.0, Scalar 15.0], Tensor [Scalar 12.0, Scalar 18.0]])
     , goodCase "Id (+) K0 (3.0, 5.0) -> (3.0, 0.0)"
-      (Oplus Id Zero)
+      (Para Id Zero)
       (Pair (Scalar 3.0) (Scalar 5.0))
       (Pair (Scalar 3.0) (Scalar 0.0))
     , goodCase "Id ^+ K0 6.0 -> 6.0"

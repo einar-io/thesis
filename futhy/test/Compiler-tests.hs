@@ -53,6 +53,9 @@ tests = testGroup "compiler"
             , goodCaseLFun "para"
               (Comp  (Para  (Scale 3.0) (Scale 7.0)) Dup)
               "let fun3 = (outer_0_0 3.0f32)\nlet fun2 = (outer_0_0 7.0f32)\nlet fun4 = (para fun3 fun2)\nlet fun1 = (dupe)\nlet fun5 = (comp fun4 fun1)\n"
+            , goodCaseLFun "lplus"
+              (Comp  (Lplus  (Scale 3.0) (Scale 7.0)) Dup)
+              "let fun3 = (outer_0_0 3.0f32)\nlet fun2 = (outer_0_0 7.0f32)\nlet fun4 = (para fun3 fun2)\nlet fun5 = (plus_0_0 fun4)\nlet fun1 = (dupe)\nlet fun6 = (comp fun5 fun1)\n"
             ]
           , testGroup "whole program tests"
             [ goodCaseProgram "Id scalar"

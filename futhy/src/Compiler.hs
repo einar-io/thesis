@@ -42,7 +42,10 @@ biop b a1 a2 =  let base = case b of
                             DotProd -> "dotprod"
                             Mult -> "mult"
                             Outer -> "outer"
-                in base <> "_" <> show(ua a1) <> "_" <> show(ua a2)
+                in base <> arityext a1 a2
+
+arityext :: Arity -> Arity -> String
+arityext a1 a2 = "_" <> show(ua a1) <> "_" <> show(ua a2)
 -- TODO: since there is no polymorphism in futhark, make the implementation either dynamic or depend on the arity of the arguments?
 
 -- int used to make function name unique
@@ -70,7 +73,7 @@ lfun linfun c1 a1 = case linfun of
                   in (c4, subprog2 <> subprog1 <> nloc, a4)
   Para lf2 lf1 ->
     case a1 of
-      (P a3 a2) ->
+      P a3 a2 ->
         let (c2, subprog1, a4) = lfun lf1 c1 a2 in
         let (c3, subprog2, a5) = lfun lf2 c2 a3 in
         let (c4, nloc, a6) = gen_sloc c3 ("para" <> spacefun <> show(c3-1) <> spacefun <> show(c2-1)) (P a5 a4)
@@ -80,10 +83,20 @@ lfun linfun c1 a1 = case linfun of
   RSec b v -> gen_sloc c1 (val v <> " " <> biop b (val_arity v) a1) a1
   Scale rn -> lfun (LSec (Scalar rn) Outer) c1 a1
   Zero -> lfun (Scale 0) c1 a1 --redirection
-  _ -> undefined -- TODO: IMPLEMENT THE REST
+  Prj i j -> case (i,j,a1) of
+                (2, 1, P a2 _) -> gen_sloc c1 "fst" a2
+                (2, 2, P _ a2) -> gen_sloc c1 "snd" a2
+                _ -> undefined
+  Lplus lf2 lf1 -> let (c2, subprog, a4@(P a3 a2)) = lfun (Para lf2 lf1) c1 a1 in -- it WILL match here because lfun Para ALWAYS returns a P _ _ type arity on success
+                   let (c3, nloc, a5) = gen_sloc c2 ("plus" <> arityext a3 a2 <> " " <> "fun" <> show(c2-1)) a4
+                   --todo a3 and a2 should be identical, should be checked at compiletime
+                   in (c3, subprog <> nloc, a5)
+  Red _ -> undefined
+  Add _ -> undefined
+  LMap _ -> undefined
+  Zip _ -> undefined
 
   -- TODO: We need a desugar stage before compilation...
-
 
 -- compile a whole program
 program :: LFun -> Val -> String

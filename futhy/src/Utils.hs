@@ -11,6 +11,9 @@ ua a = case a of
   Atom i -> i
   _ -> undefined
 
+hasArity :: Val -> Int -> Bool
+hasArity v i = i == (ua (val_arity v))
+
 val_arity :: Val -> Arity
 val_arity v = case v of
   Scalar _ -> Atom 0
