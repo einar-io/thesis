@@ -13,18 +13,18 @@ data Val
 -- These are listed as linear map expressions
 -- [POPL, p. 21]
 data LFun -- expr
-  = LSec Val BilOp
-  | RSec BilOp Val
-  | Id
-  | Lplus LFun LFun -- lifted addition
-  | Oplus LFun LFun
-  | Scale RealNumb
+  = Id
+  | Dup
   | Zero
+  | Scale RealNumb
+  | LSec Val BilOp
+  | RSec BilOp Val
+  | Para LFun LFun -- more descriptive than Oplus
   | Comp LFun LFun
-  | Red Rel
-  | Dup Int
-  | Add Int
   | Prj Int Int
+  | Lplus LFun LFun -- lifted addition
+  | Red Rel
+  | Add Int
   | LMap LFun
   | Zip [LFun]
   deriving (Show, Eq)
