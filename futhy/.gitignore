@@ -1,4 +1,3 @@
 .stack-work/
 *~
 futhy.cabal
-stack.yaml.lock
