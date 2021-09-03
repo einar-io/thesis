@@ -5,6 +5,7 @@ dependencies:
   - mtl
   - process
   - futhark
+  - filepath
 
 ghc-options: -Wall
 

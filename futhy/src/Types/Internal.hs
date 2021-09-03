@@ -1,6 +1,5 @@
 module Types.Internal where
 
-import Types
 
 -- error types!
 data Error
@@ -8,5 +7,19 @@ data Error
   deriving (Show, Eq)
 
 type Filename = String
-type Fut = String
-type Derivative = Val
+type FutFile = String
+type FutStr = String
+type FutExec = String
+type CommandResult = (String, String, String)
+
+
+data Backend
+    = C
+    | OpenCL
+    | CUDA
+
+instance Show Backend where
+  show C      = "c"
+  show CUDA   = "cuda"
+  show OpenCL = "opencl"
+

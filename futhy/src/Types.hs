@@ -1,5 +1,7 @@
 module Types where
 
+import Types.Internal()
+
 type RealNumb = Float
 
 data Val
@@ -47,3 +49,4 @@ data BilOp
   | Outer
   deriving (Show, Eq)
 
+type Derivative = Val
