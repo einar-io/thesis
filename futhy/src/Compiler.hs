@@ -1,7 +1,6 @@
 module Compiler where
 import Types
 import Utils
-import Control.Monad.State.Lazy
 
 nl :: String
 nl = "\n"
@@ -26,7 +25,7 @@ arg :: Val -> String
 arg v = "let arg = " <> (val v) <> nl <> nl
 
 entry :: Int -> String
-entry count = "entry main =" <> spacefun <> show(count-1) <> " arg"
+entry count = "entry main =" <> spacefun <> show(count-1) <> " arg" <> nl
 
 biop :: BilOp -> Arity -> Arity -> String
 biop b a1 a2 =  let base = case b of
@@ -161,14 +160,22 @@ lfunM linfun a1 = case linfun of
 
 
 programM :: LFun -> Val -> Compiler Program
-programM lf v = do
-                  let arit = val_arity v
-                  let initial = (imports <> arg v, arit, 1)
-                  --initComp initial
-                  lfunM lf arit
-                  finishProg
-                  getProgr
+programM lf v = let arit = val_arity v in
+                let initial = (imports <> arg v, arit, 1) in
+                let act = do initComp initial
+                             lfunM lf arit
+                             finishProg
+                             getProgr
+                in act
 
+evalCompiler :: Compiler Program -> CState -> Program
+evalCompiler act = fst . runCo act
+
+program :: LFun -> Val -> Program
+program lf v = let arit = val_arity v in
+               let act = programM lf v in
+               let initial = (imports <> arg v, arit, 1) in
+               evalCompiler act initial
 
 -------------Compiler a = Co {runCo :: CState -> (a, CState)}
 
