@@ -1,6 +1,10 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
 module Types where
 
-import Types.Internal()
+import Control.Monad.Reader
+import Control.Monad.Trans.Except (ExceptT, runExceptT)
+import GHC.IO.Exception (ExitCode)
 
 type RealNumb = Float
 
@@ -50,3 +54,46 @@ data BilOp
   deriving (Show, Eq)
 
 type Derivative = Val
+
+-- error types!
+data Error
+  = Something String
+  deriving (Show, Eq)
+
+type Filepath = String
+type FutPgmFile = String
+type FutPgmStr  = String
+type FutPgmExec = String
+
+data Backend
+    = C
+    | OpenCL
+    | CUDA
+
+instance Show Backend where
+  show C      = "c"
+  show CUDA   = "cuda"
+  show OpenCL = "opencl"
+
+-- error types!
+data ExecutorResult
+  = Success String -- Val
+  | CompileError ExitCode
+  | ExecutionError ExitCode
+  deriving (Show, Eq)
+
+data Env = Env {
+    fp :: FilePath
+  , be :: Backend
+  }
+
+-- Command evaluation monad. 
+type Cmd a = ReaderT Env (ExceptT String IO) a
+newtype Command a = Command { runCmd :: Cmd a }
+  deriving (Functor, Applicative, Monad, MonadIO, MonadReader Env)
+
+execCmd :: Command a -> Env -> IO (Either String a)
+execCmd cmd env = runExceptT $ runReaderT (runCmd cmd) env
+
+-- ExitCode, Stdout, Stdin
+type ExecutionResult = (ExitCode, String, String)

@@ -1,11 +1,12 @@
-module Executor 
-  ( FutFile
-  , FutStr
-  , runFile
-  , runStr)
-  where
+module Executor
+  ( runFile
+  , runStr
+  , main)
+where
 
-import Executor.Internal 
-import Types.Internal
+import Executor.InternalM
+import Types
 
-testExec = runStr "entry main = reduce (+) 0 [1,2,3,4,5,6]" C
+-- TO BE REMOVED: for testying purposes only.
+main :: IO (Either String ExecutionResult)
+main = runStr "entry main = reduce (+) 0 [1,2,3,4,5,6]" C
