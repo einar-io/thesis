@@ -5,8 +5,8 @@ import System.IO (openTempFile, hClose)
 import System.Process (readProcessWithExitCode, showCommandForUser)
 import System.FilePath (dropExtension)
 import Control.Monad.Reader
---import Control.Monad.Trans.Except (ExceptT, runExceptT)
--- import GHC.IO.Exception (ExitCode)
+import Control.Monad.Except (throwError)
+import GHC.IO.Exception (ExitCode(..))
 
 p :: String -> Command ()
 p = liftIO . print
@@ -20,7 +20,10 @@ compile = do
   p $ "[Futhark] Command going to be run: " ++ showCommandForUser futExec futParams
 
   (exitcode, stdout, stdin) <- liftIO $ readProcessWithExitCode futExec futParams ""
-  -- if exitcode <> 0 then throwError CompilationFail ExitCode else return (,,)
+  case exitcode of
+      ExitFailure _ -> throwError (CompilationError exitcode)
+      ExitSuccess   -> return (exitcode, stdout, stdin) 
+
   p   "[Futhark] Compilation results:"
   p $ "[Futhark] ExitCode: " ++ show exitcode
   p $ "[Futhark] stdout:   " ++ show stdout
@@ -75,12 +78,12 @@ runStrM futPgmStr = do
   let envNew = Env { fp = filepath, be = backend }
   local (const envNew) runFileM
 
-runStr :: FutPgmStr -> Backend -> IO (Either String ExecutionResult)
+runStr :: FutPgmStr -> Backend -> IO (Either ExecutionError ExecutionResult)
 runStr futPgmStr backend =
   let envInit = Env { fp = "", be = backend }
   in execCmd (runStrM futPgmStr) envInit
 
-runFile :: FutPgmFile -> Backend -> IO (Either String ExecutionResult)
+runFile :: FutPgmFile -> Backend -> IO (Either ExecutionError ExecutionResult)
 runFile futPgmFile backend =
   let envInit = Env { fp = futPgmFile, be = backend }
   in execCmd runFileM envInit
