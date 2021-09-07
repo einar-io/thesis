@@ -17,7 +17,6 @@ val v = case v of
   Pair v1 v2 -> "(" <> (val v1) <> "," <> (val v2) <> ")"
   Tensor ls -> "[" <> (val $ head ls) <> (concatMap (\w -> ", " <> val w) (tail ls)) <> "]"
 
-
 spacefun :: String
 spacefun = " fun"
 
@@ -103,7 +102,7 @@ getCount = Co (\cs@(_, _, cnt) -> (cnt, cs))
 finishProg :: Compiler ()
 finishProg =
   Co (\(p, r, c) ->
-    let new_loc = "entry main =" <> spacefun <> show(c) <> " arg"
+    let new_loc = "entry main =" <> spacefun <> show(c-1) <> " arg"
     in ((), (p <> new_loc, r, c)))
 
 locMArit :: Arity -> Program -> Compiler ()
