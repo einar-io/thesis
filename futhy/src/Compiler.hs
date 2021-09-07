@@ -46,7 +46,16 @@ type Count = Int
 type CState = (Program, Arity, Count)
 newtype Compiler a = Co {runCo :: CState -> (a, CState)}
 instance Functor Compiler where
-instance Applicative Compiler
+  fmap f (Co g) = Co (\s0 -> let (a, s1) = g s0
+                             in (f a, s1))
+
+instance Applicative Compiler where
+  pure a = return a
+  (<*>) a b = do
+                x <- a
+                y <- b
+                return (x y)
+
 instance Monad Compiler where
   return a = Co (\cs -> (a, cs))
   m >>= f = Co (\cs0 -> let (a,cs1) = runCo m cs0
