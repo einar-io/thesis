@@ -4,7 +4,7 @@ module Types where
 
 import Control.Monad.Reader
 import Control.Monad.Except
-import Control.Monad.Trans.Except (ExceptT, runExceptT)
+--import Control.Monad.Trans.Except (ExceptT, runExceptT)
 import GHC.IO.Exception (ExitCode)
 
 type RealNumb = Float
@@ -96,18 +96,17 @@ data Env = Env {
   , be :: Backend
   }
 
--- Command evaluation monad. 
+-- Command evaluation monad.
 type Cmd a = ReaderT Env (ExceptT ExecutionError IO) a
 newtype Command a = Command { runCmd :: Cmd a }
-  deriving 
+  deriving
   ( Functor
   , Applicative
   , Monad
   , MonadIO
   , MonadReader Env
-  , MonadError ExecutionError 
+  , MonadError ExecutionError
   )
 
 execCmd :: Command a -> Env -> IO (Either ExecutionError a)
 execCmd cmd env = runExceptT $ runReaderT (runCmd cmd) env
-

@@ -2,7 +2,7 @@
 
 module Interpretor where
 import Types
-import Utils
+-- import Utils
 
 -- general implementation - outer product, no contraction
 outer :: Val -> Val -> Val
@@ -14,7 +14,7 @@ outer x y = case (x,y) of
   _ -> undefined
 
 dotprod :: Val -> Val -> Val
-dotprod (Tensor a) (Tensor b) = undefined --Scalar $ foldr (+) 0.0 $ map (\(Scalar aa, Scalar bb) -> aa*bb) $ zip a b
+dotprod _ _ = undefined --Scalar $ foldr (+) 0.0 $ map (\(Scalar aa, Scalar bb) -> aa*bb) $ zip a b
 
 applyOp :: BilOp -> Val -> Val -> Val
 applyOp op a b = case op of
