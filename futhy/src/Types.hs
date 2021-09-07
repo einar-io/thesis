@@ -1,6 +1,11 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
 module Types where
 
-import Types.Internal()
+import Control.Monad.Reader
+import Control.Monad.Except
+import Control.Monad.Trans.Except (ExceptT, runExceptT)
+import GHC.IO.Exception (ExitCode)
 
 type RealNumb = Float
 
@@ -50,3 +55,59 @@ data BilOp
   deriving (Show, Eq)
 
 type Derivative = Val
+
+-- error types!
+data Error
+  = Something String
+  deriving (Show, Eq)
+
+type Filepath = String
+type FutPgmFile = String
+type FutPgmStr  = String
+type FutPgmExec = String
+
+data Backend
+    = C
+    | OpenCL
+    | CUDA
+
+instance Show Backend where
+  show C      = "c"
+  show CUDA   = "cuda"
+  show OpenCL = "opencl"
+
+-- Error types possible in the Left constructor of ExceptT trans.
+data ExecutionError
+  = CompilationError ExitCode
+  | ExecutionError ExitCode
+  deriving (Show, Eq)
+
+-- ExitCode, Stdout, Stdin
+type ExecutionResult = (ExitCode, String, String)
+
+-- Result types possible in the Right constructor of ExceptT trans.
+data ExecutorResult
+  = Unparsed String
+  | Parsed Val
+  deriving (Show, Eq)
+
+data Env = Env {
+    fp :: FilePath
+  , be :: Backend
+  }
+
+-- Command evaluation monad. 
+type Cmd a = ReaderT Env (ExceptT ExecutionError IO) a
+newtype Command a = Command { runCmd :: Cmd a }
+  deriving 
+  ( Functor
+  , Applicative
+  , Monad
+  , MonadIO
+  , MonadReader Env
+  , MonadError ExecutionError 
+  )
+
+execCmd :: Command a -> Env -> IO (Either ExecutionError a)
+execCmd cmd env = runExceptT $ runReaderT (runCmd cmd) env
+

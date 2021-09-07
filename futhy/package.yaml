@@ -6,6 +6,7 @@ dependencies:
   - process
   - futhark
   - filepath
+  - transformers
 
 ghc-options: -Wall
 
