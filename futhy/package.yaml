@@ -25,6 +25,19 @@ executables:
     - futhy
 
 tests:
+  optimizer-tests:
+    main:                Optimizer-tests.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - futhy
+    - tasty
+    - tasty-hunit
+    - QuickCheck
+    - tasty-quickcheck
   compiler-tests:
     main:                Compiler-tests.hs
     source-dirs:         test
