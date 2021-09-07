@@ -4,7 +4,6 @@ import Prelude
 
 -- our libs
 import Types
-import Utils
 import Compiler
 
 main :: IO ()
