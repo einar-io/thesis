@@ -21,8 +21,8 @@ compile = do
 
   (exitcode, stdout, stdin) <- liftIO $ readProcessWithExitCode futExec futParams ""
   case exitcode of
-      ExitFailure _ -> throwError (CompilationError exitcode)
-      ExitSuccess   -> return (exitcode, stdout, stdin) 
+         ExitFailure _ -> throwError (CompilationError exitcode)
+         ExitSuccess   -> return ()
 
   p   "[Futhark] Compilation results:"
   p $ "[Futhark] ExitCode: " ++ show exitcode
@@ -38,7 +38,12 @@ execute = do
   let executable = dropExtension filepath
   let params = []
   p $ "[LinPgm] Command going to be run: " ++ showCommandForUser executable params
+
   (exitcode, stdout, stdin) <- liftIO $ readProcessWithExitCode executable params "\n"
+  case exitcode of
+         ExitFailure _ -> throwError (ExecutionError exitcode)
+         ExitSuccess   -> return ()
+
   p   "[LinPgm] Execution results:"
   p $ "[LinPgm] ExitCode: " ++ show exitcode
   p $ "[LinPgm] stdout:   " ++ show stdout
