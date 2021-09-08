@@ -24,5 +24,8 @@ tests = testGroup "Optimizer"
     , goodCase "Combining many paras"
       (Comp (Comp (Para (Scale 2.0) (Scale 2.0)) (Comp (Para (Scale 2.0) (Scale 2.0)) (Comp (Comp (Para (Scale 2.0) (Scale 2.0)) (Comp (Para (Scale 2.0) (Scale 2.0)) (Para (Scale 2.0) (Scale 2.0)))) (Comp (Para (Scale 2.0) (Scale 2.0)) (Para (Scale 2.0) (Scale 2.0)))))) (Comp (Para (Scale 2.0) (Scale 2.0)) (Para (Scale 2.0) (Scale 2.0))))
       (Para (Scale 512.0) (Scale 512.0))
+    , goodCase "Flattening"
+      (Comp (Comp (Zero) (Comp (Zero) (Comp (Comp (Zero) (Comp (Zero) (Zero))) (Comp (Zero) (Zero))))) (Comp (Zero) (Zero)))
+      (Comp Zero (Comp Zero (Comp Zero (Comp Zero (Comp Zero (Comp Zero (Comp Zero (Comp Zero Zero))))))))
     ]
   ]
