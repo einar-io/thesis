@@ -27,9 +27,9 @@ let scalarprod s z : r = s*z
 
 let applytotup f (x,y) = f x y
 
-let plus_0_0 = (applytotup (+))
-let plus_1_1 = (applytotup map2 (+))
-let plus_2_2 = (applytotup map2 (add_1_1))
+--let plus_0_0 = (applytotup (+))
+--let plus_1_1 = (applytotup map2 (+))
+--let plus_2_2 = (applytotup map2 (add_1_1))
 
 -- naming scheme: general function, underscore first-order, underscore second-order
 
@@ -62,4 +62,4 @@ let contr_2_1 xx y = map (\x -> contr_1_1 y x) <| xx
 --let megaflatten [n][m][p] (x: [n][m][p]r) = map (flatten) x
 
 let dotprod_1_1 = contr_1_1
-let matrixmult_1_1 = contr_2_2
+let matrixmult_2_2 = contr_2_2
