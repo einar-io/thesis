@@ -7,6 +7,7 @@ dependencies:
   - futhark
   - filepath
   - transformers
+  - optparse-applicative
 
 ghc-options: -Wall
 
