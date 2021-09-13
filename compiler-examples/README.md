@@ -7,5 +7,5 @@
 >'cd compiler-examples'
 >'futhark repl'
 >':load ex1.fut'
->'main'
+>'main [1.0, 2.0]'
 <[168.0f32, 336.0f32]
