@@ -25,7 +25,7 @@ instance Monad Compiler where
 val :: Val -> String
 val v = case v of
   Scalar sc -> show(sc) <> "f32"
-  Pair v1 v2 -> "(" <> (val v1) <> "," <> (val v2) <> ")"
+  Pair v1 v2 -> "(" <> (val v1) <> ", " <> (val v2) <> ")"
   Tensor ls -> "[" <> (val $ head ls) <> (concatMap (\w -> ", " <> val w) (tail ls)) <> "]"
 
 spacefun :: Int -> String

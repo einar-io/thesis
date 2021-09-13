@@ -1,6 +1,7 @@
 module Executor
   ( runFile
   , runStr
+  , runStrArg
   , main)
 where
 

@@ -27,7 +27,7 @@ tests = testGroup "compiler"
               "[[3.0f32, 6.0f32], [9.0f32, 12.0f32]]"
             , goodCaseVal "pair"
               (Pair (Tensor [Tensor [Scalar 3.0, Scalar 6.0], Tensor [Scalar 9.0, Scalar 12.0]]) (Tensor [Tensor [Scalar 3.0, Scalar 6.0], Tensor [Scalar 9.0, Scalar 12.0]]))
-              "([[3.0f32, 6.0f32], [9.0f32, 12.0f32]],[[3.0f32, 6.0f32], [9.0f32, 12.0f32]])"
+              "([[3.0f32, 6.0f32], [9.0f32, 12.0f32]], [[3.0f32, 6.0f32], [9.0f32, 12.0f32]])"
             ]
           , testGroup "whole program tests"
             [ goodCaseProgram "Id"

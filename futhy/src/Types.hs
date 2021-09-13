@@ -78,7 +78,7 @@ instance Show Backend where
 
 -- Error types possible in the Left constructor of ExceptT trans.
 data ExecutionError
-  = CompilationError ExitCode
+  = CompilationError ExecutionResult
   | ExecutionError ExitCode
   deriving (Show, Eq)
 
