@@ -44,8 +44,8 @@ biop b a1 a2 =  let base = case b of
 arityext :: Arity -> Arity -> String
 arityext a1 a2 = "_" <> show(ua a1) <> "_" <> show(ua a2)
 
-getCountArity :: Compiler (Count, Arity)
-getCountArity = Co (\cs@(_, arit, cnt) -> ((cnt, arit), cs))
+getLastCountArity :: Compiler (Count, Arity)
+getLastCountArity = Co (\cs@(_, arit, cnt) -> ((cnt-1, arit), cs))
 
 locM :: Arity -> Program -> Compiler ()
 locM r fun =
@@ -58,17 +58,17 @@ lfunM linfun a1 = case linfun of
   Id -> locM a1 "id"
   Dup -> locM (P a1 a1) "dupe"
   Comp lf2 lf1 -> do lfunM lf1 a1
-                     (c2, a2) <- getCountArity
+                     (c2, a2) <- getLastCountArity
                      lfunM lf2 a2
-                     (c3, a3) <- getCountArity
-                     locM a3 ("comp" <> spacefun (c3-1) <> spacefun (c2-1))
+                     (c3, a3) <- getLastCountArity
+                     locM a3 ("comp" <> spacefun c3 <> spacefun c2)
   Para lf2 lf1 ->
     case a1 of
       P a3 a2 -> do lfunM lf1 a2
-                    (c2, a4) <- getCountArity
+                    (c2, a4) <- getLastCountArity
                     lfunM lf2 a3
-                    (c3, a5) <- getCountArity
-                    locM (P a5 a4) ("para" <> spacefun (c3-1) <> spacefun (c2-1))
+                    (c3, a5) <- getLastCountArity
+                    locM (P a5 a4) ("para" <> spacefun c3 <> spacefun c2)
       _ -> undefined --ERROR, argument to para must be a Pair of Vals
   LSec v b -> do locM a1 (biop b (val_arity v) a1 <> " " <> val v)
   RSec b v -> do locM a1 (val v <> " " <> biop b (val_arity v) a1)
@@ -79,12 +79,12 @@ lfunM linfun a1 = case linfun of
                 (2, 2, P _ a2) -> do locM a2 "snd"
                 _ -> undefined
   Lplus lf2 lf1 -> do lfunM (Para lf2 lf1) a1
-                      (c2, a4) <- getCountArity
+                      (c2, a4) <- getLastCountArity
                       case a4 of
-                        (P a3 a2) -> do locM a4 ("plus" <> arityext a3 a2 <> " " <> "fun" <> show(c2-1))
+                        (P a3 a2) -> do locM a4 ("plus" <> arityext a3 a2 <> spacefun c2)
                         _ -> undefined
   Red _ -> undefined
-  Add _ -> undefined
+  Add -> undefined
   LMap _ -> undefined
   Zip _ -> undefined
 

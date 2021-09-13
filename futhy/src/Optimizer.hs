@@ -46,6 +46,6 @@ optimizeRun lf = case lf of
   Prj _ _ -> lf
   Lplus _ _ -> lf
   Red _ -> lf
-  Add _ -> lf
+  Add -> lf
   LMap _ -> lf
   Zip _ -> lf

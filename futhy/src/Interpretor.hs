@@ -57,7 +57,7 @@ interpret f v = case f of
                        ; right = interpret rfn v}
                        in left `vectorspacePlus` right
   Red _ -> undefined
-  Add _ -> undefined
+  Add -> undefined
   LMap _ -> undefined
   Zip _ -> undefined
 

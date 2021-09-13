@@ -29,7 +29,7 @@ data LFun -- expr
   | Prj Int Int
   | Lplus LFun LFun -- lifted addition
   | Red Rel
-  | Add Int
+  | Add
   | LMap LFun
   | Zip [LFun]
   deriving (Show, Eq)
