@@ -65,6 +65,7 @@ type Filepath = String
 type FutPgmFile = String
 type FutPgmStr  = String
 type FutPgmExec = String
+type StdInArg = String
 
 data Backend
     = C

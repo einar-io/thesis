@@ -96,7 +96,7 @@ runFile futPgmFile backend =
 
 
 --- but with std'ins
-executeArg :: String -> Command ExecutionResult
+executeArg :: StdInArg -> Command ExecutionResult
 executeArg arg = do
   filepath <- asks fp
   let executable = dropExtension filepath
@@ -116,17 +116,17 @@ executeArg arg = do
   return (exitcode, stdout, stdin)
 
 
-runStrArg :: FutPgmStr -> Backend -> String -> IO (Either ExecutionError ExecutionResult)
+runStrArg :: FutPgmStr -> Backend -> StdInArg -> IO (Either ExecutionError ExecutionResult)
 runStrArg futPgmStr backend arg =
   let envInit = Env { fp = "", be = backend }
   in execCmd (runStrArgM futPgmStr arg) envInit
 
-runStrArgM :: FutPgmStr -> String -> Command ExecutionResult
+runStrArgM :: FutPgmStr -> StdInArg -> Command ExecutionResult
 runStrArgM futPgmStr arg = do
   filepath <- store futPgmStr
   backend <- asks be
   let envNew = Env { fp = filepath, be = backend }
   local (const envNew) (runFileArgM arg)
 
-runFileArgM :: String -> Command ExecutionResult
+runFileArgM :: StdInArg -> Command ExecutionResult
 runFileArgM arg = compile >> executeArg arg

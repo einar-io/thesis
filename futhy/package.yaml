@@ -26,46 +26,7 @@ executables:
 
 tests:
   integration-tests:
-    main:                Integration-tests.hs
-    source-dirs:         test
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
-    dependencies:
-    - futhy
-    - tasty
-    - tasty-hunit
-    - QuickCheck
-    - tasty-quickcheck
-  optimizer-tests:
-    main:                Optimizer-tests.hs
-    source-dirs:         test
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
-    dependencies:
-    - futhy
-    - tasty
-    - tasty-hunit
-    - QuickCheck
-    - tasty-quickcheck
-  compiler-tests:
-    main:                Compiler-tests.hs
-    source-dirs:         test
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
-    dependencies:
-    - futhy
-    - tasty
-    - tasty-hunit
-    - QuickCheck
-    - tasty-quickcheck
-  interpretor-tests:
-    main:                Interpretor-tests.hs
+    main:                Tests.hs
     source-dirs:         test
     ghc-options:
     - -threaded
