@@ -32,14 +32,14 @@ compile = do
   return (exitcode, stdout, stdin)
 
 -- |Execute the compiled Futhark executable 'futExec' containing the compiled linear program.
-execute :: Command ExecutionResult
-execute = do
+executeArg :: String -> Command ExecutionResult
+executeArg arg = do
   filepath <- asks fp
   let executable = dropExtension filepath
   let params = []
   p $ "[LinPgm] Command going to be run: " ++ showCommandForUser executable params
 
-  (exitcode, stdout, stdin) <- liftIO $ readProcessWithExitCode executable params "\n"
+  (exitcode, stdout, stdin) <- liftIO $ readProcessWithExitCode executable params arg
   case exitcode of
          ExitFailure _ -> throwError (ExecutionError exitcode)
          ExitSuccess   -> return ()
@@ -51,8 +51,8 @@ execute = do
   p   "[LinPgm] Execution ENDED"
   return (exitcode, stdout, stdin)
 
-runFileM :: Command ExecutionResult
-runFileM = compile >> execute
+runFileArgM :: String -> Command ExecutionResult
+runFileArgM arg = compile >> executeArg arg
 
 makeTemp :: Command FutPgmFile
 makeTemp = do
@@ -76,57 +76,27 @@ store futPgmStr = do
   local (const envNew) (writeTemp futPgmStr)
   return filepath
 
-runStrM :: FutPgmStr -> Command ExecutionResult
-runStrM futPgmStr = do
-  filepath <- store futPgmStr
-  backend <- asks be
-  let envNew = Env { fp = filepath, be = backend }
-  local (const envNew) runFileM
-
-runStr :: FutPgmStr -> Backend -> IO (Either ExecutionError ExecutionResult)
-runStr futPgmStr backend =
-  let envInit = Env { fp = "", be = backend }
-  in execCmd (runStrM futPgmStr) envInit
-
-runFile :: FutPgmFile -> Backend -> IO (Either ExecutionError ExecutionResult)
-runFile futPgmFile backend =
-  let envInit = Env { fp = futPgmFile, be = backend }
-  in execCmd runFileM envInit
-
-
-
---- but with std'ins
-executeArg :: String -> Command ExecutionResult
-executeArg arg = do
-  filepath <- asks fp
-  let executable = dropExtension filepath
-  let params = []
-  p $ "[LinPgm] Command going to be run: " ++ showCommandForUser executable params
-
-  (exitcode, stdout, stdin) <- liftIO $ readProcessWithExitCode executable params arg
-  case exitcode of
-         ExitFailure _ -> throwError (ExecutionError exitcode)
-         ExitSuccess   -> return ()
-
-  p   "[LinPgm] Execution results:"
-  p $ "[LinPgm] ExitCode: " ++ show exitcode
-  p $ "[LinPgm] stdout:   " ++ show stdout
-  p $ "[LinPgm] stdin :   " ++ show stdin
-  p   "[LinPgm] Execution ENDED"
-  return (exitcode, stdout, stdin)
-
-
-runStrArg :: FutPgmStr -> Backend -> String -> IO (Either ExecutionError ExecutionResult)
-runStrArg futPgmStr backend arg =
-  let envInit = Env { fp = "", be = backend }
-  in execCmd (runStrArgM futPgmStr arg) envInit
-
-runStrArgM :: FutPgmStr -> String -> Command ExecutionResult
-runStrArgM futPgmStr arg = do
+runStrArgM :: String -> FutPgmStr -> Command ExecutionResult
+runStrArgM arg futPgmStr = do
   filepath <- store futPgmStr
   backend <- asks be
   let envNew = Env { fp = filepath, be = backend }
   local (const envNew) (runFileArgM arg)
 
-runFileArgM :: String -> Command ExecutionResult
-runFileArgM arg = compile >> executeArg arg
+
+--- entrypoints
+runStrArg :: String -> FutPgmStr -> Backend -> IO (Either ExecutionError ExecutionResult)
+runStrArg arg futPgmStr backend =
+  let envInit = Env { fp = "", be = backend }
+  in execCmd (runStrArgM futPgmStr arg) envInit
+
+runFileArg :: String -> FutPgmFile -> Backend -> IO (Either ExecutionError ExecutionResult)
+runFileArg arg futPgmFile backend =
+  let envInit = Env { fp = futPgmFile, be = backend }
+  in execCmd (runFileArgM arg) envInit
+
+runStr :: FutPgmStr -> Backend -> IO (Either ExecutionError ExecutionResult)
+runStr = (runStrArg "\n")
+
+runFile :: FutPgmFile -> Backend -> IO (Either ExecutionError ExecutionResult)
+runFile = (runFileArg "\n")
