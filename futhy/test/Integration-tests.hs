@@ -17,7 +17,7 @@ main = defaultMain $ localOption (mkTimeout $ second * 10) tests
 
 goodCase :: TestName -> LFun -> Val -> TestTree
 goodCase name lf vin = testCase name $ do 
-                                        result <- (runStrArg (val vin) (compileProgram lf (val_arity vin)) C)
+                                        result <- (runStrArg (compileProgram lf (val_arity vin)) C (val vin))
                                         reference <- runStr ("entry main = " <> (val (interpret lf vin))) C
                                         case (result, reference) of
                                           (Right (_, res, _), Right (_, ref, _)) -> res @?= ref
