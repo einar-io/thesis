@@ -88,10 +88,17 @@ lfunM linfun a1 = case linfun of
   LMap _ -> undefined
   Zip _ -> undefined
 
-finishProg :: Compiler ()
-finishProg =
+typeDeclared :: Arity -> String
+typeDeclared a = case a of
+  Atom 0 -> "f32"
+  Atom n -> "[]" <> (typeDeclared $ Atom $ n-1)
+  P a1 a2 -> "(" <> typeDeclared a1 <> ", " <> typeDeclared a2 <> ")"
+
+
+finishProg :: Arity -> Compiler ()
+finishProg a =
   Co (\(p, r, c) ->
-    let new_loc = "entry main =" <> spacefun (c-1)
+    let new_loc = "entry main (input: " <>  typeDeclared a <> ") =" <> spacefun (c-1) <> " input"
     in ((), (p <> new_loc, r, c)))
 
 put :: CState -> Compiler ()
@@ -106,6 +113,6 @@ compileProgram lf arit = let initial_program =
                          let initial = (initial_program, arit, 1) in
                          let act = do put initial
                                       lfunM lf arit
-                                      finishProg
+                                      finishProg arit
                                       getProgr
                          in (fst . runCo act) initial
