@@ -1,7 +1,7 @@
 import Test.Tasty.HUnit
 import Test.Tasty
-import Test.QuickCheck
-import GHC.IO.Unsafe
+--import Test.QuickCheck
+--import GHC.IO.Unsafe
 import Prelude
 
 -- our libs
@@ -47,7 +47,7 @@ tests =
     , interpretorTests
     , compilorTests
     , executorTests
-    , qcTests
+--    , qcTests
     ]
 
 optimizorTests :: TestTree
@@ -230,22 +230,20 @@ executorTests =
     ]
 
 
-instance Arbitrary Val where
-  arbitrary = oneof
-    [ pure $ Scalar 1.0 ]
+--instance Arbitrary Val where
+--  arbitrary = oneof
+--    [ pure $ Scalar 1.0 ]
 
-instance Arbitrary LFun where
-  arbitrary = oneof
-    [ pure Id ]
+--instance Arbitrary LFun where
+--  arbitrary = oneof
+--    [ pure Id ]
 
+--propInterpretorCompilerEqual :: LFun -> Val -> Property
+--propInterpretorCompilerEqual lf vin =
 
-
-properT :: LFun -> Val -> Property
-properT lf vin = let result = unsafePerformIO (runStrArg (compileProgram lf (val_arity vin)) C (val vin)) in
-              let reference = unsafePerformIO (runStr ("entry main = " <> (val (interpret lf vin))) C) in
-              result === reference
-
-qcTests :: TestTree
-qcTests =
-  testGroup "qc tests"
-    [ testCase "property of equality of compiler and interpretor" $ quickCheckWith stdArgs { maxSuccess = 1 } properT  ]
+--qcTests :: TestTree
+--qcTests =
+--  testGroup "qc tests"
+--    [ testCase "propInterpretorCompilerEqual"
+--      $ quickCheckWith stdArgs { maxSuccess = 1 } propInterpretorCompilerEqual
+--    ]
