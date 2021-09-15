@@ -1,5 +1,7 @@
 import Test.Tasty.HUnit
 import Test.Tasty
+import Test.QuickCheck
+import GHC.IO.Unsafe
 import Prelude
 
 -- our libs
@@ -14,7 +16,7 @@ second :: Integer
 second = 1000000
 
 main :: IO ()
-main = defaultMain $ localOption (mkTimeout $ second * 10) tests
+main = defaultMain $ localOption (mkTimeout $ second * 5) tests
 
 goodCaseOptimizer :: TestName -> LFun -> LFun -> TestTree
 goodCaseOptimizer name vin vout = testCase name $ optimize vin @?= vout
@@ -43,6 +45,7 @@ tests =
     , interpretorTests
     , compilorTests
     , executorTests
+    , qcTests
     ]
 
 optimizorTests :: TestTree
@@ -223,3 +226,24 @@ executorTests =
       (Comp  (Para  (LSec (Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]) Outer ) (Comp  (Para  (LSec (Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]) Outer ) (Scale 7.0)) Dup)) Dup)
       (Tensor [Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0], Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0], Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]])
     ]
+
+
+instance Arbitrary Val where
+  arbitrary = oneof
+    [ pure $ Scalar 1.0 ]
+
+instance Arbitrary LFun where
+  arbitrary = oneof
+    [ pure Id ]
+
+
+
+properT :: LFun -> Val -> Property
+properT lf vin = let result = unsafePerformIO (runStrArg (compileProgram lf (val_arity vin)) C (val vin)) in
+              let reference = unsafePerformIO (runStr ("entry main = " <> (val (interpret lf vin))) C) in
+              result === reference
+
+qcTests :: TestTree
+qcTests =
+  testGroup "qc tests"
+    [ testCase "property of equality of compiler and interpretor" $ quickCheckWith stdArgs { maxSuccess = 1 } properT  ]
