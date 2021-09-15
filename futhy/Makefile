@@ -1,6 +1,7 @@
 default:
 	stack build --force-dirty --ghc-options=-fforce-recomp
-t:
-	rm build/*
-	cp lib/lmaplib.fut build/lmaplib.fut
+t: lib
 	stack test
+
+lib:
+	cp lib/lmaplib.fut build/lmaplib.fut
