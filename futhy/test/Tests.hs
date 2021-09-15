@@ -22,7 +22,7 @@ goodCaseOptimizer :: TestName -> LFun -> LFun -> TestTree
 goodCaseOptimizer name vin vout = testCase name $ optimize vin @?= vout
 
 goodCaseInterpretor :: TestName -> LFun -> Val -> Val -> TestTree
-goodCaseInterpretor name lfun vin vout = testCase name $ interpret lfun vin @?= vout
+goodCaseInterpretor name lfun vin vout = testCase name $ interpret lfun vin @?= return vout
 
 goodCaseProgram :: TestName -> LFun -> Val -> String -> TestTree
 goodCaseProgram name lf vin vout = testCase name $ compileProgram lf (val_arity vin) @?= vout
@@ -31,12 +31,14 @@ goodCaseVal :: TestName -> Val -> String -> TestTree
 goodCaseVal name vin vout = testCase name $ val vin @?= vout
 
 goodCaseExecution :: TestName -> LFun -> Val -> TestTree
-goodCaseExecution name lf vin = testCase name $ do
-                                        result <- (runStrArg (compileProgram lf (val_arity vin)) C (val vin))
-                                        reference <- runStr ("entry main = " <> (val (interpret lf vin))) C
-                                        case (result, reference) of
-                                          (Right (_, res, _), Right (_, ref, _)) -> res @?= ref
-                                          _ -> result @?= reference
+goodCaseExecution name lf vin =
+  testCase name $ do compOutput <- runStrArg (compileProgram lf (val_arity vin)) C (val vin)
+                     let intOutput = interpret lf vin
+                     case (compOutput, intOutput) of
+                      (Right (Output op@(_, res, _)), Right intVal) -> res @?= val intVal
+                      (Right (Output op@(_, res, _)), Left str)     -> res @?= str
+                      (Left (CompilationError (ec,stdout,stdin)), Right intVal)   -> stdout++stdin @?= val intVal
+                      (Left (ExecutionError   (ec,stdout,stdin)), Right intVal)   -> stdout++stdin @?= val intVal
 
 tests :: TestTree
 tests =
@@ -124,23 +126,23 @@ interpretorTests =
       (LSec (Tensor [Scalar 2.0, Scalar 3.0]) Outer)
       (Tensor [Scalar 4.0, Scalar 5.0, Scalar 6.0])
       (Tensor [Tensor [Scalar 8.0, Scalar 10.0, Scalar 12.0], Tensor [Scalar 12.0, Scalar 15.0, Scalar 18.0]])
-    , goodCaseInterpretor "3 {outer product} 2 -> 3x2"
-      (RSec Outer (Tensor [Scalar 2.0, Scalar 3.0]))
-      (Tensor [Scalar 4.0, Scalar 5.0, Scalar 6.0])
-      (Tensor [Tensor [Scalar 8.0, Scalar 12.0], Tensor [Scalar 10.0, Scalar 15.0], Tensor [Scalar 12.0, Scalar 18.0]])
-    , goodCaseInterpretor "Id (+) K0 (3.0, 5.0) -> (3.0, 0.0)"
-      (Para Id Zero)
-      (Pair (Scalar 3.0) (Scalar 5.0))
-      (Pair (Scalar 3.0) (Scalar 0.0))
-    , goodCaseInterpretor "Id ^+ K0 6.0 -> 6.0"
-      (Lplus Id Zero)
-      (Scalar 6.0)
-      (Scalar 6.0)
-    , goodCaseInterpretor "(Scale (-3.0)) ^+ (Scale 5.0) 7.0 -> 14.0"
-      (Lplus (Scale (-3.0)) (Scale 5.0))
-      (Scalar 7.0)
-      (Scalar 14.0)
-    ]
+  , goodCaseInterpretor "3 {outer product} 2 -> 3x2"
+    (RSec Outer (Tensor [Scalar 2.0, Scalar 3.0]))
+    (Tensor [Scalar 4.0, Scalar 5.0, Scalar 6.0])
+    (Tensor [Tensor [Scalar 8.0, Scalar 12.0], Tensor [Scalar 10.0, Scalar 15.0], Tensor [Scalar 12.0, Scalar 18.0]])
+  , goodCaseInterpretor "Id (+) K0 (3.0, 5.0) -> (3.0, 0.0)"
+    (Para Id Zero)
+    (Pair (Scalar 3.0) (Scalar 5.0))
+    (Pair (Scalar 3.0) (Scalar 0.0))
+  , goodCaseInterpretor "Id ^+ K0 6.0 -> 6.0"
+    (Lplus Id Zero)
+    (Scalar 6.0)
+    (Scalar 6.0)
+  , goodCaseInterpretor "(Scale (-3.0)) ^+ (Scale 5.0) 7.0 -> 14.0"
+    (Lplus (Scale (-3.0)) (Scale 5.0))
+    (Scalar 7.0)
+    (Scalar 14.0)
+  ]
 
 
 
