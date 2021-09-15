@@ -2,10 +2,8 @@ module Optimizer where
 import Types
 
 optimize :: LFun -> LFun
-optimize lf = let so_far = optimizeRun lf in
-              case so_far == lf of
-                True -> so_far
-                False -> optimize so_far
+optimize lf = let lf2 = optimizeRun lf in
+              if lf2 == lf then lf2 else optimize lf2
 
 optimizeRun :: LFun -> LFun
 optimizeRun lf = case lf of
@@ -49,3 +47,4 @@ optimizeRun lf = case lf of
   Add -> lf
   LMap _ -> lf
   Zip _ -> lf
+  Neg -> lf
