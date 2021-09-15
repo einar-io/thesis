@@ -43,32 +43,32 @@ genLineOfCode r fun =
       let new_loc = "let" <> " fun" <> show c <> " = (" <> fun <> ")" <> "\n"
       in ((), (p <> new_loc, r, c+1)))
 
-lfunM :: LFun -> Arity -> Compiler ()
-lfunM linfun a1 = case linfun of
+compileLFun :: LFun -> Arity -> Compiler ()
+compileLFun linfun a1 = case linfun of
   Id -> genLineOfCode a1 "id"
   Dup -> genLineOfCode (APair a1 a1) "dupe"
-  Comp lf2 lf1 -> do lfunM lf1 a1
+  Comp lf2 lf1 -> do compileLFun lf1 a1
                      (c2, a2) <- getLastCountAndArity
-                     lfunM lf2 a2
+                     compileLFun lf2 a2
                      (c3, a3) <- getLastCountAndArity
                      genLineOfCode a3 ("comp" <> " fun" <> show c3 <> " fun" <> show c2)
   Para lf2 lf1 ->
     case a1 of
-      APair a3 a2 -> do lfunM lf1 a2
-                        (c2, a4) <- getLastCountAndArity
-                        lfunM lf2 a3
-                        (c3, a5) <- getLastCountAndArity
-                        genLineOfCode (APair a5 a4) ("para" <> " fun" <> show c3 <> " fun" <> show c2)
+      APair a3 a2 -> do compileLFun lf1 a2
+                        (c4, a4) <- getLastCountAndArity
+                        compileLFun lf2 a3
+                        (c5, a5) <- getLastCountAndArity
+                        genLineOfCode (APair a5 a4) ("para" <> " fun" <> show c5 <> " fun" <> show c4)
       _ -> undefined --ERROR, argument to para must be a Pair of Vals
   LSec v b -> genLineOfCode a1 (biop b (getArity v) a1 <> " " <> show v)
   RSec b v -> genLineOfCode a1 (show v <> " " <> biop b (getArity v) a1)
-  Scale rn -> lfunM (LSec (Scalar rn) Outer) a1
-  KZero -> lfunM (Scale 0) a1
+  Scale rn -> compileLFun (LSec (Scalar rn) Outer) a1
+  KZero -> compileLFun (Scale 0) a1
   Prj i j -> case (i,j,a1) of
                 (2, 1, APair a3 _) -> genLineOfCode a3 "fst"
                 (2, 2, APair _ a2) -> genLineOfCode a2 "snd"
                 _ -> undefined
-  Lplus lf2 lf1 -> do lfunM (Para lf2 lf1) a1
+  Lplus lf2 lf1 -> do compileLFun (Para lf2 lf1) a1
                       (c2, a4) <- getLastCountAndArity
                       case a4 of
                         (APair a3 a2) -> genLineOfCode a4 ("plus" <> arityAnnotation a3 a2 <> " fun" <> show c2)
@@ -106,7 +106,7 @@ compileProgram lf arit = let initial_program =
                                "open import \"lmaplib\"\n\n" in
                          let initial = (initial_program, arit, 1) in
                          let act = do put initial
-                                      lfunM lf arit
+                                      compileLFun lf arit
                                       finishProg arit
                                       getProgr
                          in (fst . runCo act) initial

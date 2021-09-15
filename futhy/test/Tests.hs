@@ -16,7 +16,7 @@ second :: Integer
 second = 1000000
 
 main :: IO ()
-main = defaultMain $ localOption (mkTimeout $ second * 5) tests
+main = defaultMain $ localOption (mkTimeout $ second * 30) tests
 
 goodCaseOptimizer :: TestName -> LFun -> LFun -> TestTree
 goodCaseOptimizer name vin vout = testCase name $ optimize vin @?= vout
@@ -34,16 +34,16 @@ goodCaseExecution :: TestName -> LFun -> Val -> TestTree
 goodCaseExecution name lf vin =
   testCase name $ do
                      compileRes <- runStrArg (compileProgram lf (getArity vin)) C (show vin)
-                     resStr  <- case compileRes of
-                                Right (Output (_, res, _)) -> return res
-                                e -> assertFailure $ show e
+                     compileResStr  <- case compileRes of
+                                        Right (Output (_, res, _)) -> return res
+                                        e -> assertFailure $ show e
                      let Right intVal = interpret lf vin
                      intComp <- runStr ("entry main = " <> show intVal) C
-                     refStr <-  case intComp of
+                     interpResStrn <-  case intComp of
                                 Right (Output (_, ref, _)) -> return ref
                                 e -> assertFailure $ show e
-                     case (resStr == refStr) of
-                      False -> assertFailure $ show (resStr, refStr)
+                     case (compileResStr == interpResStrn) of
+                      False -> assertFailure $ show (compileResStr, interpResStrn)
                       True -> return ()
 
 tests :: TestTree
