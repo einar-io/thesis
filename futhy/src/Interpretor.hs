@@ -65,7 +65,7 @@ interpret f v = case (f, v) of
                           vl <- interpret lfn v
                           vr <- interpret rfn v
                           Right $ vl `vectorspacePlus` vr
-  (Red  r, _) -> Left "Invalid argument to Red"
+  (Red  _, _) -> Left "Invalid argument to Red"
   (LMap _, _) -> Left "Invalid argument to LMap"
   (Zip  _, _) -> Left "Invalid argument to Zip"
   (Neg   , _) -> Left "Invalid argument to Neg"
