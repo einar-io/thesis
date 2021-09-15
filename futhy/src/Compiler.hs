@@ -22,12 +22,6 @@ instance Monad Compiler where
   m >>= f = Co (\cs0 -> let (a,cs1) = runCo m cs0
                         in runCo (f a) cs1)
 
-val :: Val -> String
-val v = case v of
-  Scalar sc -> show(sc) <> "f32"
-  Pair v1 v2 -> "(" <> (val v1) <> ", " <> (val v2) <> ")"
-  Tensor ls -> "[" <> (val $ head ls) <> (concatMap (\w -> ", " <> val w) (tail ls)) <> "]"
-
 spacefun :: Int -> String
 spacefun c = " fun" <> show(c)
 
@@ -71,8 +65,8 @@ lfunM linfun a1 = case linfun of
                     (c3, a5) <- getLastCountArity
                     locM (P a5 a4) ("para" <> spacefun c3 <> spacefun c2)
       _ -> undefined --ERROR, argument to para must be a Pair of Vals
-  LSec v b -> do locM a1 (biop b (val_arity v) a1 <> " " <> val v)
-  RSec b v -> do locM a1 (val v <> " " <> biop b (val_arity v) a1)
+  LSec v b -> do locM a1 (biop b (val_arity v) a1 <> " " <> show v)
+  RSec b v -> do locM a1 (show v <> " " <> biop b (val_arity v) a1)
   Scale rn -> do lfunM (LSec (Scalar rn) Outer) a1
   KZero -> do lfunM (Scale 0) a1
   Prj i j -> case (i,j,a1) of

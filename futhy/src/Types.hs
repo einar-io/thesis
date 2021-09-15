@@ -13,7 +13,14 @@ data Val
   | Tensor [Val]
   | Pair Val Val
   | Zero
-  deriving (Show, Eq)
+  deriving (Eq)
+
+instance Show Val where
+  show v = case v of
+    Scalar sc -> show sc <> "f32"
+    Pair v1 v2 -> "(" <> show v1 <> ", " <> show v2 <> ")"
+    Tensor ls -> "[" <> show (head ls) <> concatMap (\w -> ", " <> show w) (tail ls) <> "]"
+    Zero -> show $ Scalar 0
 
 -- These are listed as linear map expressions
 -- https://github.com/diku-dk/caddie/blob/master/src/lin.sig
@@ -122,5 +129,3 @@ execCmd cmd env = runExceptT $ runReaderT (runCmd cmd) env
 type InterpretorError = String
 
 type InterpretorOutput a = Either InterpretorError a
-
-
