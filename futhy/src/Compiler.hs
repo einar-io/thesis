@@ -11,19 +11,14 @@ instance Functor Compiler where
                              in (f a, s1))
 
 instance Applicative Compiler where
-  pure a = return a
-  (<*>) a b = do
-                x <- a
-                y <- b
-                return (x y)
+  pure = return
+  (<*>) a b = do x <- a
+                 x <$> b
 
 instance Monad Compiler where
   return a = Co (\cs -> (a, cs))
   m >>= f = Co (\cs0 -> let (a,cs1) = runCo m cs0
                         in runCo (f a) cs1)
-
-spacefun :: Int -> String
-spacefun c = " fun" <> show(c)
 
 biop :: BilOp -> Arity -> Arity -> String
 biop b a1 a2 =  let base = case b of
@@ -33,70 +28,71 @@ biop b a1 a2 =  let base = case b of
                             DotProd -> "dotprod"
                             Mult -> "mult"
                             Outer -> "outer"
-                in base <> arityext a1 a2
+                in base <> arityAnnotation a1 a2
 
-arityext :: Arity -> Arity -> String
-arityext a1 a2 = "_" <> show(ua a1) <> "_" <> show(ua a2)
+arityAnnotation :: Arity -> Arity -> String
+arityAnnotation a1 a2 = "_" <> show(ua a1) <> "_" <> show(ua a2)
 
-getLastCountArity :: Compiler (Count, Arity)
-getLastCountArity = Co (\cs@(_, arit, cnt) -> ((cnt-1, arit), cs))
+getLastCountAndArity :: Compiler (Count, Arity)
+getLastCountAndArity = Co (\cs@(_, arit, cnt) -> ((cnt-1, arit), cs))
 
 -- Lines Of Code
-locM :: Arity -> Program -> Compiler ()
-locM r fun =
+genLineOfCode :: Arity -> Program -> Compiler ()
+genLineOfCode r fun =
   Co (\(p, _, c) ->
-      let new_loc = "let" <> spacefun c <> " = (" <> fun <> ")" <> "\n"
+      let new_loc = "let" <> " fun" <> show c <> " = (" <> fun <> ")" <> "\n"
       in ((), (p <> new_loc, r, c+1)))
 
 lfunM :: LFun -> Arity -> Compiler ()
 lfunM linfun a1 = case linfun of
-  Id -> locM a1 "id"
-  Dup -> locM (P a1 a1) "dupe"
+  Id -> genLineOfCode a1 "id"
+  Dup -> genLineOfCode (APair a1 a1) "dupe"
   Comp lf2 lf1 -> do lfunM lf1 a1
-                     (c2, a2) <- getLastCountArity
+                     (c2, a2) <- getLastCountAndArity
                      lfunM lf2 a2
-                     (c3, a3) <- getLastCountArity
-                     locM a3 ("comp" <> spacefun c3 <> spacefun c2)
+                     (c3, a3) <- getLastCountAndArity
+                     genLineOfCode a3 ("comp" <> " fun" <> show c3 <> " fun" <> show c2)
   Para lf2 lf1 ->
     case a1 of
-      P a3 a2 -> do lfunM lf1 a2
-                    (c2, a4) <- getLastCountArity
-                    lfunM lf2 a3
-                    (c3, a5) <- getLastCountArity
-                    locM (P a5 a4) ("para" <> spacefun c3 <> spacefun c2)
+      APair a3 a2 -> do lfunM lf1 a2
+                        (c2, a4) <- getLastCountAndArity
+                        lfunM lf2 a3
+                        (c3, a5) <- getLastCountAndArity
+                        genLineOfCode (APair a5 a4) ("para" <> " fun" <> show c3 <> " fun" <> show c2)
       _ -> undefined --ERROR, argument to para must be a Pair of Vals
-  LSec v b -> do locM a1 (biop b (val_arity v) a1 <> " " <> show v)
-  RSec b v -> do locM a1 (show v <> " " <> biop b (val_arity v) a1)
-  Scale rn -> do lfunM (LSec (Scalar rn) Outer) a1
-  KZero -> do lfunM (Scale 0) a1
+  LSec v b -> genLineOfCode a1 (biop b (getArity v) a1 <> " " <> show v)
+  RSec b v -> genLineOfCode a1 (show v <> " " <> biop b (getArity v) a1)
+  Scale rn -> lfunM (LSec (Scalar rn) Outer) a1
+  KZero -> lfunM (Scale 0) a1
   Prj i j -> case (i,j,a1) of
-                (2, 1, P a3 _) -> do locM a3 "fst"
-                (2, 2, P _ a2) -> do locM a2 "snd"
+                (2, 1, APair a3 _) -> genLineOfCode a3 "fst"
+                (2, 2, APair _ a2) -> genLineOfCode a2 "snd"
                 _ -> undefined
   Lplus lf2 lf1 -> do lfunM (Para lf2 lf1) a1
-                      (c2, a4) <- getLastCountArity
+                      (c2, a4) <- getLastCountAndArity
                       case a4 of
-                        (P a3 a2) -> do locM a4 ("plus" <> arityext a3 a2 <> spacefun c2)
+                        (APair a3 a2) -> genLineOfCode a4 ("plus" <> arityAnnotation a3 a2 <> " fun" <> show c2)
                         _ -> undefined
   Add ->
     case a1 of
-      P (Atom 0) (Atom 0) -> locM (Atom 0) "add_0_0"
-      P a2 _ -> undefined -- locM (Atom a2) ("add" <> spacefun (c3-1) <> spacefun (c2-1))
+      APair (Atom 0) (Atom 0) -> genLineOfCode (Atom 0) "add_0_0"
+      _ -> undefined -- genLineOfCode (Atom a2) ("add" <> " fun" <> show (c3-1) <> " fun" <> show (c2-1))
   Red _ -> undefined
   LMap _ -> undefined
   Zip _ -> undefined
+  Neg -> undefined
 
 typeDeclared :: Arity -> String
 typeDeclared a = case a of
   Atom 0 -> "f32"
-  Atom n -> "[]" <> (typeDeclared $ Atom $ n-1)
-  P a1 a2 -> "(" <> typeDeclared a1 <> ", " <> typeDeclared a2 <> ")"
+  Atom n -> "[]" <> typeDeclared (Atom $ n-1)
+  APair a1 a2 -> "(" <> typeDeclared a1 <> ", " <> typeDeclared a2 <> ")"
 
 
 finishProg :: Arity -> Compiler ()
 finishProg a =
   Co (\(p, r, c) ->
-    let new_loc = "entry main (input: " <>  typeDeclared a <> ") =" <> spacefun (c-1) <> " input"
+    let new_loc = "entry main (input: " <>  typeDeclared a <> ") =" <> " fun" <> show (c-1) <> " input"
     in ((), (p <> new_loc, r, c)))
 
 put :: CState -> Compiler ()
