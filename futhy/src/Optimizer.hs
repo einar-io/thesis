@@ -39,13 +39,13 @@ optimizeRun lf = case lf of
   -- leaves
   Id -> lf
   Dup -> lf
-  Zero -> lf
+  KZero -> lf
   Scale _ -> lf
   LSec _ _ -> lf
   RSec _ _ -> lf
   Prj _ _ -> lf
   Lplus _ _ -> lf
   Red _ -> lf
-  Add _ -> lf
+  Add -> lf
   LMap _ -> lf
   Zip _ -> lf

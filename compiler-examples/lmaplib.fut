@@ -27,7 +27,7 @@ let scalarprod s z : r = s*z
 
 let applytotup f (x,y) = f x y
 
---let plus_0_0 = (applytotup (+))
+let add_0_0 = (applytotup (+))
 --let plus_1_1 = (applytotup map2 (+))
 --let plus_2_2 = (applytotup map2 (add_1_1))
 

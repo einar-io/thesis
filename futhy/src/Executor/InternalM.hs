@@ -12,16 +12,17 @@ p :: String -> Command ()
 p = liftIO . hPrint stderr
 
 -- |Compile the Futhark source code in env.
-compile :: Command ExecutionResult
+compile :: Command CommandResult
 compile = do
   Env filepath backend <- ask
   let futExec = "futhark"
   let futParams = [show backend, filepath]
   p $ "[Futhark] Command going to be run: " ++ showCommandForUser futExec futParams
 
-  (exitcode, stdout, stdin) <- liftIO $ readProcessWithExitCode futExec futParams ""
+  output <- liftIO $ readProcessWithExitCode futExec futParams ""
+  let (exitcode, stdout, stdin) = output
   case exitcode of
-         ExitFailure _ -> throwError (CompilationError exitcode)
+         ExitFailure _ -> throwError (CompilationError output)
          ExitSuccess   -> return ()
 
   p   "[Futhark] Compilation results:"
@@ -29,19 +30,20 @@ compile = do
   p $ "[Futhark] stdout:   " ++ show stdout
   p $ "[Futhark] stdin :   " ++ show stdin
   p   "[Futhark] Compilation COMPLETED"
-  return (exitcode, stdout, stdin)
+  return $ Output output
 
 -- |Execute the compiled Futhark executable 'futExec' containing the compiled linear program.
-execute :: Command ExecutionResult
+execute :: Command CommandResult
 execute = do
   filepath <- asks fp
   let executable = dropExtension filepath
   let params = []
   p $ "[LinPgm] Command going to be run: " ++ showCommandForUser executable params
 
-  (exitcode, stdout, stdin) <- liftIO $ readProcessWithExitCode executable params "\n"
+  output <- liftIO $ readProcessWithExitCode executable params "\n"
+  let (exitcode, stdout, stdin) = output
   case exitcode of
-         ExitFailure _ -> throwError (ExecutionError exitcode)
+         ExitFailure _ -> throwError (ExecutionError output)
          ExitSuccess   -> return ()
 
   p   "[LinPgm] Execution results:"
@@ -49,9 +51,9 @@ execute = do
   p $ "[LinPgm] stdout:   " ++ show stdout
   p $ "[LinPgm] stdin :   " ++ show stdin
   p   "[LinPgm] Execution ENDED"
-  return (exitcode, stdout, stdin)
+  return $ Output output
 
-runFileM :: Command ExecutionResult
+runFileM :: Command CommandResult
 runFileM = compile >> execute
 
 makeTemp :: Command FutPgmFile
@@ -76,19 +78,19 @@ store futPgmStr = do
   local (const envNew) (writeTemp futPgmStr)
   return filepath
 
-runStrM :: FutPgmStr -> Command ExecutionResult
+runStrM :: FutPgmStr -> Command CommandResult
 runStrM futPgmStr = do
   filepath <- store futPgmStr
   backend <- asks be
   let envNew = Env { fp = filepath, be = backend }
   local (const envNew) runFileM
 
-runStr :: FutPgmStr -> Backend -> IO (Either ExecutionError ExecutionResult)
+runStr :: FutPgmStr -> Backend -> IO (Either CommandError CommandResult)
 runStr futPgmStr backend =
   let envInit = Env { fp = "", be = backend }
   in execCmd (runStrM futPgmStr) envInit
 
-runFile :: FutPgmFile -> Backend -> IO (Either ExecutionError ExecutionResult)
+runFile :: FutPgmFile -> Backend -> IO (Either CommandError CommandResult)
 runFile futPgmFile backend =
   let envInit = Env { fp = futPgmFile, be = backend }
   in execCmd runFileM envInit

@@ -3,32 +3,39 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-snapshots:
-- original:
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/6.yaml
-  completed:
-    sha256: f74c482d7c93739ecf3abfbc0f2dea1c20a2dfb2462c689846ed55a9653b66f7
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/6.yaml
-    size: 587113
 packages:
-- original:
+- completed:
     hackage: futhark-0.20.1@sha256:03d085e25e172ffdcd9783c151a4cfb77c50c7d98e679f38a044f721558516f0,13048
-  completed:
     pantry-tree:
-      sha256: b4cc3be2a296c694fc4c3a8d93c10366f57c54b1703d2c1d66280b3a05a626eb
       size: 23775
+      sha256: b4cc3be2a296c694fc4c3a8d93c10366f57c54b1703d2c1d66280b3a05a626eb
+  original:
     hackage: futhark-0.20.1@sha256:03d085e25e172ffdcd9783c151a4cfb77c50c7d98e679f38a044f721558516f0,13048
-- original:
+- completed:
     hackage: futhark-data-1.0.2.0@sha256:74b837206d3511122fd0d417d6e20119e9a806c09753be3b012a398019b9bb10,2368
-  completed:
     pantry-tree:
-      sha256: 55a06d328bc4beb562da86ec9f610aa502c92b6fc1c85df0d53b71afa6c51209
       size: 479
+      sha256: 55a06d328bc4beb562da86ec9f610aa502c92b6fc1c85df0d53b71afa6c51209
+  original:
     hackage: futhark-data-1.0.2.0@sha256:74b837206d3511122fd0d417d6e20119e9a806c09753be3b012a398019b9bb10,2368
-- original:
+- completed:
     hackage: futhark-server-1.1.0.0@sha256:27b55a90711cc577313c4db093576c5e9471a18f86e4d7fe34d9b55fb3e5b7b7,1357
-  completed:
     pantry-tree:
-      sha256: 51b4889a4bd044674378b5bdfcd2fbff2d0e2ac282af9be8a7115ba517dd8145
       size: 294
+      sha256: 51b4889a4bd044674378b5bdfcd2fbff2d0e2ac282af9be8a7115ba517dd8145
+  original:
     hackage: futhark-server-1.1.0.0@sha256:27b55a90711cc577313c4db093576c5e9471a18f86e4d7fe34d9b55fb3e5b7b7,1357
+- completed:
+    hackage: json-0.10@sha256:d9fc6b07ce92b8894825a17d2cf14799856767eb30c8bf55962baa579207d799,3210
+    pantry-tree:
+      size: 3190
+      sha256: 5654f66b7cd8bf087ac040a9b0a83eb064219eab32230f61a3adeddfdbb4d4cd
+  original:
+    hackage: json-0.10@sha256:d9fc6b07ce92b8894825a17d2cf14799856767eb30c8bf55962baa579207d799,3210
+snapshots:
+- completed:
+    size: 587113
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/6.yaml
+    sha256: f74c482d7c93739ecf3abfbc0f2dea1c20a2dfb2462c689846ed55a9653b66f7
+  original:
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/6.yaml

@@ -47,6 +47,7 @@ arityext a1 a2 = "_" <> show(ua a1) <> "_" <> show(ua a2)
 getCountArity :: Compiler (Count, Arity)
 getCountArity = Co (\cs@(_, arit, cnt) -> ((cnt, arit), cs))
 
+-- Lines Of Code
 locM :: Arity -> Program -> Compiler ()
 locM r fun =
   Co (\(p, _, c) ->
@@ -73,7 +74,7 @@ lfunM linfun a1 = case linfun of
   LSec v b -> do locM a1 (biop b (val_arity v) a1 <> " " <> val v)
   RSec b v -> do locM a1 (val v <> " " <> biop b (val_arity v) a1)
   Scale rn -> do lfunM (LSec (Scalar rn) Outer) a1
-  Zero -> do lfunM (Scale 0) a1
+  KZero -> do lfunM (Scale 0) a1
   Prj i j -> case (i,j,a1) of
                 (2, 1, P a3 _) -> do locM a3 "fst"
                 (2, 2, P _ a2) -> do locM a2 "snd"
@@ -83,10 +84,14 @@ lfunM linfun a1 = case linfun of
                       case a4 of
                         (P a3 a2) -> do locM a4 ("plus" <> arityext a3 a2 <> " " <> "fun" <> show(c2-1))
                         _ -> undefined
+  Add ->
+    case a1 of
+      P (Atom 0) (Atom 0) -> locM (Atom 0) "add_0_0"
+      P a2 _ -> undefined -- locM (Atom a2) ("add" <> spacefun (c3-1) <> spacefun (c2-1))
   Red _ -> undefined
-  Add _ -> undefined
   LMap _ -> undefined
   Zip _ -> undefined
+
 
 finishProg :: Compiler ()
 finishProg =

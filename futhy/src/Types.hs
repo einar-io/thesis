@@ -4,7 +4,6 @@ module Types where
 
 import Control.Monad.Reader
 import Control.Monad.Except
---import Control.Monad.Trans.Except (ExceptT, runExceptT)
 import GHC.IO.Exception (ExitCode)
 
 type RealNumb = Float
@@ -13,14 +12,16 @@ data Val
   = Scalar RealNumb
   | Tensor [Val]
   | Pair Val Val
+  | Zero
   deriving (Show, Eq)
 
 -- These are listed as linear map expressions
+-- https://github.com/diku-dk/caddie/blob/master/src/lin.sig
 -- [POPL, p. 21]
 data LFun -- expr
   = Id
   | Dup
-  | Zero
+  | KZero
   | Scale RealNumb
   | LSec Val BilOp
   | RSec BilOp Val
@@ -29,9 +30,10 @@ data LFun -- expr
   | Prj Int Int
   | Lplus LFun LFun -- lifted addition
   | Red Rel
-  | Add Int
+  | Add
   | LMap LFun
   | Zip [LFun]
+  | Neg
   deriving (Show, Eq)
 
 data Rel
@@ -61,34 +63,37 @@ data Error
   = Something String
   deriving (Show, Eq)
 
-type Filepath = String
+type Filepath   = String
 type FutPgmFile = String
 type FutPgmStr  = String
 type FutPgmExec = String
 
 data Backend
     = C
-    | OpenCL
+    | OPENCL
     | CUDA
+    deriving (Show, Read)
 
-instance Show Backend where
-  show C      = "c"
-  show CUDA   = "cuda"
-  show OpenCL = "opencl"
+-- The data contained in the Right constructur of ExceptT trans:
+-- Maybe rename this to CmdResult
+type Stdin  = String
+type Stdout = String
+type CommandOutput = (ExitCode, Stdout, Stdin)
 
 -- Error types possible in the Left constructor of ExceptT trans.
-data ExecutionError
-  = CompilationError ExitCode
-  | ExecutionError ExitCode
+-- Maybe rename this to CmdError
+data CommandError
+  = CompilationError CommandOutput
+  | ExecutionError CommandOutput
+  | InterpretorError String
   deriving (Show, Eq)
 
--- ExitCode, Stdout, Stdin
-type ExecutionResult = (ExitCode, String, String)
-
 -- Result types possible in the Right constructor of ExceptT trans.
-data ExecutorResult
-  = Unparsed String
-  | Parsed Val
+data CommandResult
+  = RawFuthark CommandOutput
+  | Output CommandOutput
+  | StructuredFuthark Val
+  | InterpretorResult Val
   deriving (Show, Eq)
 
 data Env = Env {
@@ -97,7 +102,7 @@ data Env = Env {
   }
 
 -- Command evaluation monad.
-type Cmd a = ReaderT Env (ExceptT ExecutionError IO) a
+type Cmd a = ReaderT Env (ExceptT CommandError IO) a
 newtype Command a = Command { runCmd :: Cmd a }
   deriving
   ( Functor
@@ -105,8 +110,17 @@ newtype Command a = Command { runCmd :: Cmd a }
   , Monad
   , MonadIO
   , MonadReader Env
-  , MonadError ExecutionError
+  , MonadError CommandError
   )
 
-execCmd :: Command a -> Env -> IO (Either ExecutionError a)
+type DerivativeComputation a = Either CommandError a
+
+execCmd :: Command a -> Env -> IO (DerivativeComputation a)
 execCmd cmd env = runExceptT $ runReaderT (runCmd cmd) env
+
+
+type InterpretorError = String
+
+type InterpretorOutput a = Either InterpretorError a
+
+
