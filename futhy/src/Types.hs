@@ -67,6 +67,7 @@ type Filepath   = String
 type FutPgmFile = String
 type FutPgmStr  = String
 type FutPgmExec = String
+type StdInArg = String
 
 data Backend
     = C
@@ -81,7 +82,6 @@ type Stdout = String
 type CommandOutput = (ExitCode, Stdout, Stdin)
 
 -- Error types possible in the Left constructor of ExceptT trans.
--- Maybe rename this to CmdError
 data CommandError
   = CompilationError CommandOutput
   | ExecutionError CommandOutput

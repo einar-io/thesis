@@ -42,7 +42,6 @@ vectorspacePlus left right = case (left, right) of
    _ -> undefined
 
 
-
 interpret :: LFun -> Val -> InterpretorOutput Val
 interpret f v = case (f, v) of
   (Id,  _) -> Right v

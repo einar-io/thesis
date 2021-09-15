@@ -1,8 +1,9 @@
 module Executor
   ( runFile
   , runStr
-  , main
-  ) where
+  , runStrArg
+  , main)
+where
 
 import Executor.InternalM
 import Types

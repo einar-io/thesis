@@ -9,7 +9,7 @@ import Control.Monad.Except (throwError)
 import GHC.IO.Exception (ExitCode(..))
 
 p :: String -> Command ()
-p = liftIO . hPrint stderr
+p s = return () -- liftIO . hPrint stderr
 
 -- |Compile the Futhark source code in env.
 compile :: Command CommandResult
@@ -94,3 +94,42 @@ runFile :: FutPgmFile -> Backend -> IO (Either CommandError CommandResult)
 runFile futPgmFile backend =
   let envInit = Env { fp = futPgmFile, be = backend }
   in execCmd runFileM envInit
+
+
+
+--- but with std'ins
+executeArg :: StdInArg -> Command CommandResult
+executeArg arg = do
+  filepath <- asks fp
+  let executable = dropExtension filepath
+  let params = []
+  p $ "[LinPgm] Command going to be run: " ++ showCommandForUser executable params
+
+  output <- liftIO $ readProcessWithExitCode executable params arg
+  let (exitcode, stdout, stdin) = output
+  case exitcode of
+         ExitFailure _ -> throwError (ExecutionError (exitcode, stdout, stdin))
+         ExitSuccess   -> return ()
+
+  p   "[LinPgm] Execution results:"
+  p $ "[LinPgm] ExitCode: " ++ show exitcode
+  p $ "[LinPgm] stdout:   " ++ show stdout
+  p $ "[LinPgm] stdin :   " ++ show stdin
+  p   "[LinPgm] Execution ENDED"
+  return $ Output output
+
+
+runStrArg :: FutPgmStr -> Backend -> StdInArg -> IO (DerivativeComputation CommandResult)
+runStrArg futPgmStr backend arg =
+  let envInit = Env { fp = "", be = backend }
+  in execCmd (runStrArgM futPgmStr arg) envInit
+
+runStrArgM :: FutPgmStr -> StdInArg -> Command CommandResult
+runStrArgM futPgmStr arg = do
+  filepath <- store futPgmStr
+  backend <- asks be
+  let envNew = Env { fp = filepath, be = backend }
+  local (const envNew) (runFileArgM arg)
+
+runFileArgM :: StdInArg -> Command CommandResult
+runFileArgM arg = compile >> executeArg arg
