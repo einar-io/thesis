@@ -63,8 +63,8 @@ optimizorTests =
       (Comp (Comp (Para (Scale 2.0) (Scale 2.0)) (Comp (Para (Scale 2.0) (Scale 2.0)) (Comp (Comp (Para (Scale 2.0) (Scale 2.0)) (Comp (Para (Scale 2.0) (Scale 2.0)) (Para (Scale 2.0) (Scale 2.0)))) (Comp (Para (Scale 2.0) (Scale 2.0)) (Para (Scale 2.0) (Scale 2.0)))))) (Comp (Para (Scale 2.0) (Scale 2.0)) (Para (Scale 2.0) (Scale 2.0))))
       (Para (Scale 512.0) (Scale 512.0))
     , goodCaseOptimizer "Flattening"
-      (Comp (Comp (Zero) (Comp (Zero) (Comp (Comp (Zero) (Comp (Zero) (Zero))) (Comp (Zero) (Zero))))) (Comp (Zero) (Zero)))
-      (Comp Zero (Comp Zero (Comp Zero (Comp Zero (Comp Zero (Comp Zero (Comp Zero (Comp Zero Zero))))))))
+      (Comp (Comp (KZero) (Comp (KZero) (Comp (Comp (KZero) (Comp (KZero) (KZero))) (Comp (KZero) (KZero))))) (Comp (KZero) (KZero)))
+      (Comp KZero (Comp KZero (Comp KZero (Comp KZero (Comp KZero (Comp KZero (Comp KZero (Comp KZero KZero))))))))
     ]
 
 interpretorTests :: TestTree
@@ -131,11 +131,11 @@ interpretorTests =
     (Tensor [Scalar 4.0, Scalar 5.0, Scalar 6.0])
     (Tensor [Tensor [Scalar 8.0, Scalar 12.0], Tensor [Scalar 10.0, Scalar 15.0], Tensor [Scalar 12.0, Scalar 18.0]])
   , goodCaseInterpretor "Id (+) K0 (3.0, 5.0) -> (3.0, 0.0)"
-    (Para Id Zero)
+    (Para Id KZero)
     (Pair (Scalar 3.0) (Scalar 5.0))
     (Pair (Scalar 3.0) (Scalar 0.0))
   , goodCaseInterpretor "Id ^+ K0 6.0 -> 6.0"
-    (Lplus Id Zero)
+    (Lplus Id KZero)
     (Scalar 6.0)
     (Scalar 6.0)
   , goodCaseInterpretor "(Scale (-3.0)) ^+ (Scale 5.0) 7.0 -> 14.0"
