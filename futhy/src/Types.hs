@@ -80,7 +80,14 @@ data Backend
     = C
     | OPENCL
     | CUDA
-    deriving (Show, Read)
+    deriving (Read)
+
+instance Show Backend where
+  show b = case b of
+    C -> "c"
+    OPENCL -> "opencl"
+    CUDA -> "cuda"
+
 
 -- The data contained in the Right constructur of ExceptT trans:
 -- Maybe rename this to CmdResult
