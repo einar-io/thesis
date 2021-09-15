@@ -9,7 +9,7 @@ import Control.Monad.Except (throwError)
 import GHC.IO.Exception (ExitCode(..))
 
 p :: String -> Command ()
-p s = return () -- liftIO . hPrint stderr
+p = liftIO . hPrint stderr
 
 -- |Compile the Futhark source code in env.
 compile :: Command CommandResult
@@ -33,29 +33,6 @@ compile = do
   return $ Output output
 
 -- |Execute the compiled Futhark executable 'futExec' containing the compiled linear program.
-execute :: Command CommandResult
-execute = do
-  filepath <- asks fp
-  let executable = dropExtension filepath
-  let params = []
-  p $ "[LinPgm] Command going to be run: " ++ showCommandForUser executable params
-
-  output <- liftIO $ readProcessWithExitCode executable params "\n"
-  let (exitcode, stdout, stdin) = output
-  case exitcode of
-         ExitFailure _ -> throwError (ExecutionError output)
-         ExitSuccess   -> return ()
-
-  p   "[LinPgm] Execution results:"
-  p $ "[LinPgm] ExitCode: " ++ show exitcode
-  p $ "[LinPgm] stdout:   " ++ show stdout
-  p $ "[LinPgm] stdin :   " ++ show stdin
-  p   "[LinPgm] Execution ENDED"
-  return $ Output output
-
-runFileM :: Command CommandResult
-runFileM = compile >> execute
-
 makeTemp :: Command FutPgmFile
 makeTemp = do
   let path   = "build/"
@@ -78,24 +55,13 @@ store futPgmStr = do
   local (const envNew) (writeTemp futPgmStr)
   return filepath
 
-runStrM :: FutPgmStr -> Command CommandResult
-runStrM futPgmStr = do
-  filepath <- store futPgmStr
-  backend <- asks be
-  let envNew = Env { fp = filepath, be = backend }
-  local (const envNew) runFileM
-
 runStr :: FutPgmStr -> Backend -> IO (Either CommandError CommandResult)
-runStr futPgmStr backend =
-  let envInit = Env { fp = "", be = backend }
-  in execCmd (runStrM futPgmStr) envInit
+runStr futPgmStr backend = runStrArg futPgmStr backend "\n"
 
 runFile :: FutPgmFile -> Backend -> IO (Either CommandError CommandResult)
 runFile futPgmFile backend =
   let envInit = Env { fp = futPgmFile, be = backend }
-  in execCmd runFileM envInit
-
-
+  in execCmd (runFileArgM "\n") envInit
 
 --- but with std'ins
 executeArg :: StdInArg -> Command CommandResult
