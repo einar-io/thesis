@@ -3,7 +3,7 @@ import Types
 
 data Arity
   = Atom Int
-  | P Arity Arity
+  | APair Arity Arity
   deriving (Show, Eq)
 
 ua :: Arity -> Int
@@ -12,12 +12,13 @@ ua a = case a of
   _ -> undefined
 
 hasArity :: Val -> Int -> Bool
-hasArity v i = i == (ua (val_arity v))
+hasArity v i = i == ua (getArity v)
 
-val_arity :: Val -> Arity
-val_arity v = case v of
+getArity :: Val -> Arity
+getArity v = case v of
   Scalar _ -> Atom 0
-  Tensor (h:_) -> let (Atom i) = val_arity h
+  Zero -> Atom 0
+  Tensor (h:_) -> let (Atom i) = getArity h
                   in Atom (i+1)
-  Pair v1 v2 -> P (val_arity v1) (val_arity v2)
+  Pair v1 v2 -> APair (getArity v1) (getArity v2)
   Tensor [] -> undefined

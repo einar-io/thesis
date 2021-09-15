@@ -25,7 +25,7 @@ goodCaseInterpretor :: TestName -> LFun -> Val -> Val -> TestTree
 goodCaseInterpretor name lfun vin vout = testCase name $ interpret lfun vin @?= return vout
 
 goodCaseProgram :: TestName -> LFun -> Val -> String -> TestTree
-goodCaseProgram name lf vin vout = testCase name $ compileProgram lf (val_arity vin) @?= vout
+goodCaseProgram name lf vin vout = testCase name $ compileProgram lf (getArity vin) @?= vout
 
 goodCaseVal :: TestName -> Val -> String -> TestTree
 goodCaseVal name vin vout = testCase name $ show vin @?= vout
@@ -33,7 +33,7 @@ goodCaseVal name vin vout = testCase name $ show vin @?= vout
 goodCaseExecution :: TestName -> LFun -> Val -> TestTree
 goodCaseExecution name lf vin =
   testCase name $ do
-                     compileRes <- runStrArg (compileProgram lf (val_arity vin)) C (show vin)
+                     compileRes <- runStrArg (compileProgram lf (getArity vin)) C (show vin)
                      resStr  <- case compileRes of
                                 Right (Output (_, res, _)) -> return res
                                 e -> assertFailure $ show e
