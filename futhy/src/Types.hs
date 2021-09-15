@@ -6,10 +6,10 @@ import Control.Monad.Reader
 import Control.Monad.Except
 import GHC.IO.Exception (ExitCode)
 
-type RealNumb = Float
+type RealNumber = Float
 
 data Val
-  = Scalar RealNumb
+  = Scalar RealNumber
   | Tensor [Val]
   | Pair Val Val
   | Zero
@@ -29,7 +29,7 @@ data LFun -- expr
   = Id
   | Dup
   | KZero
-  | Scale RealNumb
+  | Scale RealNumber
   | LSec Val BilOp
   | RSec BilOp Val
   | Para LFun LFun -- more descriptive than Oplus
