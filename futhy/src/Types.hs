@@ -48,7 +48,7 @@ data Rel
   | Func RelFun
   deriving (Show, Eq)
 
-data RelFun
+newtype RelFun
   = Const Int
   deriving (Show, Eq)
 
@@ -66,7 +66,7 @@ data BilOp
 type Derivative = Val
 
 -- error types!
-data Error
+newtype Error
   = Something String
   deriving (Show, Eq)
 
