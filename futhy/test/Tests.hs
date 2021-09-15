@@ -28,17 +28,23 @@ goodCaseProgram :: TestName -> LFun -> Val -> String -> TestTree
 goodCaseProgram name lf vin vout = testCase name $ compileProgram lf (val_arity vin) @?= vout
 
 goodCaseVal :: TestName -> Val -> String -> TestTree
-goodCaseVal name vin vout = testCase name $ val vin @?= vout
+goodCaseVal name vin vout = testCase name $ show vin @?= vout
 
 goodCaseExecution :: TestName -> LFun -> Val -> TestTree
 goodCaseExecution name lf vin =
-  testCase name $ do compOutput <- runStrArg (compileProgram lf (val_arity vin)) C (val vin)
-                     let intOutput = interpret lf vin
-                     case (compOutput, intOutput) of
-                      (Right (Output op@(_, res, _)), Right intVal) -> res @?= val intVal
-                      (Right (Output op@(_, res, _)), Left str)     -> res @?= str
-                      (Left (CompilationError (ec,stdout,stdin)), Right intVal)   -> stdout++stdin @?= val intVal
-                      (Left (ExecutionError   (ec,stdout,stdin)), Right intVal)   -> stdout++stdin @?= val intVal
+  testCase name $ do
+                     compileRes <- runStrArg (compileProgram lf (val_arity vin)) C (show vin)
+                     resStr  <- case compileRes of
+                                Right (Output (_, res, _)) -> return res
+                                e -> assertFailure $ show e
+                     let Right intVal = interpret lf vin
+                     intComp <- runStr ("entry main = " <> show intVal) C
+                     refStr <-  case intComp of
+                                Right (Output (_, ref, _)) -> return ref
+                                e -> assertFailure $ show e
+                     case (resStr == refStr) of
+                      False -> assertFailure $ show (resStr, refStr)
+                      True -> return ()
 
 tests :: TestTree
 tests =
@@ -149,7 +155,7 @@ interpretorTests =
 compilorTests :: TestTree
 compilorTests =
     testGroup "compiler"
-    [ testGroup "literal val tests"
+    [ testGroup "literal show tests"
       [ goodCaseVal "scalar"
         (Scalar 15.0)
         "15.0f32"
