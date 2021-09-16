@@ -4,15 +4,12 @@ import Types
 data Arity
   = Atom Int
   | APair Arity Arity
-  deriving (Show, Eq)
+  deriving (Eq)
 
-ua :: Arity -> Int
-ua a = case a of
-  Atom i -> i
-  _ -> undefined
-
-hasArity :: Val -> Int -> Bool
-hasArity v i = i == ua (getArity v)
+instance Show Arity where
+  show a = case a of
+    Atom i -> show i
+    APair a3 a2 -> "(" <> show a3 <> ", " <> show a2 <> ")"
 
 getArity :: Val -> Arity
 getArity v = case v of

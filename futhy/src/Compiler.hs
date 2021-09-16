@@ -31,7 +31,7 @@ biop b a1 a2 =  let base = case b of
                 in base <> arityAnnotation a1 a2
 
 arityAnnotation :: Arity -> Arity -> String
-arityAnnotation a1 a2 = "_" <> show(ua a1) <> "_" <> show(ua a2)
+arityAnnotation a1 a2 = "_" <> show a1 <> "_" <> show a2
 
 getLastCountAndArity :: Compiler (Count, Arity)
 getLastCountAndArity = Co (\cs@(_, arit, cnt) -> ((cnt-1, arit), cs))
