@@ -191,14 +191,14 @@ compilorTests =
         (Comp  (Para  (Scale 3.0) (Scale 7.0)) Dup)
         (Scalar 1.0)
         "open import \"lmaplib\"\n\nlet fun1 = (dupe)\nlet fun2 = (outer_0_0 7.0f32)\nlet fun3 = (outer_0_0 3.0f32)\nlet fun4 = (para fun3 fun2)\nlet fun5 = (comp fun4 fun1)\nentry main (input: f32) = fun5 input"
-      , goodCaseProgram "lplus"
-        (Comp  (Lplus  (Scale 3.0) (Scale 7.0)) Dup)
+      , goodCaseProgram "lplus_0"
+        (Lplus  (Scale 3.0) (Scale 7.0))
         (Scalar 1.0)
-        "open import \"lmaplib\"\n\nlet fun1 = (dupe)\nlet fun2 = (outer_0_0 7.0f32)\nlet fun3 = (outer_0_0 3.0f32)\nlet fun4 = (para fun3 fun2)\nlet fun5 = (plus_0_0 fun4)\nlet fun6 = (comp fun5 fun1)\nentry main (input: f32) = fun6 input"
-      , goodCaseProgram "Id scalar"
-        (Id)
-        (Scalar 15.0)
-        "open import \"lmaplib\"\n\nlet fun1 = (id)\nentry main (input: f32) = fun1 input"
+        "open import \"lmaplib\"\n\nlet fun1 = (outer_0_0 7.0f32)\nlet fun2 = (outer_0_0 3.0f32)\nlet fun3 = (lplus_0 fun2 fun1)\nentry main (input: f32) = fun3 input"
+      , goodCaseProgram "lplus_1"
+        (Lplus  (Scale 3.0) (Scale 7.0))
+        (Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0])
+        "open import \"lmaplib\"\n\nlet fun1 = (outer_0_1 7.0f32)\nlet fun2 = (outer_0_1 3.0f32)\nlet fun3 = (lplus_1 fun2 fun1)\nentry main (input: []f32) = fun3 input"
       , goodCaseProgram "complex"
         (Comp  (Para  (LSec (Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]) Outer ) (Comp  (Para  (LSec (Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]) Outer ) (Scale 7.0)) Dup)) Dup)
         (Tensor [Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0], Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0], Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]])
@@ -227,9 +227,12 @@ executorTests =
     , goodCaseExecution "para"
       (Comp  (Para  (Scale 3.0) (Scale 7.0)) Dup)
       (Scalar 1.0)
-    , goodCaseExecution "lplus"
-      (Comp  (Lplus  (Scale 3.0) (Scale 7.0)) Dup)
+    , goodCaseExecution "lplus_0"
+      (Lplus  (Scale 3.0) (Scale 7.0))
       (Scalar 1.0)
+    , goodCaseExecution "lplus_1"
+      (Lplus  (Scale 3.0) (Scale 7.0))
+      (Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0])
     , goodCaseExecution "complex"
       (Comp  (Para  (LSec (Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]) Outer ) (Comp  (Para  (LSec (Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]) Outer ) (Scale 7.0)) Dup)) Dup)
       (Tensor [Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0], Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0], Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]])
