@@ -8,6 +8,7 @@ import Data.List
 import Data.AssocList.List.Eq as AList
 import Data.Maybe
 import Flow
+import Control.Applicative
 
 -- general implementation - outer product, no contraction
 outer :: Val -> Val -> Val
@@ -68,11 +69,17 @@ interpret f v = case (f, v) of
   (Red (List []), v) -> return Zero
   (Red (List r ), v) -> Right $ SparseTensor $ reduce r v
 
+  (Neg   , v) -> Right $ negate v
 
 
   (LMap _, _) -> Left "Invalid argument to LMap"
-  (Zip  _, _) -> Left "Invalid argument to Zip"
-  (Neg   , _) -> Left "Invalid argument to Neg"
+
+  (Zip fs, Tensor vs) -> case length fs `compare` length r of
+                           EQ -> do vals <- zipWithM interpret fs vs
+                                    Right $ Tensor vals
+                           _  -> Left "Invalid argument pair to Zip.  Lists of LFUNS and list of values must have same length."
+
+
 
   (Add, Pair Zero vr) -> Right vr
   (Add, Pair vl Zero) -> Right vl

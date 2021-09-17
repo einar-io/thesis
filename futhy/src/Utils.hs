@@ -22,3 +22,10 @@ getArity v = case v of
                   in Atom (i+1)
   Pair v1 v2 -> APair (getArity v1) (getArity v2)
   Tensor [] -> undefined
+
+-- Source https://hackage.haskell.org/package/tidal-1.7.8/docs/src/Sound.Tidal.Utils.html#nth
+{- | Safer version of !! --}
+nth :: Int -> [a] -> Maybe a
+nth _ []       = Nothing
+nth 0 (x : _)  = Just x
+nth n (_ : xs) = nth (n - 1) xs

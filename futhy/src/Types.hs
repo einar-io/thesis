@@ -13,7 +13,19 @@ data Val
   | Tensor [Val]
   | Pair Val Val
   | Zero
+  | SparseTensor [(Int, Val)]
   deriving (Eq)
+
+
+instance Num Val where
+ (Scalar n1) + (Scalar n2) = Scalar (n1 + n2)
+ (Tensor vs1) + (Tensor vs2) = Tensor (zipWith (+) vs1 vs2)
+ Zero + _ = Zero
+ _ + Zero = Zero
+ negate (Scalar n) = Scalar (-n)
+ abs (Scalar n) = Scalar (abs n)
+ signum (Scalar n) = Scalar (signum n)
+ fromInteger i = Scalar (fromInteger i)
 
 instance Show Val where
   show v = case v of
@@ -109,6 +121,18 @@ data CommandResult
   | StructuredFuthark Val
   | InterpretorResult Val
   deriving (Show, Eq)
+
+
+{-
+type InterpretorError  = String
+type InterpretorResult = Val
+type CommandError   = (ErrorType, CommandType)
+type CommandResult2 = CommandOutput
+Right (ec, stdout, stdin)
+Left  (_, (ec, stdout, stdout))
+-}
+
+
 
 data Env = Env {
     fp :: FilePath

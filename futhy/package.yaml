@@ -8,6 +8,8 @@ dependencies:
   - filepath
   - transformers
   - optparse-applicative
+  - assoc-list
+  - flow
 
 ghc-options: -Wall
 
