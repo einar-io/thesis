@@ -3,7 +3,11 @@
 module Interpretor where
 import Types
 import Control.Monad
--- import Utils
+import Utils
+import Data.List
+import Data.AssocList.List.Eq as AList
+import Data.Maybe
+import Flow
 
 -- general implementation - outer product, no contraction
 outer :: Val -> Val -> Val
@@ -58,14 +62,14 @@ interpret f v = case (f, v) of
   (Prj 2 1, _) -> Right $ proj1 v
   (Prj 2 2, _) -> Right $ proj2 v
   (Prj _ _, _) -> Left "Invalid argument to Prj"
-  (Lplus lfn rfn, _) -> {- let { left  = interpret lfn v
-                            ; right = interpret rfn v }
-                            in Right $ left `vectorspacePlus` right -}
-                        do
-                          vl <- interpret lfn v
-                          vr <- interpret rfn v
-                          Right $ vl `vectorspacePlus` vr
-  (Red  _, _) -> Left "Invalid argument to Red"
+  (Lplus lfn rfn, _) -> do vl <- interpret lfn v
+                           vr <- interpret rfn v
+                           Right $ vl `vectorspacePlus` vr
+  (Red (List []), v) -> return Zero
+  (Red (List r ), v) -> Right $ SparseTensor $ reduce r v
+
+
+
   (LMap _, _) -> Left "Invalid argument to LMap"
   (Zip  _, _) -> Left "Invalid argument to Zip"
   (Neg   , _) -> Left "Invalid argument to Neg"
@@ -78,6 +82,45 @@ interpret f v = case (f, v) of
                                                   Right $ Tensor vs
                                          _  -> Left "Invalid pair of tensors. Lists values do not have same length."
   (Add, _) ->  Left "Invalid argument to Add"
+
+
+
+{- Safely dereferences a vector unlike the (!!) operator. -}
+type Index = Int
+vecLookup :: Index -> Val -> Maybe Val
+vecLookup idx (Tensor v) = nth idx v
+vecLookup _   _          = Nothing
+
+{- This is needed for the red operation -}
+h :: (Index, a) -> Val -> (a, Maybe Val)
+h (x, y) vs = (y, vecLookup x vs)
+
+{- Takes an AList and merges values of duplicate keys -}
+compact :: Eq k => [(k, [v])] -> [(k, v)] -> [(k, [v])]
+compact acc []              = acc
+compact acc allkv@((k,_):_) =
+  let (vs, rest) = AList.partition k allkv
+   in compact ((k,vs):acc) rest
+
+{- Get rid of Nothings and unwrap the Justs. -}
+keepValues :: (a, [Maybe b]) -> (a, [b])
+keepValues (a, bs) =
+  let v = filter isJust bs
+          |> catMaybes
+   in (a, v)
+
+reduce :: Eq a => [(Index, a)] -> Val -> [(a, Val)]
+reduce r v = map (`h` v) r
+              |> compact []
+              |> map keepValues
+              |> filter (\(_,y) -> y /= [])
+              |> map (\(x,y) -> (x,sum y))
+
+
+
+
+r = [(1,2), (0,2), (1,3), (5,6)]
+v = Tensor [Scalar (-1), Scalar 1,Scalar 2,Scalar 3]
 
 
 eval :: LFun -> Val -> String
