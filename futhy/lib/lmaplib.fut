@@ -14,28 +14,30 @@ let fst (a,_) = a
 let snd (_,b) = b
 let flip f x y = f y x
 
----- function operations
+---- lmap operations
 let comp f g x = f (g x) --sequential application of two funs
 let para f g (a,b) = (f a, g b) --apply two funs to tuple of vals
 
-let sv (s:r) v = map (*s) v --scale vector
-let scalarprod s z : r = s*z
+let add : r->r->r = (+)
+let mul : r->r->r = (*)
 
-let applytotup f (x,y) = f x y
 
-let add (x: f32) (y: f32) = x + y
+let lplus_h h f g v = h (f v) (g v)
+let lplus_0 = lplus_h add
+let lplus_1 = lplus_h (map2 add)
+let lplus_2 = lplus_h (map2 (map2 add))
+let lplus_3 = lplus_h (map2 (map2 (map2 add)))
 
-let lplus_0 f g v = (applytotup add (f v, g v))
-let lplus_1 f g v = (applytotup (map2 add) (f v, g v))
-let lplus_2 f g v = (applytotup (map2 (map2 add)) (f v, g v))
 
--- naming scheme: general function, underscore first-order, underscore second-order
+-- this is almost like monads
+-- derive the pattern and make it a higher order function
+-- the rest becomes trivial
 
--- sperging:
+-- sperg perfection:
 let mapr f x y = map (f x) y
 let mapl f x y = map (flip f y) x
 
-let outer_0_0 : r->r->r = (*)
+let outer_0_0 = mul
 let outer_0_1 = mapr outer_0_0
 let outer_0_2 = mapr outer_0_1
 let outer_0_3 = mapr outer_0_2
@@ -54,6 +56,12 @@ let outer_2_3 = mapl outer_1_3
 
 
 
+
+
+
+
+let sv (s:r) v = map (*s) v --scale vector
+let scalarprod s z : r = s*z
 
 let contract = (reduce (+) 0.0f32)
 let contr_1_1 x y = map2 (*) x y |> contract
