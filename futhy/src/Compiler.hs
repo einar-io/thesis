@@ -31,7 +31,7 @@ biop b a1 a2 =  let base = case b of
                 in base <> arityAnnotation a1 a2
 
 arityAnnotation :: Arity -> Arity -> String
-arityAnnotation a1 a2 = "_" <> show(ua a1) <> "_" <> show(ua a2)
+arityAnnotation a1 a2 = "_" <> show a1 <> "_" <> show a2
 
 getLastCountAndArity :: Compiler (Count, Arity)
 getLastCountAndArity = Co (\cs@(_, arit, cnt) -> ((cnt-1, arit), cs))
@@ -68,11 +68,14 @@ compileLFun linfun a1 = case linfun of
                 (2, 1, APair a3 _) -> genLineOfCode a3 "fst"
                 (2, 2, APair _ a2) -> genLineOfCode a2 "snd"
                 _ -> undefined
-  Lplus lf2 lf1 -> do compileLFun (Para lf2 lf1) a1
-                      (c2, a4) <- getLastCountAndArity
-                      case a4 of
-                        (APair a3 a2) -> genLineOfCode a4 ("plus" <> arityAnnotation a3 a2 <> " fun" <> show c2)
+  Lplus lf3 lf2 -> do compileLFun lf2 a1
+                      (c2, a2) <- getLastCountAndArity
+                      compileLFun lf3 a1
+                      (c3, a3) <- getLastCountAndArity
+                      case (a2, a3) of
+                        (Atom _, Atom _) -> genLineOfCode a2 ("lplus_" <> show a2 <> " fun" <> show c3 <> " fun" <> show c2)
                         _ -> undefined
+
   Add ->
     case a1 of
       APair (Atom 0) (Atom 0) -> genLineOfCode (Atom 0) "add_0_0"

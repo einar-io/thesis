@@ -29,9 +29,9 @@ let applytotup f (x,y) = f x y
 
 let add (x: f32) (y: f32) = x + y
 
-let add_0_0 = (applytotup add)
---let plus_1_1 = (applytotup map2 (+))
---let plus_2_2 = (applytotup map2 (add_1_1))
+let lplus_0 f g v = (applytotup add (f v, g v))
+let lplus_1 f g v = (applytotup (map2 add) (f v, g v))
+let lplus_2 f g v = (applytotup (map2 (map2 add)) (f v, g v))
 
 -- naming scheme: general function, underscore first-order, underscore second-order
 
