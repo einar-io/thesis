@@ -1,7 +1,7 @@
 module Executor.InternalM where
 
 import Types
-import System.IO (stderr, hPrint, openTempFile, hClose)
+import System.IO (openTempFile, hClose) -- , stderr, hPrint)
 import System.Process (readProcessWithExitCode, showCommandForUser)
 import System.FilePath (dropExtension)
 import Control.Monad.Reader
@@ -9,7 +9,7 @@ import Control.Monad.Except (throwError)
 import GHC.IO.Exception (ExitCode(..))
 
 p :: String -> Command ()
-p = liftIO . hPrint stderr
+p _ = return () -- liftIO . hPrint stderr
 
 -- |Compile the Futhark source code in env.
 compile :: Command CommandResult
