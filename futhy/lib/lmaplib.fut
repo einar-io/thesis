@@ -5,18 +5,14 @@ let matrix : [][]i32 = [[1,2,3,4]
                        ,[1,2,3,4]
                        ,[1,2,3,4]
                        ,[1,2,3,4]]
-let tuple = (matrix, array)
-
 type r = f32
 
 ------------LIBRARY
--- id is in futhark already
 ---- tuple operations
 let dupe a    = (a,a)
 let fst (a,_) = a
 let snd (_,b) = b
-let fliptup (a,b) = (b,a)
-let tup f g = (f,g)
+let flip f x y = f y x
 
 ---- function operations
 let comp f g x = f (g x) --sequential application of two funs
@@ -36,19 +32,28 @@ let lplus_2 f g v = (applytotup (map2 (map2 add)) (f v, g v))
 -- naming scheme: general function, underscore first-order, underscore second-order
 
 -- sperging:
-let pmap f x y = map (f x) y
+let mapr f x y = map (f x) y
+let mapl f x y = map (flip f y) x
 
 let outer_0_0 : r->r->r = (*)
-let outer_0_1 = pmap outer_0_0
-let outer_0_2 = pmap outer_0_1
+let outer_0_1 = mapr outer_0_0
+let outer_0_2 = mapr outer_0_1
+let outer_0_3 = mapr outer_0_2
 
-let outer_1_0 = flip outer_0_1
-let outer_1_1 = pmap outer_1_0
-let outer_1_2 = pmap outer_1_1
+let outer_1_0 = mapl outer_0_0
+let outer_2_0 = mapl outer_1_0
+let outer_3_0 = mapl outer_2_0
 
-let outer_2_0 = flip outer_0_2
-let outer_2_1 = pmap outer_2_0
-let outer_2_2 = pmap outer_2_1
+let outer_1_1 = mapl outer_0_1
+let outer_1_2 = mapl outer_0_2
+let outer_1_3 = mapl outer_0_3
+
+let outer_2_1 = mapl outer_1_1
+let outer_2_2 = mapl outer_1_2
+let outer_2_3 = mapl outer_1_3
+
+
+
 
 let contract = (reduce (+) 0.0f32)
 let contr_1_1 x y = map2 (*) x y |> contract
