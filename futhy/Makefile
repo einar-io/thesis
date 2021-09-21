@@ -3,5 +3,4 @@ default:
 t:
 	rm -f build/lmaplib.fut
 	cp lib/lmaplib.fut build/lmaplib.fut
-	stack test
-	
+	stack test 2> /dev/null
