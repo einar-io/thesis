@@ -39,5 +39,5 @@ tests:
     - futhy
     - tasty
     - tasty-hunit
-    - QuickCheck
-    - tasty-quickcheck
+#    - QuickCheck
+#    - tasty-quickcheck

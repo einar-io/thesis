@@ -5,6 +5,8 @@ module Types where
 import Control.Monad.Reader
 import Control.Monad.Except
 import GHC.IO.Exception (ExitCode)
+import Data.List (intercalate)
+import Flow
 
 type RealNumber = Float
 
@@ -16,12 +18,15 @@ data Val
   | SparseTensor [(Int, Val)]
   deriving (Eq)
 
-
 instance Num Val where
  (Scalar n1) + (Scalar n2) = Scalar (n1 + n2)
  (Tensor vs1) + (Tensor vs2) = Tensor (zipWith (+) vs1 vs2)
- Zero + _ = Zero
- _ + Zero = Zero
+ Zero + v = v
+ v + Zero = v
+ (Scalar n1) * (Scalar n2) = Scalar (n1 * n2)
+ (Tensor vs1) * (Tensor vs2) = Tensor (zipWith (*) vs1 vs2)
+ Zero * _ = Zero
+ _ * Zero = Zero
  negate (Scalar n) = Scalar (-n)
  abs (Scalar n) = Scalar (abs n)
  signum (Scalar n) = Scalar (signum n)
@@ -31,8 +36,23 @@ instance Show Val where
   show v = case v of
     Scalar sc -> show sc <> "f32"
     Pair v1 v2 -> "(" <> show v1 <> ", " <> show v2 <> ")"
-    Tensor ls -> "[" <> show (head ls) <> concatMap (\w -> ", " <> show w) (tail ls) <> "]"
+    --Tensor ls -> "[" <> show (head ls) <> concatMap (\w -> ", " <> show w) (tail ls) <> "]"
+    Tensor ls ->
+      --"DenseTensor ["
+      "["
+      ++ ( ls
+           |> map show
+           |> intercalate ", "
+         )
+      ++ "]"
     Zero -> show $ Scalar 0
+    SparseTensor vs ->
+      "SparseTensor <["
+      ++ ( vs
+           |> map (\(i, v) -> "(" ++ show i ++ ": " ++ show v ++ ")")
+           |> intercalate ", "
+         )
+      ++ "]>"
 
 -- These are listed as linear map expressions
 -- https://github.com/diku-dk/caddie/blob/master/src/lin.sig
@@ -160,3 +180,5 @@ execCmd cmd env = runExceptT $ runReaderT (runCmd cmd) env
 type InterpretorError = String
 
 type InterpretorOutput a = Either InterpretorError a
+
+type Index = Int

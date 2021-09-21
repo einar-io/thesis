@@ -148,6 +148,26 @@ interpretorTests =
     (Lplus (Scale (-3.0)) (Scale 5.0))
     (Scalar 7.0)
     (Scalar 14.0)
+  , goodCaseInterpretor "Reduce primitive test: happy path"
+    (Red (List [(0,1)]))
+    (Tensor [Scalar 0])
+    (SparseTensor [(1, 0)])
+  , goodCaseInterpretor "Reduce primitive test: empty relation"
+    (Red (List []))
+    (Tensor [Scalar 0, Scalar 1,Scalar 2,Scalar 3])
+    Zero
+  , goodCaseInterpretor "Reduce primitive test: empty values vector"
+    (Red (List [(0,1), (2,3)]))
+    (Tensor [])
+    (SparseTensor [])
+  , goodCaseInterpretor "Reduce primitive test: duplicates."
+    (Red (List [(1,2), (1,2), (1,1), (1,2)]))
+    (Tensor [Scalar (-1), Scalar 1,Scalar 2,Scalar 3])
+    (SparseTensor [(1, 1), (2, 3)])
+  , goodCaseInterpretor "Reduce compound test: duplicates and out-of-bounds indices."
+    (Red (List [(1,2), (0,2), (1,3), (5,6)]))
+    (Tensor [Scalar (-1), Scalar 1,Scalar 2,Scalar 3])
+    (SparseTensor [(3, 1), (2, 0)])
   ]
 
 
