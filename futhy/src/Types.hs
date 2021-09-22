@@ -55,12 +55,16 @@ newtype RelFun
 -- These are bilinear operators
 -- listed on [POPL, p. 20]
 data BilOp
+  = MatrixMult
+  | DotProd
+  | Outer
+  deriving (Show, Eq)
+
+data SugaryBilOp
   = ScalarProd
   | TensorProd
-  | MatrixMult
-  | DotProd
   | Mult
-  | Outer
+  | BilOp
   deriving (Show, Eq)
 
 type Derivative = Val
