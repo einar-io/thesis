@@ -19,3 +19,28 @@ getArity v = case v of
                   in Atom (i+1)
   Pair v1 v2 -> APair (getArity v1) (getArity v2)
   Tensor [] -> undefined
+
+
+mkT1 :: [RealNumber] -> Val
+mkT1 x = Tensor $ map Scalar x
+
+mkT2 :: [[RealNumber]] -> Val
+mkT2 x = Tensor $ map mkT1 x
+
+mkR0 :: Val -> RealNumber
+mkR0 (Scalar x) = x
+mkR0 _ = undefined
+
+mkR1 :: Val -> [RealNumber]
+mkR1 (Tensor x@(Scalar _: _)) = map mkR0 x
+mkR1 _ = undefined
+
+mkR2 :: Val -> [[RealNumber]]
+mkR2 (Tensor x@(Tensor (Scalar _: _) : _)) = map mkR1 x
+mkR2 _ = undefined
+
+--- from https://hackage.haskell.org/package/base-4.15.0.0/docs/src/Data-OldList.html#transpose
+transpose               :: [[a]] -> [[a]]
+transpose []             = []
+transpose ([]   : xss)   = transpose xss
+transpose ((x:xs) : xss) = (x : [h | (h:_) <- xss]) : transpose (xs : [ t | (_:t) <- xss])
