@@ -22,11 +22,8 @@ instance Monad Compiler where
 
 biop :: BilOp -> Arity -> Arity -> String
 biop b a1 a2 =  let base = case b of
-                            ScalarProd -> "scalarprod"
-                            TensorProd -> "tensorprod"
                             MatrixMult -> "matrixmult"
                             DotProd -> "dotprod"
-                            Mult -> "mult"
                             Outer -> "outer"
                 in base <> arityAnnotation a1 a2
 
@@ -61,7 +58,7 @@ compileLFun linfun a1 = case linfun of
                         genLineOfCode (APair a5 a4) ("para" <> " fun" <> show c5 <> " fun" <> show c4)
       _ -> undefined --ERROR, argument to para must be a Pair of Vals
   LSec v b -> genLineOfCode a1 (biop b (getArity v) a1 <> " " <> show v)
-  RSec b v -> genLineOfCode a1 (show v <> " " <> biop b (getArity v) a1)
+  RSec b v -> genLineOfCode a1 ("flip " <> biop b (getArity v) a1 <> " " <> show v)
   Scale rn -> compileLFun (LSec (Scalar rn) Outer) a1
   KZero -> compileLFun (Scale 0) a1
   Prj i j -> case (i,j,a1) of
