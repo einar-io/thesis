@@ -4,7 +4,7 @@ module Interpretor where
 import Types
 import Control.Monad
 import Utils
-import Data.List
+import Data.List hiding (transpose)
 import Data.AssocList.List.Eq as AList
 import Data.Maybe
 import Flow
