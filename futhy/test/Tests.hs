@@ -168,6 +168,28 @@ interpretorTests =
     (Red (List [(1,2), (0,2), (1,3), (5,6)]))
     (Tensor [Scalar (-1), Scalar 1,Scalar 2,Scalar 3])
     (SparseTensor [(3, 1), (2, 0)])
+  , goodCaseInterpretor "Neg scalar"
+    Neg
+    (Scalar 5.0)
+    (Scalar (-5.0))
+  , goodCaseInterpretor "Neg minus scalar"
+    Neg
+    (Scalar (-5.0))
+    (Scalar 5.0)
+  , goodCaseInterpretor "Neg dense tensor"
+    Neg
+    (Tensor [Tensor [Scalar 8.0, Scalar 12.0], Tensor [Scalar 10.0, Scalar 15.0], Tensor [Scalar 12.0, Scalar 18.0]])
+    (Tensor [Tensor [Scalar (-8.0), Scalar (-12.0)], Tensor [Scalar (-10.0), Scalar (-15.0)], Tensor [Scalar (-12.0), Scalar (-18.0)]])
+  , goodCaseInterpretor "Zip: simple functions"
+    (Zip [Id, Neg, Scale 45, KZero])
+    (Tensor [Scalar (-1), Scalar 1,Scalar 2,Scalar 3])
+    (Tensor [Scalar (-1), Scalar (-1),Scalar 90, Scalar 0])
+    {- WIP
+  , goodCaseInterpretor "Zip: shape-changing functions"
+    (Zip [Dup, Dup, Dup, KZero])
+    (Tensor [Scalar (-1), Scalar 1,Scalar 1,Scalar 3])
+    ( [(-1.0f32, -1.0f32), (1.0f32, 1.0f32), (1.0f32, 1.0f32), 0.0f32]
+    -}
   ]
 
 

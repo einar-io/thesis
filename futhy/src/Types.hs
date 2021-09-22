@@ -15,7 +15,7 @@ data Val
   | Tensor [Val]
   | Pair Val Val
   | Zero
-  | SparseTensor [(Int, Val)]
+  | SparseTensor [(Index, Val)]
   deriving (Eq)
 
 instance Num Val where
@@ -28,8 +28,13 @@ instance Num Val where
  Zero * _ = Zero
  _ * Zero = Zero
  negate (Scalar n) = Scalar (-n)
+ negate (Tensor vs) = Tensor (map negate vs)
+ negate (SparseTensor pivs) = SparseTensor $ map (\(idx, v) -> (idx, negate v)) pivs
+ negate Zero = Zero
+ negate (Pair l r) = Pair (negate l) (negate r)
  abs (Scalar n) = Scalar (abs n)
  signum (Scalar n) = Scalar (signum n)
+ signum Zero = 0
  fromInteger i = Scalar (fromInteger i)
 
 instance Show Val where
