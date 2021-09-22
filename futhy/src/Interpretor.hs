@@ -3,7 +3,7 @@
 module Interpretor where
 import Types
 import Control.Monad
--- import Utils
+import Utils
 
 -- general implementation - outer product, no contraction
 outer :: Val -> Val -> Val
@@ -15,16 +15,18 @@ outer x y = case (x,y) of
   _ -> undefined
 
 dotprod :: Val -> Val -> Val
-dotprod _ _ = undefined --Scalar $ foldr (+) 0.0 $ map (\(Scalar aa, Scalar bb) -> aa*bb) $ zip a b
+dotprod x y = case (mkR1 x, mkR1 y) of
+  (a, b) -> Scalar $ sum $ zipWith (*) a b
+
+matmul :: Val -> Val -> Val
+matmul x y = case (mkR2 x, mkR2 y) of
+  (a, b) -> mkT2 [[sum $ zipWith (*) ai bi | bi <- transpose b] | ai <- a]
 
 applyOp :: BilOp -> Val -> Val -> Val
 applyOp op a b = case op of
   Outer -> outer a b
   DotProd -> dotprod a b
-  ScalarProd -> undefined
-  TensorProd -> undefined
-  MatrixMult -> undefined
-  Mult -> undefined
+  MatrixMult -> matmul a b
 
 proj1 :: Val -> Val
 proj1 (Pair l _) = l
