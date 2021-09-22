@@ -5,6 +5,8 @@ module Types where
 import Control.Monad.Reader
 import Control.Monad.Except
 import GHC.IO.Exception (ExitCode)
+import Data.List (intercalate)
+import Flow
 
 type RealNumber = Float
 
@@ -13,14 +15,49 @@ data Val
   | Tensor [Val]
   | Pair Val Val
   | Zero
+  | SparseTensor [(Index, Val)]
   deriving (Eq)
+
+instance Num Val where
+ (Scalar n1) + (Scalar n2) = Scalar (n1 + n2)
+ (Tensor vs1) + (Tensor vs2) = Tensor (zipWith (+) vs1 vs2)
+ Zero + v = v
+ v + Zero = v
+ (Scalar n1) * (Scalar n2) = Scalar (n1 * n2)
+ (Tensor vs1) * (Tensor vs2) = Tensor (zipWith (*) vs1 vs2)
+ Zero * _ = Zero
+ _ * Zero = Zero
+ negate (Scalar n) = Scalar (-n)
+ negate (Tensor vs) = Tensor (map negate vs)
+ negate (SparseTensor pivs) = SparseTensor $ map (\(idx, v) -> (idx, negate v)) pivs
+ negate Zero = Zero
+ negate (Pair l r) = Pair (negate l) (negate r)
+ abs (Scalar n) = Scalar (abs n)
+ signum (Scalar n) = Scalar (signum n)
+ signum Zero = 0
+ fromInteger i = Scalar (fromInteger i)
 
 instance Show Val where
   show v = case v of
     Scalar sc -> if sc >= 0.0 then show sc <> "f32" else "(" <> show sc <> "f32" <> ")"
     Pair v1 v2 -> "(" <> show v1 <> ", " <> show v2 <> ")"
-    Tensor ls -> "[" <> show (head ls) <> concatMap (\w -> ", " <> show w) (tail ls) <> "]"
+    --Tensor ls -> "[" <> show (head ls) <> concatMap (\w -> ", " <> show w) (tail ls) <> "]"
+    Tensor ls ->
+      --"DenseTensor ["
+      "["
+      ++ ( ls
+           |> map show
+           |> intercalate ", "
+         )
+      ++ "]"
     Zero -> show $ Scalar 0
+    SparseTensor vs ->
+      "SparseTensor <["
+      ++ ( vs
+           |> map (\(i, v) -> "(" ++ show i ++ ": " ++ show v ++ ")")
+           |> intercalate ", "
+         )
+      ++ "]>"
 
 -- These are listed as linear map expressions
 -- https://github.com/diku-dk/caddie/blob/master/src/lin.sig
@@ -114,6 +151,18 @@ data CommandResult
   | InterpretorResult Val
   deriving (Show, Eq)
 
+
+{-
+type InterpretorError  = String
+type InterpretorResult = Val
+type CommandError   = (ErrorType, CommandType)
+type CommandResult2 = CommandOutput
+Right (ec, stdout, stdin)
+Left  (_, (ec, stdout, stdout))
+-}
+
+
+
 data Env = Env {
     fp :: FilePath
   , be :: Backend
@@ -140,3 +189,5 @@ execCmd cmd env = runExceptT $ runReaderT (runCmd cmd) env
 type InterpretorError = String
 
 type InterpretorOutput a = Either InterpretorError a
+
+type Index = Int

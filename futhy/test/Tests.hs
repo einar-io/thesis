@@ -191,6 +191,47 @@ otherTests = [ ("Comp id and scale"
                     , Lplus (Scale (-3.0)) (Scale 5.0)
                     , Scalar 7.0
                     , Scalar 14.0)
+             , ("Reduce primitive test: happy path"
+                    , Red (List [(0,1)])
+                    , Tensor [Scalar 0]
+                    , SparseTensor [(1, 0)])
+             , ("Reduce primitive test: empty relation"
+                    , Red (List [])
+                    , Tensor [Scalar 0, Scalar 1,Scalar 2,Scalar 3]
+                    , Zero)
+             , ("Reduce primitive test: empty values vector"
+                    , Red (List [(0,1), (2,3)])
+                    , Tensor []
+                    , SparseTensor [])
+             , ("Reduce primitive test: duplicates."
+                    , Red (List [(1,2), (1,2), (1,1), (1,2)])
+                    , Tensor [Scalar (-1), Scalar 1,Scalar 2,Scalar 3]
+                    , SparseTensor [(1, 1), (2, 3)])
+             , ("Reduce compound test: duplicates and out-of-bounds indices."
+                    , Red (List [(1,2), (0,2), (1,3), (5,6)])
+                    , Tensor [Scalar (-1), Scalar 1,Scalar 2,Scalar 3]
+                    , SparseTensor [(3, 1), (2, 0)])
+             , ("Neg scalar"
+                    , Neg
+                    , Scalar 5.0
+                    , Scalar (-5.0))
+             , ("Neg minus scalar"
+                    , Neg
+                    , Scalar (-5.0)
+                    , Scalar 5.0)
+             , ("Neg dense tensor"
+                    , Neg
+                    , Tensor [Tensor [Scalar 8.0, Scalar 12.0], Tensor [Scalar 10.0, Scalar 15.0], Tensor [Scalar 12.0, Scalar 18.0]]
+                    , Tensor [Tensor [Scalar (-8.0), Scalar (-12.0)], Tensor [Scalar (-10.0), Scalar (-15.0)], Tensor [Scalar (-12.0), Scalar (-18.0)]])
+             , ("Zip: simple functions"
+                    , Zip [Id, Neg, Scale 45, KZero]
+                    , Tensor [Scalar (-1), Scalar 1,Scalar 2,Scalar 3]
+                    , Tensor [Scalar (-1), Scalar (-1),Scalar 90, Scalar 0])
+             {-, ("Zip: shape-changing functions" --WIP
+                    , Zip [Dup, Dup, Dup, KZero]
+                    , Tensor [Scalar (-1), Scalar 1,Scalar 1,Scalar 3]
+                    , [(-1.0f32, -1.0f32), (1.0f32, 1.0f32), (1.0f32, 1.0f32), 0.0f32]) -}
+
              ]
 
 --instance Arbitrary Val where
