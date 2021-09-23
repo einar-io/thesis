@@ -87,9 +87,7 @@ let cont_3_3 = cont_aux ntcont_3_3
 
 -- -- --simple versions
 let dotprod_1_1 = aptr (map2 (*))
-let matmul_2_2 xss yss = map (\xs -> map (cont_1_1 xs) <| transpose yss) xss
-
-
+let matrixmult_2_2 xss yss = map (\xs -> map (cont_1_1 xs) <| transpose yss) xss
 
 -- let cont_2_2 xss yss = map (\xs -> map (cont_1_1 xs) <| transpose yss) xss -- matmul
 

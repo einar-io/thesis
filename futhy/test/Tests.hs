@@ -53,6 +53,8 @@ allFeatures = [ ("basic", basicTests)
               , ("negTests", negTests)
               , ("reduceTests", reduceTests)
               , ("zipTests", zipTests)
+              , ("dotprod", dotprodTests)
+              , ("matmul", matmulTests)
               ]
 
 basicTests :: [([Char], LFun, Val, Val)]
@@ -98,6 +100,43 @@ scaleTests =
                  , Tensor [ Tensor [Scalar 15.0, Scalar 18.0]
                           , Tensor [Scalar 21.0, Scalar 24.0]]])
   ]
+
+dotprodTests :: [([Char], LFun, Val, Val)]
+dotprodTests =
+  [ ("[1,2,3] * [4,5,6] = 32"
+        , LSec (Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]) DotProd
+        , Tensor [Scalar 4.0, Scalar 5.0, Scalar 6.0]
+        , Scalar 32.0)
+  ]
+
+matmulTests :: [([Char], LFun, Val, Val)]
+matmulTests =
+  [ ("2x2 * 2x2 -> 2x2"
+        , LSec (Tensor [ Tensor [Scalar 1.0, Scalar 2.0]
+                       , Tensor [Scalar 3.0, Scalar 4.0]]) MatrixMult
+        , Tensor [ Tensor [Scalar 5.0, Scalar 6.0]
+                 , Tensor [Scalar 7.0, Scalar 8.0]]
+        , Tensor [ Tensor [Scalar 19.0, Scalar 22.0]
+                 , Tensor [Scalar 43.0, Scalar 50.0]])
+  , ("2x3 * 3x2 -> 2x2"
+          , LSec (Tensor [ Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]
+                         , Tensor [Scalar 4.0, Scalar 5.0, Scalar 6.0]]) MatrixMult
+          , Tensor [ Tensor [Scalar 7.0, Scalar 8.0]
+                   , Tensor [Scalar 9.0, Scalar 10.0]
+                   , Tensor [Scalar 11.0, Scalar 12.0]]
+          , Tensor [ Tensor [Scalar 58.0, Scalar 64.0]
+                   , Tensor [Scalar 139.0, Scalar 154.0]])
+  , ("3x2 * 2x3 -> 3x3"
+          , LSec (Tensor [ Tensor [Scalar 7.0, Scalar 8.0]
+                         , Tensor [Scalar 9.0, Scalar 10.0]
+                         , Tensor [Scalar 11.0, Scalar 12.0]]) MatrixMult
+          , (Tensor [ Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]
+                    , Tensor [Scalar 4.0, Scalar 5.0, Scalar 6.0]])
+          , Tensor [ Tensor [Scalar 39.0, Scalar 54.0, Scalar 69.0]
+                   , Tensor [Scalar 49.0, Scalar 68.0, Scalar 87.0]
+                   , Tensor [Scalar 59.0, Scalar 82.0, Scalar 105.0]])
+  ]
+
 
 outerTests :: [([Char], LFun, Val, Val)]
 outerTests =
