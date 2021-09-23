@@ -18,32 +18,31 @@ second = 1000000
 main :: IO ()
 main = defaultMain $ localOption (mkTimeout $ second * 30) runAllTests
 
-goodCaseInterpretor :: TestName -> LFun -> Val -> Val -> TestTree
-goodCaseInterpretor name lfun vin vout = testCase name $ interpret lfun vin @?= return vout
+goodCaseInterpretor :: (LFun, Val, Val) -> TestTree
+goodCaseInterpretor (lf, vin, vout) = testCase "Interpretor" $ interpret lf vin @?= return vout
 
-goodCaseExecution :: TestName -> LFun -> Val -> TestTree
-goodCaseExecution name lf vin =
-  testCase name $ do compileRes <- runStrArg (compileProgram lf (getArity vin)) C (show vin)
-                     compileResStr  <- case compileRes of
-                                        Right (Output (_, res, _)) -> return res
-                                        e -> assertFailure $ show e
-                     let Right intVal = interpret lf vin
-                     intComp <- runStr ("entry main = " <> show intVal) C
-                     interpResStrn <-  case intComp of
-                                Right (Output (_, ref, _)) -> return ref
-                                e -> assertFailure $ show e
-                     case (compileResStr == interpResStrn) of
-                      False -> assertFailure $ show (compileResStr, interpResStrn)
-                      True -> return ()
+goodCaseExecution :: (LFun, Val, Val) -> TestTree
+goodCaseExecution (lf, vin, vout) =
+  testCase "Compiler" $ do compileRes <- runStrArg (compileProgram lf (getArity vin)) C (show vin)
+                           compileResStr  <- case compileRes of
+                                              Right (Output (_, res, _)) -> return res
+                                              e -> assertFailure $ show e
+                           intComp <- runStr ("entry main = " <> show vout) C
+                           interpResStrn <-  case intComp of
+                                      Right (Output (_, ref, _)) -> return ref
+                                      e -> assertFailure $ show e
+                           case (compileResStr == interpResStrn) of
+                            False -> assertFailure $ show (compileResStr, interpResStrn)
+                            True -> return ()
 
-goodCaseStaged :: TestName -> LFun -> Val -> Val -> TestTree
-goodCaseStaged name lf vin vout = testGroup name $ [goodCaseInterpretor "Interpretor" lf vin vout, goodCaseExecution "Compiler" lf vin]
+goodCaseStaged :: TestName -> (LFun, Val, Val) -> TestTree
+goodCaseStaged name params = testGroup name $ [goodCaseInterpretor params, goodCaseExecution params]
 
 runAllTests :: TestTree
 runAllTests = testGroup "All features" $ [optimizerTests] <> map testFeature allFeatures
 
 testFeature :: (String, [(String, LFun, Val, Val)]) -> TestTree
-testFeature (n,l) = testGroup n $ map (\(name, lf, vin, vout) -> goodCaseStaged name lf vin vout) l
+testFeature (n,l) = testGroup n $ map (\(name, lf, vin, vout) -> goodCaseStaged name (lf, vin, vout)) l
 
 allFeatures :: [(String, [(String, LFun, Val, Val)])]
 allFeatures = [ ("basic", basicTests)
