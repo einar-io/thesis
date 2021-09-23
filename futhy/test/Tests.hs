@@ -36,7 +36,7 @@ goodCaseExecution (lf, vin, vout) =
                             True -> return ()
 
 goodCaseStaged :: TestName -> (LFun, Val, Val) -> TestTree
-goodCaseStaged name params = testGroup name $ [goodCaseInterpretor params, goodCaseExecution params]
+goodCaseStaged name params = testGroup name [goodCaseInterpretor params, goodCaseExecution params]
 
 runAllTests :: TestTree
 runAllTests = testGroup "All features" $ [optimizerTests] <> map testFeature allFeatures
@@ -52,7 +52,9 @@ allFeatures = [ ("basic", basicTests)
               , ("lplusTests", lplusTests)
               , ("negTests", negTests)
               , ("reduceTests", reduceTests)
+              , ("lmapTests", lmapTests)
               , ("zipTests", zipTests)
+              , ("addTests", addTests)
               , ("dotprod", dotprodTests)
               , ("matmul", matmulTests)
               ]
@@ -220,7 +222,11 @@ miscTests =
         , LSec (Scalar 2.0) Outer
         , Scalar 2.0
         , Scalar 4.0)
-  , ("Id ^+ K0 6.0 -> 6.0"
+  , ("Id (+) K0 $ (3.0, 5.0) -> (3.0, 0.0)"
+        , Para Id KZero
+        , Pair (Scalar 3.0) (Scalar 5.0)
+        , Pair (Scalar 3.0) Zero)
+  , ("Id ^+ K0 $ 6.0 -> 6.0"
         , Lplus Id KZero
         , Scalar 6.0
         , Scalar 6.0)
@@ -282,18 +288,54 @@ negTests =
         , Tensor [Tensor [Scalar (-8.0), Scalar (-12.0)], Tensor [Scalar (-10.0), Scalar (-15.0)], Tensor [Scalar (-12.0), Scalar (-18.0)]])
   ]
 
+lmapTests :: [([Char], LFun, Val, Val)]
+lmapTests =
+  [ ("LMap: map to zero"
+          , LMap KZero
+          , VList [Scalar (-1), Scalar 1, Scalar 2, Scalar 3]
+          , VList [Zero, Zero, Zero, Zero])
+  ]
+
 zipTests :: [([Char], LFun, Val, Val)]
 zipTests =
   [ ("Zip: simple functions"
           , Zip [Id, Neg, Scale 45, KZero]
-          , Tensor [Scalar (-1), Scalar 1,Scalar 2,Scalar 3]
-          , Tensor [Scalar (-1), Scalar (-1),Scalar 90, Scalar 0])
-   {-, ("Zip: shape-changing functions" --WIP
+          , VList [Scalar (-1), Scalar 1,Scalar 2,Scalar 3]
+          , VList [Scalar (-1), Scalar (-1),Scalar 90, Scalar 0])
+    {-
+    ("Zip: shape-changing functions"
           , Zip [Dup, Dup, Dup, KZero]
           , Tensor [Scalar (-1), Scalar 1,Scalar 1,Scalar 3]
           , [(-1.0f32, -1.0f32), (1.0f32, 1.0f32), (1.0f32, 1.0f32), 0.0f32]) -}
 
   ]
+
+addTests :: [(String, LFun, Val, Val)]
+addTests =
+  [ ("Add: left Zero and scalar"
+    ,  Add
+    ,  Pair Zero (Scalar 5)
+    ,  Scalar 5
+    )
+  , ("Add: scalar right Zero"
+    ,  Add
+    ,  Pair (Scalar 3) Zero
+    ,  Scalar 3
+    )
+  , ("Add: scalar and scalar"
+    ,  Add
+    ,  Pair (Scalar 3) (Scalar 5)
+    ,  Scalar 8
+    )
+  , ("Add: dense tensor and dense tensor"
+    ,  Add
+    ,  Pair (Tensor [Scalar 2, Scalar 3, Scalar 5]) (Tensor [Scalar 13, Scalar 7, Scalar 11])
+    ,  Tensor [Scalar 15, Scalar 10, Scalar 16]
+    )
+  ]
+
+
+
 
 --instance Arbitrary Val where
 --  arbitrary = oneof

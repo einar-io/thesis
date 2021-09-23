@@ -10,13 +10,16 @@ import Flow
 
 type RealNumber = Float
 
+
 data Val
   = Scalar RealNumber
   | Tensor [Val]
   | Pair Val Val
   | Zero
   | SparseTensor [(Index, Val)]
+  | VList [Val]
   deriving (Eq)
+
 
 instance Num Val where
  (Scalar n1) + (Scalar n2) = Scalar (n1 + n2)
