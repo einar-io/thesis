@@ -220,10 +220,6 @@ miscTests =
         , LSec (Scalar 2.0) Outer
         , Scalar 2.0
         , Scalar 4.0)
-  , ("Id (+) K0 (3.0, 5.0) -> (3.0, 0.0)"
-        , Para Id KZero
-        , Pair (Scalar 3.0) (Scalar 5.0)
-        , Pair (Scalar 3.0) (Scalar 0.0))
   , ("Id ^+ K0 6.0 -> 6.0"
         , Lplus Id KZero
         , Scalar 6.0
