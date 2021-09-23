@@ -59,6 +59,11 @@ instance Show Val where
          )
       ++ "]>"
 
+stdinShow :: Val -> String
+stdinShow v = case v of
+  Scalar sc -> show sc <> "f32"
+  _ -> show v
+
 -- These are listed as linear map expressions
 -- https://github.com/diku-dk/caddie/blob/master/src/lin.sig
 -- [POPL, p. 21]

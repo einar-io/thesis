@@ -23,7 +23,7 @@ goodCaseInterpretor (lf, vin, vout) = testCase "Interpretor" $ interpret lf vin 
 
 goodCaseExecution :: (LFun, Val, Val) -> TestTree
 goodCaseExecution (lf, vin, vout) =
-  testCase "Compiler" $ do compileRes <- runStrArg (compileProgram lf (getArity vin)) C (show vin)
+  testCase "Compiler" $ do compileRes <- runStrArg (compileProgram lf (getArity vin)) C (stdinShow vin)
                            compileResStr  <- case compileRes of
                                               Right (Output (_, res, _)) -> return res
                                               e -> assertFailure $ show e
