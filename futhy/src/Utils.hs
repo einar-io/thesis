@@ -49,3 +49,9 @@ nth :: Int -> [a] -> Maybe a
 nth _ []       = Nothing
 nth 0 (x : _)  = Just x
 nth n (_ : xs) = nth (n - 1) xs
+
+stdinShow :: Val -> String
+stdinShow v = case v of
+  Scalar sc -> " " <> show sc <> "f32 "
+  Pair v2 v1 -> stdinShow v2 <> " " <> stdinShow v1
+  _ -> show v

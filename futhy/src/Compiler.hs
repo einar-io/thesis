@@ -75,8 +75,7 @@ compileLFun linfun a1 = case linfun of
 
   Add ->
     case a1 of
-      APair (Atom 0) (Atom 0) -> genLineOfCode (Atom 0) "add_0_0"
-      _ -> undefined -- genLineOfCode (Atom a2) ("add" <> " fun" <> show (c3-1) <> " fun" <> show (c2-1))
+      APair a3 a2 -> genLineOfCode a2 ("add_" <> show a3 <> "_" <> show a2)
   Neg -> do genLineOfCode a1 ("neg_" <> show a1)
   Zip lfs -> case lfs of
              [] -> undefined
@@ -85,18 +84,27 @@ compileLFun linfun a1 = case linfun of
   Red _ -> undefined
   LMap _ -> undefined
 
+
+finishProg :: Arity -> Compiler ()
+finishProg a =
+  Co (\(p, r, c) ->
+    let (params, args, _) = inputArgDeclaration a 0 in
+    let new_loc = "entry main " <> params <>  " =" <> " fun" <> show (c-1) <> " " <> args
+    in ((), (p <> new_loc, r, c)))
+
+inputArgDeclaration :: Arity -> Int -> (String, String, Int)
+inputArgDeclaration a1 c1
+  = case a1 of
+  Atom _ -> ("(i" <> show c1 <> ": " <> typeDeclared a1 <> ")", "i" <> show c1, c1+1)
+  APair a2 a3 -> let (params2, args2, c2) = inputArgDeclaration a2 c1 in
+                 let (params3, args3, c3) = inputArgDeclaration a3 c2 in
+                 (params2 <> " " <> params3, "(" <> args2 <> ", " <> args3 <> ")", c3)
+
 typeDeclared :: Arity -> String
 typeDeclared a = case a of
   Atom 0 -> "f32"
   Atom n -> "[]" <> typeDeclared (Atom $ n-1)
   APair a1 a2 -> "(" <> typeDeclared a1 <> ", " <> typeDeclared a2 <> ")"
-
-
-finishProg :: Arity -> Compiler ()
-finishProg a =
-  Co (\(p, r, c) ->
-    let new_loc = "entry main (input: " <>  typeDeclared a <> ") =" <> " fun" <> show (c-1) <> " input"
-    in ((), (p <> new_loc, r, c)))
 
 put :: CState -> Compiler ()
 put cs = Co (\_ -> ((), cs))

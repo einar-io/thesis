@@ -5,6 +5,7 @@ import Test.Tasty
 import Prelude
 
 -- our libs
+import Utils
 import Optimizer
 import Interpretor
 import Types
@@ -39,25 +40,44 @@ goodCaseStaged :: TestName -> (LFun, Val, Val) -> TestTree
 goodCaseStaged name params = testGroup name [goodCaseInterpretor params, goodCaseExecution params]
 
 runAllTests :: TestTree
-runAllTests = testGroup "All features" $ [optimizerTests] <> map testFeature allFeatures
+runAllTests = testGroup "All features" $ map testFeature allFeatures -- <> [optimizerTests]
 
 testFeature :: (String, [(String, LFun, Val, Val)]) -> TestTree
 testFeature (n,l) = testGroup n $ map (\(name, lf, vin, vout) -> goodCaseStaged name (lf, vin, vout)) l
 
 allFeatures :: [(String, [(String, LFun, Val, Val)])]
-allFeatures = [ ("basic", basicTests)
-              , ("outer products", outerTests)
-              , ("miscTests", miscTests)
-              , ("scaleTests", scaleTests)
-              , ("lplusTests", lplusTests)
-              , ("negTests", negTests)
-              , ("reduceTests", reduceTests)
-              , ("lmapTests", lmapTests)
+allFeatures = wipFeatures <> doneFeatures
+
+wipFeatures :: [(String, [(String, LFun, Val, Val)])]
+wipFeatures = [ ("reduceTests", reduceTests)
               , ("zipTests", zipTests)
-              , ("addTests", addTests)
-              , ("dotprod", dotprodTests)
-              , ("matmul", matmulTests)
+              , ("lmapTests", lmapTests)
               ]
+
+doneFeatures :: [(String, [(String, LFun, Val, Val)])]
+doneFeatures = [ ("basic", basicTests)
+               , ("addTests", addTests)
+               , ("tupleTests", tupleTests)
+               , ("miscTests", miscTests)
+               , ("dotprod", dotprodTests)
+               , ("matmul", matmulTests)
+               , ("outer products", outerTests)
+               , ("scaleTests", scaleTests)
+               , ("lplusTests", lplusTests)
+               , ("negTests", negTests)
+               ]
+
+tupleTests :: [([Char], LFun, Val, Val)]
+tupleTests =
+  [ ("Comp Add (Para Add Id)"
+        , Comp Add (Para Add Id)
+        , Pair (Pair (Scalar 1.0) (Scalar 2.0)) (Scalar 3.0)
+        , Scalar 6.0)
+    , ("Id (P (P (P S S) S) (P S S))"
+        , Id
+        , Pair (Pair (Pair (Scalar 1.0) (Scalar 2.0))(Scalar 2.0)) (Pair (Scalar 1.0) (Scalar 2.0))
+        , Pair (Pair (Pair (Scalar 1.0) (Scalar 2.0))(Scalar 2.0)) (Pair (Scalar 1.0) (Scalar 2.0)))
+  ]
 
 basicTests :: [([Char], LFun, Val, Val)]
 basicTests =
@@ -73,6 +93,46 @@ basicTests =
         , Id
         , Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]
         , Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0])
+  , ("Comp id and scale"
+        , Comp Id (Scale 7.0)
+        , Scalar 10.0
+        , Scalar 70.0)
+  , ("Comp scale scale"
+        , Comp  (Scale (-2.0)) (Scale 7.0)
+        , Scalar 10.0
+        , Scalar (-140.0))
+  , ("Comp scale scale scale on vector"
+        , Comp  (Comp  (Scale 3.0) (Scale 7.0)) (Scale 8.0)
+        , Tensor [Scalar 1.0, Scalar 2.0]
+        , Tensor [Scalar 168.0, Scalar 336.0])
+  , ("Para"
+        , Comp  (Para  (Scale 3.0) (Scale 7.0)) Dup
+        , Scalar 1.0
+        , Pair (Scalar 3.0) (Scalar 7.0))
+  , ("Lsec scalar * scalar"
+        , LSec (Scalar 2.0) Outer
+        , Scalar 2.0
+        , Scalar 4.0)
+  , ("Lsec scalar * scalar"
+        , LSec (Scalar 2.0) Outer
+        , Scalar 2.0
+        , Scalar 4.0)
+  , ("Id ^+ K0 $ 6.0 -> 6.0"
+        , Lplus Id KZero
+        , Scalar 6.0
+        , Scalar 6.0)
+  , ("(Scale (-3.0)) ^+ (Scale 5.0) 7.0 -> 14.0"
+        , Lplus (Scale (-3.0)) (Scale 5.0)
+        , Scalar 7.0
+        , Scalar 14.0)
+  ]
+
+miscTests :: [([Char], LFun, Val, Val)]
+miscTests =
+  [ ("Id (+) K0 $ (3.0, 5.0) -> (3.0, 0.0)"
+        , Para Id KZero
+        , Pair (Scalar 3.0) (Scalar 5.0)
+        , Pair (Scalar 3.0) Zero)
   ]
 
 scaleTests :: [([Char], LFun, Val, Val)]
@@ -142,7 +202,13 @@ matmulTests =
 
 outerTests :: [([Char], LFun, Val, Val)]
 outerTests =
-  [ ("2 {outer product} 1 -> 2"
+  [ ("1 {outer product} 1 -> 2"
+          , LSec (Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]) Outer
+          , Tensor [Scalar 5.0, Scalar 2.0, Scalar 3.0]
+          , Tensor [ Tensor [Scalar 5.0, Scalar 2.0, Scalar 3.0]
+                   , Tensor [Scalar 10.0, Scalar 4.0, Scalar 6.0]
+                   , Tensor [Scalar 15.0, Scalar 6.0, Scalar 9.0]])
+  ,  ("2 {outer product} 1 -> 2"
           , LSec (Tensor [Scalar 1.0, Scalar 2.0]) Outer
           , Scalar 3.0
           , Tensor [Scalar 3.0, Scalar 6.0])
@@ -196,45 +262,7 @@ outerTests =
                             , Tensor [Scalar 3.0, Scalar 6.0, Scalar 9.0]]])
   ]
 
-miscTests :: [([Char], LFun, Val, Val)]
-miscTests =
-  [ ("Comp id and scale"
-        , Comp Id (Scale 7.0)
-        , Scalar 10.0
-        , Scalar 70.0)
-  , ("Comp scale scale"
-        , Comp  (Scale (-2.0)) (Scale 7.0)
-        , Scalar 10.0
-        , Scalar (-140.0))
-  , ("Comp scale scale scale on vector"
-        , Comp  (Comp  (Scale 3.0) (Scale 7.0)) (Scale 8.0)
-        , Tensor [Scalar 1.0, Scalar 2.0]
-        , Tensor [Scalar 168.0, Scalar 336.0])
-  , ("Para"
-        , Comp  (Para  (Scale 3.0) (Scale 7.0)) Dup
-        , Scalar 1.0
-        , Pair (Scalar 3.0) (Scalar 7.0))
-  , ("Lsec scalar * scalar"
-        , LSec (Scalar 2.0) Outer
-        , Scalar 2.0
-        , Scalar 4.0)
-  , ("Lsec scalar * scalar"
-        , LSec (Scalar 2.0) Outer
-        , Scalar 2.0
-        , Scalar 4.0)
-  , ("Id (+) K0 $ (3.0, 5.0) -> (3.0, 0.0)"
-        , Para Id KZero
-        , Pair (Scalar 3.0) (Scalar 5.0)
-        , Pair (Scalar 3.0) Zero)
-  , ("Id ^+ K0 $ 6.0 -> 6.0"
-        , Lplus Id KZero
-        , Scalar 6.0
-        , Scalar 6.0)
-  , ("(Scale (-3.0)) ^+ (Scale 5.0) 7.0 -> 14.0"
-        , Lplus (Scale (-3.0)) (Scale 5.0)
-        , Scalar 7.0
-        , Scalar 14.0)
-  ]
+
 
 lplusTests :: [([Char], LFun, Val, Val)]
 lplusTests =

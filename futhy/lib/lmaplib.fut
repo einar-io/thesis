@@ -18,10 +18,15 @@ let para f g (a,b) = (f a, g b) --apply two funs to tuple of vals
 -- the rest becomes trivial
 
 ----- near sperg perfection:
+-- add
+let add_0_0 (x,y) = (add) x y
+let add_1_1 (x,y) = (map2 add) x y
+let add_2_2 (x,y) = (map2 (map2 add)) x y
+let add_3_3 (x,y) = (map2 (map2 (map2 add))) x y
 
 -- lplus
 let lplus_h h f g v = h (f v) (g v)
-let lplus_0 = lplus_h add
+let lplus_0 = lplus_h (add)
 let lplus_1 = lplus_h (map2 add)
 let lplus_2 = lplus_h (map2 (map2 add))
 let lplus_3 = lplus_h (map2 (map2 (map2 add)))
