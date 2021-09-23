@@ -77,10 +77,10 @@ compileLFun linfun a1 = case linfun of
     case a1 of
       APair (Atom 0) (Atom 0) -> genLineOfCode (Atom 0) "add_0_0"
       _ -> undefined -- genLineOfCode (Atom a2) ("add" <> " fun" <> show (c3-1) <> " fun" <> show (c2-1))
+  Neg -> do genLineOfCode a1 ("neg_" <> show a1)
   Red _ -> undefined
   LMap _ -> undefined
   Zip _ -> undefined
-  Neg -> undefined
 
 typeDeclared :: Arity -> String
 typeDeclared a = case a of

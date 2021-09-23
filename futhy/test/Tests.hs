@@ -18,32 +18,31 @@ second = 1000000
 main :: IO ()
 main = defaultMain $ localOption (mkTimeout $ second * 30) runAllTests
 
-goodCaseInterpretor :: TestName -> LFun -> Val -> Val -> TestTree
-goodCaseInterpretor name lfun vin vout = testCase name $ interpret lfun vin @?= return vout
+goodCaseInterpretor :: (LFun, Val, Val) -> TestTree
+goodCaseInterpretor (lf, vin, vout) = testCase "Interpretor" $ interpret lf vin @?= return vout
 
-goodCaseExecution :: TestName -> LFun -> Val -> TestTree
-goodCaseExecution name lf vin =
-  testCase name $ do compileRes <- runStrArg (compileProgram lf (getArity vin)) C (show vin)
-                     compileResStr  <- case compileRes of
-                                        Right (Output (_, res, _)) -> return res
-                                        e -> assertFailure $ show e
-                     let Right intVal = interpret lf vin
-                     intComp <- runStr ("entry main = " <> show intVal) C
-                     interpResStrn <-  case intComp of
-                                Right (Output (_, ref, _)) -> return ref
-                                e -> assertFailure $ show e
-                     case (compileResStr == interpResStrn) of
-                      False -> assertFailure $ show (compileResStr, interpResStrn)
-                      True -> return ()
+goodCaseExecution :: (LFun, Val, Val) -> TestTree
+goodCaseExecution (lf, vin, vout) =
+  testCase "Compiler" $ do compileRes <- runStrArg (compileProgram lf (getArity vin)) C (stdinShow vin)
+                           compileResStr  <- case compileRes of
+                                              Right (Output (_, res, _)) -> return res
+                                              e -> assertFailure $ show e
+                           intComp <- runStr ("entry main = " <> show vout) C
+                           interpResStrn <-  case intComp of
+                                      Right (Output (_, ref, _)) -> return ref
+                                      e -> assertFailure $ show e
+                           case (compileResStr == interpResStrn) of
+                            False -> assertFailure $ show (compileResStr, interpResStrn)
+                            True -> return ()
 
-goodCaseStaged :: TestName -> LFun -> Val -> Val -> TestTree
-goodCaseStaged name lf vin vout = testGroup name [goodCaseInterpretor "Interpretor" lf vin vout, goodCaseExecution "Compiler" lf vin]
+goodCaseStaged :: TestName -> (LFun, Val, Val) -> TestTree
+goodCaseStaged name params = testGroup name [goodCaseInterpretor params, goodCaseExecution params]
 
 runAllTests :: TestTree
 runAllTests = testGroup "All features" $ [optimizerTests] <> map testFeature allFeatures
 
 testFeature :: (String, [(String, LFun, Val, Val)]) -> TestTree
-testFeature (n,l) = testGroup n $ map (\(name, lf, vin, vout) -> goodCaseStaged name lf vin vout) l
+testFeature (n,l) = testGroup n $ map (\(name, lf, vin, vout) -> goodCaseStaged name (lf, vin, vout)) l
 
 allFeatures :: [(String, [(String, LFun, Val, Val)])]
 allFeatures = [ ("basic", basicTests)
@@ -56,6 +55,8 @@ allFeatures = [ ("basic", basicTests)
               , ("lmapTests", lmapTests)
               , ("zipTests", zipTests)
               , ("addTests", addTests)
+              , ("dotprod", dotprodTests)
+              , ("matmul", matmulTests)
               ]
 
 basicTests :: [([Char], LFun, Val, Val)]
@@ -101,6 +102,43 @@ scaleTests =
                  , Tensor [ Tensor [Scalar 15.0, Scalar 18.0]
                           , Tensor [Scalar 21.0, Scalar 24.0]]])
   ]
+
+dotprodTests :: [([Char], LFun, Val, Val)]
+dotprodTests =
+  [ ("[1,2,3] * [4,5,6] = 32"
+        , LSec (Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]) DotProd
+        , Tensor [Scalar 4.0, Scalar 5.0, Scalar 6.0]
+        , Scalar 32.0)
+  ]
+
+matmulTests :: [([Char], LFun, Val, Val)]
+matmulTests =
+  [ ("2x2 * 2x2 -> 2x2"
+        , LSec (Tensor [ Tensor [Scalar 1.0, Scalar 2.0]
+                       , Tensor [Scalar 3.0, Scalar 4.0]]) MatrixMult
+        , Tensor [ Tensor [Scalar 5.0, Scalar 6.0]
+                 , Tensor [Scalar 7.0, Scalar 8.0]]
+        , Tensor [ Tensor [Scalar 19.0, Scalar 22.0]
+                 , Tensor [Scalar 43.0, Scalar 50.0]])
+  , ("2x3 * 3x2 -> 2x2"
+          , LSec (Tensor [ Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]
+                         , Tensor [Scalar 4.0, Scalar 5.0, Scalar 6.0]]) MatrixMult
+          , Tensor [ Tensor [Scalar 7.0, Scalar 8.0]
+                   , Tensor [Scalar 9.0, Scalar 10.0]
+                   , Tensor [Scalar 11.0, Scalar 12.0]]
+          , Tensor [ Tensor [Scalar 58.0, Scalar 64.0]
+                   , Tensor [Scalar 139.0, Scalar 154.0]])
+  , ("3x2 * 2x3 -> 3x3"
+          , LSec (Tensor [ Tensor [Scalar 7.0, Scalar 8.0]
+                         , Tensor [Scalar 9.0, Scalar 10.0]
+                         , Tensor [Scalar 11.0, Scalar 12.0]]) MatrixMult
+          , (Tensor [ Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]
+                    , Tensor [Scalar 4.0, Scalar 5.0, Scalar 6.0]])
+          , Tensor [ Tensor [Scalar 39.0, Scalar 54.0, Scalar 69.0]
+                   , Tensor [Scalar 49.0, Scalar 68.0, Scalar 87.0]
+                   , Tensor [Scalar 59.0, Scalar 82.0, Scalar 105.0]])
+  ]
+
 
 outerTests :: [([Char], LFun, Val, Val)]
 outerTests =

@@ -84,13 +84,17 @@ let cont_1_3 = cont_aux ntcont_1_3
 let cont_2_3 = cont_aux ntcont_2_3
 let cont_3_3 = cont_aux ntcont_3_3
 
-
 -- -- --simple versions
 let dotprod_1_1 = aptr (map2 (*))
-let matmul_2_2 xss yss = map (\xs -> map (cont_1_1 xs) <| transpose yss) xss
-
-
+let matrixmult_2_2 xss yss = map (\xs -> map (cont_1_1 xs) <| transpose yss) xss
 
 -- let cont_2_2 xss yss = map (\xs -> map (cont_1_1 xs) <| transpose yss) xss -- matmul
 
 -- assumes that 'transpose' reverses the order of indices for the generalization to work?
+
+
+-- -- -- neg
+let neg_0 : r->r = (\x -> -x)
+let neg_1 = map neg_0
+let neg_2 = map neg_1
+let neg_3 = map neg_2
