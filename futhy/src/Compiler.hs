@@ -82,7 +82,11 @@ compileLFun linfun a1 = case linfun of
              [lf] -> compileLFun lf a1
              (h:t) -> compileLFun (Para h $ Zip t) a1
   Red _ -> undefined
-  LMap _ -> undefined
+  LMap lf -> case a1 of
+              Atom n -> do compileLFun lf $ Atom $ n-1
+                           (c2, a2) <- getLastCountAndArity
+                           genLineOfCode a1 ("map " <> " fun" <> show c2)
+              _ -> undefined
 
 
 finishProg :: Arity -> Compiler ()
