@@ -93,7 +93,7 @@ interpret f v = case (f, v) of
   (LSec l op, _) -> Right $ applyOp op l v
   (RSec op r, _) -> Right $ applyOp op v r
   (Scale s, _)   -> Right $ outer (Scalar s) v
-  (KZero, _)     -> Right Zero -- Scalar 0.0 -- can this be done better?
+  (KZero, _)     -> Right Zero
   (Prj 2 1, _) -> Right $ proj1 v
   (Prj 2 2, _) -> Right $ proj2 v
   (Prj _ _, _) -> Left "Invalid argument to Prj"
@@ -104,7 +104,7 @@ interpret f v = case (f, v) of
   (Red (List []), _) -> return Zero
   (Red (List r ), _) -> Right $ SparseTensor $ reduce r v
 
-  (Neg   , _) -> Right $ negate v
+  (Neg   , _) -> return (negate v)
 
   (LMap fn, VList vs) -> do vals <- mapM (interpret fn) vs
                             return (VList vals)

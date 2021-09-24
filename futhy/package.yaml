@@ -10,6 +10,7 @@ dependencies:
   - optparse-applicative
   - assoc-list
   - flow
+  - hmatrix
 
 ghc-options: -Wall
 
