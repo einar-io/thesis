@@ -8,7 +8,7 @@ import GHC.IO.Exception (ExitCode)
 import Data.List (intercalate)
 import Flow
 
-type RealNumber = Float
+type RealNumber = Double
 
 
 data Val
@@ -72,21 +72,23 @@ stdinShow v = case v of
 -- https://github.com/diku-dk/caddie/blob/master/src/lin.sig
 -- [POPL, p. 21]
 data LFun -- expr
+  -- Arity preserving
   = Id
-  | Dup
   | KZero
   | Scale RealNumber
+  | Neg
   | LSec Val BilOp
   | RSec BilOp Val
-  | Para LFun LFun -- more descriptive than Oplus
-  | Comp LFun LFun
-  | Prj Int Int
-  | Lplus LFun LFun -- lifted addition
-  | Red Rel
-  | Add
   | LMap LFun
   | Zip [LFun]
-  | Neg
+  | Para LFun LFun -- more descriptive than Oplus
+  -- Arity changing
+  | Dup
+  | Comp LFun LFun
+  | Prj Int Int
+  | Add
+  | Lplus LFun LFun -- lifted addition
+  | Red Rel
   deriving (Show, Eq)
 
 data Rel

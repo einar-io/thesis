@@ -7,3 +7,8 @@ t:
 
 tags:
 	hasktags .
+
+e:
+	stack build
+	stack test 2> /dev/null
+
