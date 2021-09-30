@@ -69,7 +69,7 @@ executeArg arg = do
   filepath <- asks fp
   let executable = dropExtension filepath
   let params = []
-  p $ "[LinPgm] Command going to be run: " ++ showCommandForUser executable params
+  p $ "[LinPgm] Command going to be run: " ++ showCommandForUser executable params <> " " <> arg
 
   output <- liftIO $ readProcessWithExitCode executable params arg
   let (exitcode, stdout, stdin) = output

@@ -13,9 +13,9 @@ type RealNumber = Double
 
 data Val
   = Scalar RealNumber
+  | Zero
   | Tensor [Val]
   | Pair Val Val
-  | Zero
   | SparseTensor [(Index, Val)]
   | VList [Val]
   deriving (Eq)
@@ -62,12 +62,6 @@ instance Show Val where
          )
       ++ "]>"
 
-stdinShow :: Val -> String
-stdinShow v = case v of
-  Scalar sc -> show sc <> "f32"
-  _ -> show v
-
-
 -- These are listed as linear map expressions
 -- https://github.com/diku-dk/caddie/blob/master/src/lin.sig
 -- [POPL, p. 21]
@@ -106,13 +100,6 @@ data BilOp
   = MatrixMult
   | DotProd
   | Outer
-  deriving (Show, Eq)
-
-data SugaryBilOp
-  = ScalarProd
-  | TensorProd
-  | Mult
-  | BilOp
   deriving (Show, Eq)
 
 type Derivative = Val
