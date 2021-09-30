@@ -82,9 +82,9 @@ data LFun -- expr
   | LMap LFun
   | Zip [LFun]
   | Para LFun LFun -- more descriptive than Oplus
+  | Comp LFun LFun
   -- Arity changing
   | Dup
-  | Comp LFun LFun
   | Prj Int Int
   | Add
   | Lplus LFun LFun -- lifted addition
