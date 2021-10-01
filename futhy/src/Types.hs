@@ -11,14 +11,12 @@ import Flow
 
 type RealNumber = Double
 
-
 data Val
   = Scalar RealNumber
   | Zero
   | Tensor [Val]
   | Pair Val Val
   | SparseTensor [(Index, Val)]
-  | VList [Val]
   deriving (Eq)
 
 
@@ -27,41 +25,70 @@ instance Num Val where
  (Tensor vs1) + (Tensor vs2) = Tensor (zipWith (+) vs1 vs2)
  Zero + v = v
  v + Zero = v
+ (_) + (_) = undefined
  (Scalar n1) * (Scalar n2) = Scalar (n1 * n2)
  (Tensor vs1) * (Tensor vs2) = Tensor (zipWith (*) vs1 vs2)
  Zero * _ = Zero
  _ * Zero = Zero
+ (_) * (_) = undefined
  negate (Scalar n) = Scalar (-n)
  negate (Tensor vs) = Tensor (map negate vs)
  negate (SparseTensor pivs) = SparseTensor $ map (\(idx, v) -> (idx, negate v)) pivs
  negate Zero = Zero
  negate (Pair l r) = Pair (negate l) (negate r)
  abs (Scalar n) = Scalar (abs n)
+ abs (_) = undefined
  signum (Scalar n) = Scalar (signum n)
  signum Zero = 0
+ signum (_) = undefined
  fromInteger i = Scalar (fromInteger i)
 
 instance Show Val where
   show v = case v of
     Scalar sc -> if sc >= 0.0 then show sc <> "f32" else "(" <> show sc <> "f32" <> ")"
     Pair v1 v2 -> "(" <> show v1 <> ", " <> show v2 <> ")"
-    --Tensor ls -> "[" <> show (head ls) <> concatMap (\w -> ", " <> show w) (tail ls) <> "]"
     Tensor ls ->
       --"DenseTensor ["
       "["
-      ++ ( ls
+      <> ( ls
            |> map show
            |> intercalate ", "
          )
-      ++ "]"
+      <> "]"
     Zero -> show $ Scalar 0
-    SparseTensor vs ->
-      "SparseTensor <["
-      ++ ( vs
-           |> map (\(i, val) -> "(" ++ show i ++ ": " ++ show val ++ ")")
-           |> intercalate ", "
-         )
-      ++ "]>"
+    SparseTensor _ ->
+      "[0.0f32, 0.0f32]"
+
+stdinShow :: Val -> String
+stdinShow v = case v of
+  Scalar sc  -> " " <> show sc <> "f32 "
+  Pair v2 v1 -> stdinShow v2 <> " " <> stdinShow v1
+  Tensor ls  -> "[" <> ( ls
+                         |> map stdinShow
+                         |> intercalate ", "
+                        ) <> "]"
+  _ -> show v
+
+
+data Arity
+  = Atom Int
+  | APair Arity Arity
+  deriving (Eq)
+
+instance Show Arity where
+  show a = case a of
+    Atom i -> show i
+    APair a3 a2 -> "(" <> show a3 <> ", " <> show a2 <> ")"
+
+getArity :: Val -> Arity
+getArity v = case v of
+  Scalar _ -> Atom 0
+  Zero -> Atom 0
+  Tensor (h:_) -> let (Atom i) = getArity h
+                  in Atom (i+1)
+  Pair v1 v2 -> APair (getArity v1) (getArity v2)
+  Tensor [] -> error "Arity-get failed: empty tensor not allowed"
+  _ -> error $ "Arity not implemented for " <> show v
 
 -- These are listed as linear map expressions
 -- https://github.com/diku-dk/caddie/blob/master/src/lin.sig
@@ -81,6 +108,8 @@ data LFun -- expr
   -- Arity changing
   | Dup
   | Prj Int Int
+  | Fst
+  | Snd
   | Add
   | Lplus LFun LFun -- lifted addition
   | Red Rel

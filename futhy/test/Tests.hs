@@ -12,12 +12,12 @@ import Flow
 --import Prelude
 
 -- our libs
-import Utils
 import Optimizer
 import Interpretor
 import Types
 import Compiler
 import Utils
+import Caramelizer
 import Executor hiding (main)
 
 -- separate test files (called from here)
@@ -30,10 +30,11 @@ main :: IO ()
 main = defaultMain $ localOption (mkTimeout $ second * 30) runAllTests
 
 goodCaseInterpretor :: (LFun, Val, Val) -> TestTree
-goodCaseInterpretor (lf, vin, vout) = testCase "Interpretor" $ interpret lf vin @?= return vout
+goodCaseInterpretor (lf, vin, vout) = testCase "Interpretor" $ interpret (caramelizeLFun lf) vin @?= return vout
 
 goodCaseExecution :: (LFun, Val, Val) -> TestTree
-goodCaseExecution (lf, vin, vout) =
+goodCaseExecution (sugary_lf, sugary_vin, sugary_vout) =
+  let (lf, vin, vout) = (caramelizeLFun sugary_lf, caramelizeVal sugary_vin, caramelizeVal sugary_vout) in
   testCase "Compiler" $ do compileRes <- runStrArg (compileProgram lf (getArity vin)) C (stdinShow vin)
                            compileResStr  <- case compileRes of
                                               {-Right (Output (_, res, _)) -> return res
@@ -279,8 +280,6 @@ outerTests =
                             , Tensor [Scalar 3.0, Scalar 6.0, Scalar 9.0]]])
   ]
 
-
-
 lplusTests :: [([Char], LFun, Val, Val)]
 lplusTests =
   [ ("lplus_0"
@@ -337,16 +336,16 @@ lmapTests :: [([Char], LFun, Val, Val)]
 lmapTests =
   [ ("LMap: map to zero"
           , LMap KZero
-          , VList [Scalar (-1), Scalar 1, Scalar 2, Scalar 3]
-          , VList [Zero, Zero, Zero, Zero])
+          , Tensor [Scalar (-1), Scalar 1, Scalar 2, Scalar 3]
+          , Tensor [Scalar (-0), Zero, Zero, Zero])
   ]
 
 zipTests :: [([Char], LFun, Val, Val)]
 zipTests =
   [ ("Zip: simple functions"
           , Zip [Id, Neg, Scale 45, KZero]
-          , VList [Scalar (-1), Scalar 1,Scalar 2,Scalar 3]
-          , VList [Scalar (-1), Scalar (-1),Scalar 90, Scalar 0])
+          , Tensor [Scalar (-1), Scalar 1,Scalar 2,Scalar 3]
+          , Tensor [Scalar (-1), Scalar (-1),Scalar 90, Scalar 0])
     {-
     ("Zip: shape-changing functions"
           , Zip [Dup, Dup, Dup, KZero]

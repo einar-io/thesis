@@ -35,6 +35,7 @@ optimizeRun lf = case lf of
   Para x y -> Para (optimizeRun x) (optimizeRun y)
 
   -- leaves
+  Lplus _ _ -> error "LPlus should be desugared!"
   Id -> lf
   Dup -> lf
   KZero -> lf
@@ -42,7 +43,6 @@ optimizeRun lf = case lf of
   LSec _ _ -> lf
   RSec _ _ -> lf
   Prj _ _ -> lf
-  Lplus _ _ -> lf
   Red _ -> lf
   Add -> lf
   LMap _ -> lf
