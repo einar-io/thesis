@@ -4,11 +4,11 @@ module Interpretor where
 import Types
 import Control.Monad
 import Utils
-import Data.List hiding (transpose)
+--import Data.List hiding (transpose)
 import Data.AssocList.List.Eq as AList
 import Data.Maybe
 import Flow
-import Control.Applicative
+--import Control.Applicative
 
 -- general implementation - outer product, no contraction
 outer :: Val -> Val -> Val
@@ -103,6 +103,10 @@ interpret f v = case (f, v) of
 
   (Red (List []), _) -> return Zero
   (Red (List r ), _) -> Right $ SparseTensor $ reduce r v
+  (Red r, _)         -> Left <| "Invalid argument to Red.  rel: "
+                        ++ show r
+                        ++ " v: "
+                        ++ show v
 
   (Neg   , _) -> return (negate v)
 

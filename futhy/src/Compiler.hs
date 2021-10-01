@@ -84,7 +84,7 @@ compileLFun linfun a1 = case linfun of
   Red _ -> undefined
   LMap lf -> case a1 of
               Atom n -> do compileLFun lf $ Atom $ n-1
-                           (c2, a2) <- getLastCountAndArity
+                           (c2, _a2) <- getLastCountAndArity
                            genLineOfCode a1 ("map " <> " fun" <> show c2)
               _ -> undefined
 

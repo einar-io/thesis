@@ -6,6 +6,7 @@ import Control.Monad.Reader
 import Control.Monad.Except
 import GHC.IO.Exception (ExitCode)
 import Data.List (intercalate)
+import Data.Char (toLower)
 import Flow
 
 type RealNumber = Double
@@ -57,7 +58,7 @@ instance Show Val where
     SparseTensor vs ->
       "SparseTensor <["
       ++ ( vs
-           |> map (\(i, v) -> "(" ++ show i ++ ": " ++ show v ++ ")")
+           |> map (\(i, val) -> "(" ++ show i ++ ": " ++ show val ++ ")")
            |> intercalate ", "
          )
       ++ "]>"
@@ -122,41 +123,11 @@ data Backend
     deriving (Read)
 
 instance Show Backend where
-  show b = case b of
-    C -> "c"
-    OPENCL -> "opencl"
-    CUDA -> "cuda"
+  show b = show b
+           |> map toLower
 
-
-
-
-{-
--- Error types possible in the Left constructor of ExceptT trans.
-data CommandError
-  = CompilationError CommandOutput
-  | ExecutionError CommandOutput
---  | InterpretorError String
-  deriving (Show, Eq)
--}
-
-{-
--- Result types possible in the Right constructor of ExceptT trans.
-data CommandResult
-  = RawFuthark CommandOutput
-  | Output CommandOutput
-  | StructuredFuthark Val
---  | InterpretorResult Val
-  deriving (Show, Eq)
--}
-
-{-
-data CommandExecution
-  = Result
-  | Failure
--}
-
-data Env = Env {
-    fp :: FilePath
+data Env = Env
+  { fp :: FilePath
   , be :: Backend
   }
 
@@ -191,13 +162,8 @@ newtype Command a = Command { runCmd :: Cmd a }
   , MonadError Failure
   )
 
---type DerivativeComputation a = Either Failure a
-
 execCmd :: Command a -> Env -> IO (CommandExecution a)
 execCmd cmd env = runExceptT $ runReaderT (runCmd cmd) env
-
-
-
 
 
 type InterpretorError    = String
