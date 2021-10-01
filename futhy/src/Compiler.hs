@@ -1,6 +1,5 @@
 module Compiler where
 import Types
-import Utils
 
 type Program = String
 type Count = Int
@@ -41,52 +40,50 @@ genLineOfCode r fun =
       in ((), (p <> new_loc, r, c+1)))
 
 compileLFun :: LFun -> Arity -> Compiler ()
-compileLFun linfun a1 = case linfun of
-  Id -> genLineOfCode a1 "id"
-  Dup -> genLineOfCode (APair a1 a1) "dupe"
-  Comp lf2 lf1 -> do compileLFun lf1 a1
-                     (c2, a2) <- getLastCountAndArity
-                     compileLFun lf2 a2
-                     (c3, a3) <- getLastCountAndArity
-                     genLineOfCode a3 ("comp" <> " fun" <> show c3 <> " fun" <> show c2)
-  Para lf2 lf1 ->
-    case a1 of
-      APair a3 a2 -> do compileLFun lf1 a2
-                        (c4, a4) <- getLastCountAndArity
-                        compileLFun lf2 a3
-                        (c5, a5) <- getLastCountAndArity
-                        genLineOfCode (APair a5 a4) ("para" <> " fun" <> show c5 <> " fun" <> show c4)
-      _ -> undefined --ERROR, argument to para must be a Pair of Vals
-  LSec v b -> genLineOfCode a1 (biop b (getArity v) a1 <> " " <> show v)
-  RSec b v -> genLineOfCode a1 ("flip " <> biop b (getArity v) a1 <> " " <> show v)
-  Scale rn -> compileLFun (LSec (Scalar rn) Outer) a1
-  KZero -> compileLFun (Scale 0) a1
-  Prj i j -> case (i,j,a1) of
-                (2, 1, APair a3 _) -> genLineOfCode a3 "fst"
-                (2, 2, APair _ a2) -> genLineOfCode a2 "snd"
-                _ -> undefined
-  Lplus lf3 lf2 -> do compileLFun lf2 a1
-                      (c2, a2) <- getLastCountAndArity
-                      compileLFun lf3 a1
-                      (c3, a3) <- getLastCountAndArity
-                      case (a2, a3) of
-                        (Atom _, Atom _) -> genLineOfCode a2 ("lplus_" <> show a2 <> " fun" <> show c3 <> " fun" <> show c2)
-                        _ -> undefined
+compileLFun linfun a1 = case (linfun, a1) of
+  (Comp lf2 lf1, _) -> do compileLFun lf1 a1
+                          (c2, a2) <- getLastCountAndArity
+                          compileLFun lf2 a2
+                          (c3, a3) <- getLastCountAndArity
+                          genLineOfCode a3 ("comp" <> " fun" <> show c3 <> " fun" <> show c2)
+  (Para lf2 lf1, APair a3 a2) -> do compileLFun lf1 a2
+                                    (c4, a4) <- getLastCountAndArity
+                                    compileLFun lf2 a3
+                                    (c5, a5) <- getLastCountAndArity
+                                    genLineOfCode (APair a5 a4) ("para" <> " fun" <> show c5 <> " fun" <> show c4)
+  (LMap lf, Atom n) -> do compileLFun lf $ Atom $ n-1
+                          (c2, _) <- getLastCountAndArity
+                          genLineOfCode a1 ("map " <> " fun" <> show c2)
+  (Id, _)              -> genLineOfCode a1 "id"
+  (Dup, _)             -> genLineOfCode (APair a1 a1) "dupe"
+  (Fst, APair a3 _)    -> genLineOfCode a3 "fst"
+  (Snd, APair _ a2)    -> genLineOfCode a2 "snd"
+  (Neg, _)             -> genLineOfCode a1 ("neg_" <> show a1)
+  (LSec v b, _)        -> genLineOfCode a1 (biop b (getArity v) a1 <> " " <> show v)
+  (RSec b v, _)        -> genLineOfCode a1 ("flip " <> biop b (getArity v) a1 <> " " <> show v)
+  (Add, APair a3 a2)   -> genLineOfCode a2 ("add_" <> show a3 <> "_" <> show a2)
+  (Zip (h:t@(_:_)), _) -> compileLFun (Para h $ Zip t) a1
+  (Zip (h:_), _)       -> compileLFun h a1
+  (Zip [], _)          -> error "zip on empty list undefined"
 
-  Add ->
-    case a1 of
-      APair a3 a2 -> genLineOfCode a2 ("add_" <> show a3 <> "_" <> show a2)
-  Neg -> do genLineOfCode a1 ("neg_" <> show a1)
-  Zip lfs -> case lfs of
-             [] -> undefined
-             [lf] -> compileLFun lf a1
-             (h:t) -> compileLFun (Para h $ Zip t) a1
-  Red _ -> undefined
-  LMap lf -> case a1 of
-              Atom n -> do compileLFun lf $ Atom $ n-1
-                           (c2, a2) <- getLastCountAndArity
-                           genLineOfCode a1 ("map " <> " fun" <> show c2)
-              _ -> undefined
+  (Red (List _), Atom 0)  -> error "Red not meaningful for an Atom 0 argument"
+  (Red (List ls), Atom n) -> genLineOfCode a1 ("reduce_" <> show n <> " " <> show ls)
+
+--- error section
+  (Red (List _), _)  -> error "Meaningless arity given to Red."
+  (Para _ _, _)      -> error "Meaningless arity given to Para."
+  (Fst , _)          -> error "Meaningless arity given to Fst."
+  (Snd , _)          -> error "Meaningless arity given to Snd."
+  (Add , _)          -> error "Meaningless arity given to Add."
+  (LMap _, _)        -> error "Meaningless arity given to LMap."
+  -- desugared
+  (KZero, _)         -> error "KZero should have been desugared!"
+  (Scale _, _)       -> error "Scale should have been desugared!"
+  (Prj _ _, _)       -> error "Prj should have been desugared!"
+  (Lplus _ _, _)     -> error "Lplus should have been desugared!"
+-- missing impl
+  (Red _, _)         -> error "This relation not implemented in compiler"
+
 
 
 finishProg :: Arity -> Compiler ()
