@@ -33,6 +33,7 @@ tests:
     main:                Tests.hs
     source-dirs:         test
     ghc-options:
+    - -main-is           Tests
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N

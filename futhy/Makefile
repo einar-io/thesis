@@ -5,5 +5,14 @@ t:
 	cp lib/lmaplib.fut build/lmaplib.fut
 	stack test
 
+.PHONY: tags
 tags:
 	hasktags .
+
+e: tags
+	stack build
+	stack test 2> /dev/null
+
+f:
+	stack build
+	stack test

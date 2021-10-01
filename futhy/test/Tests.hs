@@ -1,8 +1,15 @@
+module Tests (main) where
+
+--import qualified Prelude
+import Prelude hiding (not)
+import qualified Numeric.LinearAlgebra ((<>))
+import Control.Monad (when)
 import Test.Tasty.HUnit
 import Test.Tasty
+import Flow
 --import Test.QuickCheck
 --import GHC.IO.Unsafe
-import Prelude
+--import Prelude
 
 -- our libs
 import Optimizer
@@ -12,6 +19,9 @@ import Compiler
 import Utils
 import Caramelizer
 import Executor hiding (main)
+
+-- separate test files (called from here)
+import MatrixTests
 
 second :: Integer
 second = 1000000
@@ -41,7 +51,10 @@ goodCaseStaged :: TestName -> (LFun, Val, Val) -> TestTree
 goodCaseStaged name params = testGroup name [goodCaseInterpretor params, goodCaseExecution params]
 
 runAllTests :: TestTree
-runAllTests = testGroup "All features" $ map testFeature allFeatures -- <> [optimizerTests]
+runAllTests = testGroup "All features" $ []
+  -- [optimizerTests]
+  <> map testFeature allFeatures
+  <> [matrixTests]
 
 testFeature :: (String, [(String, LFun, Val, Val)]) -> TestTree
 testFeature (n,l) = testGroup n $ map (\(name, lf, vin, vout) -> goodCaseStaged name (lf, vin, vout)) l
