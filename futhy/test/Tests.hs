@@ -276,8 +276,6 @@ outerTests =
                             , Tensor [Scalar 3.0, Scalar 6.0, Scalar 9.0]]])
   ]
 
-
-
 lplusTests :: [([Char], LFun, Val, Val)]
 lplusTests =
   [ ("lplus_0"
