@@ -97,9 +97,17 @@ let matrixmult_2_2 xss yss = map (\xs -> map (cont_1_1 xs) <| transpose yss) xss
 
 -- assumes that 'transpose' reverses the order of indices for the generalization to work?
 
-
 -- -- -- neg
 let neg_0 : r->r = (\x -> -x)
 let neg_1 = map neg_0
 let neg_2 = map neg_1
 let neg_3 = map neg_2
+
+-- -- --reduce
+let reduce_1 [n][m] (rel : [m](i64, i64)) (vals : [n]r) =
+	let ne = 0.0
+	let (srcs, is) = unzip rel
+	let k = reduce i64.max 0 is
+	let output = replicate (k+1) ne
+	let as = map (\i -> if i < length vals then vals[i] else ne) srcs
+	in reduce_by_index output (+) ne is as
