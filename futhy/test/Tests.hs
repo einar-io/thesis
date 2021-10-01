@@ -36,12 +36,15 @@ goodCaseExecution :: (LFun, Val, Val) -> TestTree
 goodCaseExecution (lf, vin, vout) =
   testCase "Compiler" $ do compileRes <- runStrArg (compileProgram lf (getArity vin)) C (stdinShow vin)
                            compileResStr  <- case compileRes of
-                                              Right (Output (_, res, _)) -> return res
+                                              {-Right (Output (_, res, _)) -> return res
+                                              e -> assertFailure $ show e
+                                              -}
+                                              Right (CommandResult (_, res, _)) -> return res
                                               e -> assertFailure $ show e
                            intComp <- runStr ("entry main = " <> show vout) C
                            interpResStrn <-  case intComp of
-                                      Right (Output (_, ref, _)) -> return ref
-                                      e -> assertFailure $ show e
+                                              Right (CommandResult (_, res, _)) -> return res
+                                              e -> assertFailure $ show e
                            case (compileResStr == interpResStrn) of
                             False -> assertFailure $ show (compileResStr, interpResStrn)
                             True -> return ()
@@ -50,10 +53,11 @@ goodCaseStaged :: TestName -> (LFun, Val, Val) -> TestTree
 goodCaseStaged name params = testGroup name [goodCaseInterpretor params, goodCaseExecution params]
 
 runAllTests :: TestTree
-runAllTests = testGroup "All features" $ []
-  -- [optimizerTests]
-  <> map testFeature allFeatures
-  <> [matrixTests]
+runAllTests = testGroup "All features" <| concat
+  [ map testFeature allFeatures
+  , [matrixTests]
+  -- , [optimizerTests]
+  ]
 
 testFeature :: (String, [(String, LFun, Val, Val)]) -> TestTree
 testFeature (n,l) = testGroup n $ map (\(name, lf, vin, vout) -> goodCaseStaged name (lf, vin, vout)) l

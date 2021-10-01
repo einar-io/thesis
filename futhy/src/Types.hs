@@ -128,46 +128,59 @@ instance Show Backend where
     CUDA -> "cuda"
 
 
--- The data contained in the Right constructur of ExceptT trans:
--- Maybe rename this to CmdResult
-type Stdin  = String
-type Stdout = String
-type CommandOutput = (ExitCode, Stdout, Stdin)
 
+
+{-
 -- Error types possible in the Left constructor of ExceptT trans.
 data CommandError
   = CompilationError CommandOutput
   | ExecutionError CommandOutput
-  | InterpretorError String
+--  | InterpretorError String
   deriving (Show, Eq)
+-}
 
+{-
 -- Result types possible in the Right constructor of ExceptT trans.
 data CommandResult
   = RawFuthark CommandOutput
   | Output CommandOutput
   | StructuredFuthark Val
-  | InterpretorResult Val
+--  | InterpretorResult Val
   deriving (Show, Eq)
-
-
-{-
-type InterpretorError  = String
-type InterpretorResult = Val
-type CommandError   = (ErrorType, CommandType)
-type CommandResult2 = CommandOutput
-Right (ec, stdout, stdin)
-Left  (_, (ec, stdout, stdout))
 -}
 
-
+{-
+data CommandExecution
+  = Result
+  | Failure
+-}
 
 data Env = Env {
     fp :: FilePath
   , be :: Backend
   }
 
+-- The data contained in the Right constructur of ExceptT trans:
+-- Maybe rename this to CmdResult
+type Stdin  = String
+type Stdout = String
+type CommandOutput = (ExitCode, Stdout, Stdin)
+
+data FailedStep
+  = CompilationError
+  | ExecutionError
+  deriving (Show, Eq)
+
+newtype Result = CommandResult CommandOutput
+  deriving (Show, Eq)
+
+data Failure = CommandFailure FailedStep CommandOutput
+  deriving (Show, Eq)
+
+type CommandExecution a = Either Failure a
+
 -- Command evaluation monad.
-type Cmd a = ReaderT Env (ExceptT CommandError IO) a
+type Cmd a = ReaderT Env (ExceptT Failure IO) a
 newtype Command a = Command { runCmd :: Cmd a }
   deriving
   ( Functor
@@ -175,17 +188,20 @@ newtype Command a = Command { runCmd :: Cmd a }
   , Monad
   , MonadIO
   , MonadReader Env
-  , MonadError CommandError
+  , MonadError Failure
   )
 
-type DerivativeComputation a = Either CommandError a
+--type DerivativeComputation a = Either Failure a
 
-execCmd :: Command a -> Env -> IO (DerivativeComputation a)
+execCmd :: Command a -> Env -> IO (CommandExecution a)
 execCmd cmd env = runExceptT $ runReaderT (runCmd cmd) env
 
 
-type InterpretorError = String
 
+
+
+type InterpretorError    = String
+type InterpretorResult   = Val
 type InterpretorOutput a = Either InterpretorError a
 
 type Index = Int

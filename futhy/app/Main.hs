@@ -19,13 +19,13 @@ import Options.Applicative
 import Types
 import ArgParser
 {-
-import Executor hiding (main)
+import Executor
 import Compiler
 import Optimizer
 -}
 
 -- Load as module
-computeDerivative :: LFun -> Val -> DerivativeComputation CommandResult
+computeDerivative :: LFun -> Val -> Command Result
 computeDerivative _lfun _v = undefined
 {-
 computeDerivative :: LFun -> Val -> DerivativeComputation ExecutionResult
