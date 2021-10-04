@@ -6,7 +6,6 @@ import Control.Monad.Reader
 import Control.Monad.Except
 import GHC.IO.Exception (ExitCode)
 import Data.List (intercalate)
-import Data.Char (toLower)
 import Flow
 
 type RealNumber = Double
@@ -152,8 +151,10 @@ data Backend
     deriving (Read)
 
 instance Show Backend where
-  show b = show b
-           |> map toLower
+  show b = case b of
+    C -> "c"
+    OPENCL -> "opencl"
+    CUDA -> "cuda"
 
 data Env = Env
   { fp :: FilePath
