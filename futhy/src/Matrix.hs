@@ -45,14 +45,16 @@ type LeftRightMultipliers = ([Matrix RealNumber], [Matrix RealNumber])
 
 scalar2real :: Val -> RealNumber
 scalar2real (Scalar s) = s
+scalar2real _ = error "Called scalar2real with something other than a scalar"
 
 tensor2reals :: Val -> [RealNumber]
 tensor2reals (Tensor vs) = map scalar2real vs
+tensor2reals _ = error "Called tensor2reals with something other than a tensor fo scalars"
 
 tnsr2mtx :: Val -> Shape -> Matrix RealNumber
 -- Tensor must be of rank 2 to be trivially convertable to a matrix.
 tnsr2mtx (Tensor ts@(Tensor _:_)) _shp = matrix (length ts) (ts |> map tensor2reals |> concat)
-tnsr2mtx _ _ = undefined
+tnsr2mtx _ _ = error "Called tnsr2mtx with something not a tensor of tensors of scalars"
 
 -- injects
 inl :: Matrix RealNumber -> [LeftRightMultipliers]

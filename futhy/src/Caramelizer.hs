@@ -18,8 +18,11 @@ caramelizeLFun sfl = case sfl of
   Comp sf2 sf1  -> Comp (caramelizeLFun sf2) (caramelizeLFun sf1)
   Prj 2 1       -> Fst
   Prj 2 2       -> Snd
+  Prj _ _       -> error "invalid projection attempted desugar"
   Lplus sf2 sf1 -> Comp (Comp Add (Para (caramelizeLFun sf2) (caramelizeLFun sf1))) Dup
   Red _         -> sfl
   Add           -> sfl
+  Fst           -> sfl
+  Snd           -> sfl
   LMap sf1      -> LMap $ caramelizeLFun sf1
   Zip sfs       -> Zip $ map caramelizeLFun sfs

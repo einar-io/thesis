@@ -2,8 +2,8 @@ module Tests (main) where
 
 --import qualified Prelude
 import Prelude hiding (not)
-import qualified Numeric.LinearAlgebra ((<>))
-import Control.Monad (when)
+--import qualified Numeric.LinearAlgebra ((<>))
+--import Control.Monad (when)
 import Test.Tasty.HUnit
 import Test.Tasty
 import Flow
@@ -12,13 +12,13 @@ import Flow
 --import Prelude
 
 -- our libs
-import Optimizer
+--import Optimizer
 import Interpretor
 import Types
 import Compiler
-import Utils
+--import Utils
 import Caramelizer
-import Executor hiding (main)
+import Executor-- hiding (main)
 
 -- separate test files (called from here)
 import MatrixTests
@@ -399,22 +399,22 @@ addTests =
 --      $ quickCheckWith stdArgs { maxSuccess = 1 } propInterpretorCompilerEqual
 --    ]
 
-goodCaseOptimizer :: TestName -> LFun -> LFun -> TestTree
-goodCaseOptimizer name vin vout = testCase name $ optimize vin @?= vout
+--goodCaseOptimizer :: TestName -> LFun -> LFun -> TestTree
+--goodCaseOptimizer name vin vout = testCase name $ optimize vin @?= vout
 
-optimizerTests :: TestTree
-optimizerTests =
-  testGroup "Optimizer"
-    [ goodCaseOptimizer "Comp Id Id -> Id"
-      (Comp (Comp Id (Comp Id Id)) (Comp Id Id))
-      (Id)
-    , goodCaseOptimizer "Combining many scales"
-      (Comp (Comp (Scale 2.0) (Comp (Scale 2.0) (Comp (Comp (Scale 2.0) (Comp (Scale 2.0) (Scale 2.0))) (Comp (Scale 2.0) (Scale 2.0))))) (Comp (Scale 2.0) (Scale 2.0)))
-      (Scale 512.0)
-    , goodCaseOptimizer "Combining many paras"
-      (Comp (Comp (Para (Scale 2.0) (Scale 2.0)) (Comp (Para (Scale 2.0) (Scale 2.0)) (Comp (Comp (Para (Scale 2.0) (Scale 2.0)) (Comp (Para (Scale 2.0) (Scale 2.0)) (Para (Scale 2.0) (Scale 2.0)))) (Comp (Para (Scale 2.0) (Scale 2.0)) (Para (Scale 2.0) (Scale 2.0)))))) (Comp (Para (Scale 2.0) (Scale 2.0)) (Para (Scale 2.0) (Scale 2.0))))
-      (Para (Scale 512.0) (Scale 512.0))
-    , goodCaseOptimizer "Flattening"
-      (Comp (Comp (KZero) (Comp (KZero) (Comp (Comp (KZero) (Comp (KZero) (KZero))) (Comp (KZero) (KZero))))) (Comp (KZero) (KZero)))
-      (Comp KZero (Comp KZero (Comp KZero (Comp KZero (Comp KZero (Comp KZero (Comp KZero (Comp KZero KZero))))))))
-    ]
+--optimizerTests :: TestTree
+--optimizerTests =
+--  testGroup "Optimizer"
+--    [ goodCaseOptimizer "Comp Id Id -> Id"
+--      (Comp (Comp Id (Comp Id Id)) (Comp Id Id))
+--      (Id)
+--    , goodCaseOptimizer "Combining many scales"
+--      (Comp (Comp (Scale 2.0) (Comp (Scale 2.0) (Comp (Comp (Scale 2.0) (Comp (Scale 2.0) (Scale 2.0))) (Comp (Scale 2.0) (Scale 2.0))))) (Comp (Scale 2.0) (Scale 2.0)))
+--      (Scale 512.0)
+--   , goodCaseOptimizer "Combining many paras"
+--      (Comp (Comp (Para (Scale 2.0) (Scale 2.0)) (Comp (Para (Scale 2.0) (Scale 2.0)) (Comp (Comp (Para (Scale 2.0) (Scale 2.0)) (Comp (Para (Scale 2.0) (Scale 2.0)) (Para (Scale 2.0) (Scale 2.0)))) (Comp (Para (Scale 2.0) (Scale 2.0)) (Para (Scale 2.0) (Scale 2.0)))))) (Comp (Para (Scale 2.0) (Scale 2.0)) (Para (Scale 2.0) (Scale 2.0))))
+--      (Para (Scale 512.0) (Scale 512.0))
+--    , goodCaseOptimizer "Flattening"
+--      (Comp (Comp (KZero) (Comp (KZero) (Comp (Comp (KZero) (Comp (KZero) (KZero))) (Comp (KZero) (KZero))))) (Comp (KZero) (KZero)))
+--      (Comp KZero (Comp KZero (Comp KZero (Comp KZero (Comp KZero (Comp KZero (Comp KZero (Comp KZero KZero))))))))
+--    ]

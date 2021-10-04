@@ -36,13 +36,16 @@ optimizeRun lf = case lf of
 
   -- leaves
   Lplus _ _ -> error "LPlus should be desugared!"
+  Prj _ _ -> error "Projection should be desugared"
+
   Id -> lf
   Dup -> lf
   KZero -> lf
   Scale _ -> lf
   LSec _ _ -> lf
   RSec _ _ -> lf
-  Prj _ _ -> lf
+  Fst -> lf
+  Snd -> lf
   Red _ -> lf
   Add -> lf
   LMap _ -> lf

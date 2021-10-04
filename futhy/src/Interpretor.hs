@@ -94,9 +94,8 @@ interpret f v = case (f, v) of
   (RSec op r, _) -> Right $ applyOp op v r
   (Scale s, _)   -> Right $ outer (Scalar s) v
   (KZero, _)     -> Right Zero
-  (Prj 2 1, _) -> Right $ proj1 v
-  (Prj 2 2, _) -> Right $ proj2 v
-  (Prj _ _, _) -> Left "Invalid argument to Prj"
+  (Fst, _)       -> Right $ proj1 v
+  (Snd, _)       -> Right $ proj2 v
   (Lplus lfn rfn, _) -> do vl <- interpret lfn v
                            vr <- interpret rfn v
                            Right $ vl `vectorspacePlus` vr
@@ -129,6 +128,7 @@ interpret f v = case (f, v) of
                                                return (Tensor vs)
                                        else Left "Invalid pair of tensors. Lists values do not have same length."
   (Add, _) ->  Left "Invalid argument to Add"
+  (Prj _ _, _) -> Left "Projection should have been desugared"
 
 eval :: LFun -> Val -> String
 eval f v = show (interpret f v)

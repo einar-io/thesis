@@ -7,8 +7,8 @@ import Prelude hiding (not)
 import Test.Tasty.HUnit
 import Test.Tasty
 import Types
-import Numeric.LinearAlgebra hiding ((|>))
-import Data.Maybe
+--import Numeric.LinearAlgebra hiding ((|>))
+--import Data.Maybe
 import Flow
 import Control.Monad
 import Matrix
@@ -24,14 +24,25 @@ goodCompactMatrix name vin vout shp = testCase (" " ++ name)
 
 
 -- This function is inspired by the AP exam.
+not :: p -> [Char] -> LFun -> LFun -> (Int, Int) -> TestTree
 not _ name vin vout shp =
       let act = lfun2mtcs vin shp
-          exp = lfun2mtcs vout shp
+          expr = lfun2mtcs vout shp
        in testCase ("*" ++ name)
-            <| when (act == exp)
+            <| when (act == expr)
             <| assertFailure "Unexpected Success.  The values are supposed to be distinct."
 
 {- Example values -}
+a :: Val
+b :: Val
+c :: Val
+ab :: Val
+ba :: Val
+neye :: Val
+eye :: Val
+diag818 :: Val
+zero :: Val
+
 
 a = Tensor [ Tensor [Scalar 0, Scalar 1]
            , Tensor [Scalar 2, Scalar 3]
@@ -66,6 +77,7 @@ diag818 = Tensor [ Tensor [Scalar 818, Scalar 0]
 zero = Tensor [ Tensor [Scalar 0, Scalar 0]
               , Tensor [Scalar 0, Scalar 0]
               ]
+shp2x2 :: (Int, Int)
 shp2x2 = (2,2)
 
 matrixTests :: TestTree
