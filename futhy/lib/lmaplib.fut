@@ -8,10 +8,20 @@ let dupe a    = (a,a)
 let fst (a,_) = a
 let snd (_,b) = b
 let flip f x y = f y x
+let binaryToUnaryTuple f (x,y) = f x y
 
----- lmap operations
 let comp f g x = f (g x) --sequential application of two funs
 let para f g (a,b) = (f a, g b) --apply two funs to tuple of vals
+
+let toss_dummy_const f (_,a) = f a
+
+let hind_comp f g ((x,y),z) = f (x,(g (y,z)))
+
+let hind_para f g ((x,y),(a,b)) = (f (x,a), g (y,b))
+
+let unzipmap2 f = map2 (\x y -> f (x,y))
+
+let mktuple x y = (x,y )-- for partial application
 
 -- this is almost like monads
 -- derive the pattern and make it a higher order function
@@ -102,7 +112,6 @@ let neg_0 : r->r = (\x -> -x)
 let neg_1 = map neg_0
 let neg_2 = map neg_1
 let neg_3 = map neg_2
-
 
 -- -- --reduce
 let applyAsTuple f x y = f (x,y)

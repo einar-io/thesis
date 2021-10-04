@@ -56,7 +56,7 @@ goodCaseStaged name params = testGroup name [goodCaseInterpretor params, goodCas
 runAllTests :: TestTree
 runAllTests = testGroup "All features" <| concat
   [ map testFeature allFeatures
-  , [matrixTests]
+--  , [matrixTests]
   -- , [optimizerTests]
   ]
 
@@ -64,12 +64,12 @@ testFeature :: (String, [(String, LFun, Val, Val)]) -> TestTree
 testFeature (n,l) = testGroup n $ map (\(name, lf, vin, vout) -> goodCaseStaged name (lf, vin, vout)) l
 
 allFeatures :: [(String, [(String, LFun, Val, Val)])]
-allFeatures = wipFeatures <> doneFeatures
+allFeatures = wipFeatures -- <> doneFeatures
 
 wipFeatures :: [(String, [(String, LFun, Val, Val)])]
-wipFeatures = [ ("reduceTests", reduceTests)
-              , ("zipTests", zipTests)
-              , ("lmapTests", lmapTests)
+wipFeatures = [-- ("reduceTests", reduceTests)
+               ("zipTests", zipTests)
+             -- , ("lmapTests", lmapTests)
               ]
 
 doneFeatures :: [(String, [(String, LFun, Val, Val)])]
@@ -150,7 +150,7 @@ miscTests =
   [ ("Id (+) K0 $ (3.0, 5.0) -> (3.0, 0.0)"
         , Para Id KZero
         , Pair (Scalar 3.0) (Scalar 5.0)
-        , Pair (Scalar 3.0) Zero)
+        , Pair (Scalar 3.0) (Scalar 0.0))
   ]
 
 scaleTests :: [([Char], LFun, Val, Val)]
@@ -301,7 +301,7 @@ reduceTests =
   , ("Reduce primitive test: empty relation"
         , Red (List [])
         , Tensor [Scalar 0, Scalar 1,Scalar 2,Scalar 3]
-        , Zero)
+        , Tensor [Scalar 0, Scalar 0,Scalar 0,Scalar 0])
   , ("Reduce primitive test: empty values vector"
         , Red (List [(0,1), (2,3)])
         , Tensor []
@@ -337,20 +337,31 @@ lmapTests =
   [ ("LMap: map to zero"
           , LMap KZero
           , Tensor [Scalar (-1), Scalar 1, Scalar 2, Scalar 3]
-          , Tensor [Scalar (-0), Zero, Zero, Zero])
+          , Tensor [Scalar (-0), Scalar 0, Scalar 0, Scalar 0])
   ]
 
 zipTests :: [([Char], LFun, Val, Val)]
 zipTests =
-  [ ("Zip: simple functions"
-          , Zip [Id, Neg, Scale 45, KZero]
+  [ ("Zip: simple Scales"
+          , Zip [Scale 2, Scale 3, Scale 4, Scale 6]
           , Tensor [Scalar (-1), Scalar 1,Scalar 2,Scalar 3]
-          , Tensor [Scalar (-1), Scalar (-1),Scalar 90, Scalar 0])
-    {-
-    ("Zip: shape-changing functions"
-          , Zip [Dup, Dup, Dup, KZero]
-          , Tensor [Scalar (-1), Scalar 1,Scalar 1,Scalar 3]
-          , [(-1.0f32, -1.0f32), (1.0f32, 1.0f32), (1.0f32, 1.0f32), 0.0f32]) -}
+          , Tensor [Scalar (-2), Scalar 3,Scalar 8, Scalar 18])
+  , ("Zip: dot products"
+          , Zip [LSec (Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]) DotProd, LSec (Tensor [Scalar 4.0, Scalar 5.0, Scalar 6.0]) DotProd, LSec (Tensor [Scalar 7.0, Scalar 8.0, Scalar 9.0]) DotProd]
+          , Tensor [Tensor [Scalar 10, Scalar 11, Scalar 12], Tensor [Scalar 13, Scalar 14, Scalar 15], Tensor [Scalar 16, Scalar 17, Scalar 18]]
+          , Tensor [Scalar 68, Scalar 212, Scalar 410])
+  , ("Zip: dup"
+          , Zip [Dup, Dup, Dup]
+          , Tensor [Scalar (-1), Scalar 1,Scalar 3]
+          , Tensor [Pair (Scalar (-1)) (Scalar (-1)), Pair (Scalar 1) (Scalar 1),Pair (Scalar 3) (Scalar 3)])
+  , ("Zip: comp add dup"
+          , Zip [Comp Add Dup, Comp Add Dup, Comp Add Dup]
+          , Tensor [Scalar (-1), Scalar 1,Scalar 3]
+          , Tensor [Scalar (-2), Scalar 2, Scalar 6])
+  , ("Zip: comp dup scale"
+          , Zip [Comp Dup (Scale 2), Comp Dup (Scale 2), Comp Dup (Scale 2)]
+          , Tensor [Scalar (-1), Scalar 1,Scalar 3]
+          , Tensor [Pair (Scalar (-2)) (Scalar (-2)), Pair (Scalar 2) (Scalar 2),Pair (Scalar 6) (Scalar 6)])
 
   ]
 
