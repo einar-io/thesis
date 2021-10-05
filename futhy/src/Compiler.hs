@@ -33,7 +33,6 @@ arityAnnotation a1 a2 = "_" <> show a1 <> "_" <> show a2
 getLastCountAndArity :: Compiler (Count, Arity)
 getLastCountAndArity = Co (\cs@(_, arit, cnt) -> ((cnt-1, arit), cs))
 
--- Lines Of Code
 genLineOfCode :: Arity -> Program -> Compiler ()
 genLineOfCode r fun =
   Co (\(p, _, c) ->
@@ -67,11 +66,12 @@ compileLFun linfun a1 = case (linfun, a1) of
   (LMap lf, Atom n) -> do compileLFun lf $ Atom $ n-1
                           (c2, _) <- getLastCountAndArity
                           genLineOfCode a1 ("map" <> " fun" <> show c2)
-  (Zip lfs, Atom 0)    -> error "zip not meaningful for an Atom 0 argument"
+  (Zip _, Atom 0)    -> error "zip not meaningful for an Atom 0 argument"
   (Zip lfs, Atom n)    -> do let ((hf:_), vs@(hv:_)) = unzip $ map decurryLFun lfs
                              nonapplyLFunP hf hv (Atom $ n-1)
                              (c2, _) <- getLastCountAndArity
                              genLineOfCode a1 ("unzipmap2" <> " fun" <> show c2 <> " " <> show vs)
+  (Zip _, _) -> error "sadasdasd"
 
 --- error section
   (Red (List _), _)  -> error "Meaningless arity given to Red."
@@ -133,7 +133,7 @@ nonapplyLFunP lfp1 v1 a1 = case (lfp1, a1, v1) of
                                            (c2, _) <- getLastCountAndArity
                                            genLineOfCode a1 ("map" <> " fun" <> show c2)
 
-  (ZipP lfp2, Atom 0, _) -> error "Zip not meaningful for an Atom 0 argument"
+  (ZipP _, Atom 0, _) -> error "Zip not meaningful for an Atom 0 argument"
   (ZipP lfp2, Atom n, Tensor (h:_)) -> do nonapplyLFunP lfp2 h (Atom $ n-1)
                                           (c2, _) <- getLastCountAndArity
                                           genLineOfCode a1 ("map2" <> " (\\x -> fun" <> show c2 <> " x)")

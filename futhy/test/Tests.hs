@@ -362,7 +362,10 @@ zipTests =
           , Zip [Comp Dup (Scale 2), Comp Dup (Scale 2), Comp Dup (Scale 2)]
           , Tensor [Scalar (-1), Scalar 1,Scalar 3]
           , Tensor [Pair (Scalar (-2)) (Scalar (-2)), Pair (Scalar 2) (Scalar 2),Pair (Scalar 6) (Scalar 6)])
-
+  , ("Zip: para scale scale"
+          , Zip [Para (Scale 1) (Scale 2), Para (Scale 3) (Scale 4), Para (Scale 3) (Scale 4)]
+          , Tensor [Pair (Scalar (-1)) (Scalar (-2)), Pair (Scalar 5) (Scalar 6),Pair (Scalar 7) (Scalar 8)]
+          , Tensor [Pair (Scalar (-1)) (Scalar (-4)), Pair (Scalar 15) (Scalar 24),Pair (Scalar 21) (Scalar 32)])
   ]
 
 addTests :: [(String, LFun, Val, Val)]
