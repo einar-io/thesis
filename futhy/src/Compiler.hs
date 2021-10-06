@@ -118,13 +118,13 @@ nonapplyLFunP lfp1 v1 a1 = case (lfp1, a1, v1) of
                                           (c2, a2) <- getLastCountAndArity
                                           nonapplyLFunP lfp3 v3 a2
                                           (c3, a3) <- getLastCountAndArity
-                                          genLineOfCode a3 ("hind_comp" <> " fun" <> show c3 <> " fun" <> show c2)
+                                          genLineOfCode a3 ("pass_consts_comp" <> " fun" <> show c3 <> " fun" <> show c2)
   -- TODO: do these work?
   (ParaP lfp3 lfp2, APair a3 a2, Pair v3 v2) -> do nonapplyLFunP lfp2 v2 a2
                                                    (c4, a4) <- getLastCountAndArity
                                                    nonapplyLFunP lfp3 v3 a3
                                                    (c5, a5) <- getLastCountAndArity
-                                                   genLineOfCode (APair a5 a4) ("hind_para" <> " fun" <> show c5 <> " fun" <> show c4)
+                                                   genLineOfCode (APair a5 a4) ("pass_consts__para" <> " fun" <> show c5 <> " fun" <> show c4)
 
   (LMapP _, Atom 0, _) -> error "LMapP not meaningful for an Atom 0 argument"
   (LMapP lfp2, Atom n, Tensor (h:_)) -> do nonapplyLFunP lfp2 h (Atom $ n-1)
