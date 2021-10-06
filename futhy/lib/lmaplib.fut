@@ -8,7 +8,6 @@ let dupe a    = (a,a)
 let fst (a,_) = a
 let snd (_,b) = b
 let flip f x y = f y x
-let binaryToUnaryTuple f (x,y) = f x y
 
 let comp f g x = f (g x) --sequential application of two funs
 let para f g (a,b) = (f a, g b) --apply two funs to tuple of vals

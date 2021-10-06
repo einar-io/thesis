@@ -110,10 +110,8 @@ nonapplyLFunP lfp1 v1 a1 = case (lfp1, a1, v1) of
   (RedP (List _), Atom 0, _)  -> error "Red not meaningful for an Atom 0 argument"
   (RedP (List ls), Atom n, _) -> genLineOfCode a1 ("toss_dummy_const reduce_" <> show n <> " " <> show ls)
 
-  -- TODO: do these work?
-  (LSecP op, _, v) -> genLineOfCode a1 $ "binaryToUnaryTuple " <> (biop op (getArity v) a1)  -- <> " " <> show v)
-  -- TODO: do these work?
-  (RSecP op, _, v) -> genLineOfCode a1 $ "binaryToUnaryTuple " <> ("flip " <> biop op (getArity v) a1) -- <> " " <> show v)
+  (LSecP op, _, v) -> genLineOfCode a1 $ "uncurry " <> (biop op (getArity v) a1)  -- <> " " <> show v)
+  (RSecP op, _, v) -> genLineOfCode a1 $ "uncurry " <> ("flip " <> biop op (getArity v) a1) -- <> " " <> show v)
 
   -- TODO: do these work?
   (CompP lfp3 lfp2, _, Pair v3 v2) ->  do nonapplyLFunP lfp2 v2 a1
