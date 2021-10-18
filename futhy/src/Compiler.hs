@@ -30,8 +30,8 @@ biop b a1 a2 =  let base = case b of
 arityAnnotation :: Arity -> Arity -> String
 arityAnnotation a1 a2 = "_" <> show a1 <> "_" <> show a2
 
-getLastCountAndArity :: Compiler (Count, Arity)
-getLastCountAndArity = Co (\cs@(_, arit, cnt) -> ((cnt-1, arit), cs))
+getLastFunIdAndArity :: Compiler (String, Arity)
+getLastFunIdAndArity = Co (\cs@(_, arit, cnt) -> ((" fun" <> show (cnt-1), arit), cs))
 
 genLineOfCode :: Arity -> Program -> Compiler ()
 genLineOfCode r fun =
@@ -53,25 +53,26 @@ compileLFun linfun a1 = case (linfun, a1) of
   (LSec v b, _)        -> genLineOfCode a1 (biop b (getArity v) a1 <> " " <> show v)
   (RSec b v, _)        -> genLineOfCode a1 ("flip " <> biop b (getArity v) a1 <> " " <> show v)
   (Comp lf3 lf2, _) -> do compileLFun lf2 a1
-                          (c2, a2) <- getLastCountAndArity
+                          (id2, a2) <- getLastFunIdAndArity
                           compileLFun lf3 a2
-                          (c3, a3) <- getLastCountAndArity
-                          genLineOfCode a3 ("comp" <> " fun" <> show c3 <> " fun" <> show c2)
+                          (id3, a3) <- getLastFunIdAndArity
+                          genLineOfCode a3 ("comp" <> id3 <> id2)
   (Para lf3 lf2, APair a3 a2) -> do compileLFun lf2 a2
-                                    (c4, a4) <- getLastCountAndArity
+                                    (id4, a4) <- getLastFunIdAndArity
                                     compileLFun lf3 a3
-                                    (c5, a5) <- getLastCountAndArity
-                                    genLineOfCode (APair a5 a4) ("para" <> " fun" <> show c5 <> " fun" <> show c4)
+                                    (id5, a5) <- getLastFunIdAndArity
+                                    genLineOfCode (APair a5 a4) ("para" <> id5 <> id4)
   (LMap _, Atom 0) -> error "LMap not meaningful for an Atom 0 argument"
   (LMap lf, Atom n) -> do compileLFun lf $ Atom $ n-1
-                          (c2, _) <- getLastCountAndArity
-                          genLineOfCode a1 ("map" <> " fun" <> show c2)
+                          (id2, _) <- getLastFunIdAndArity
+                          genLineOfCode a1 ("map" <> id2)
   (Zip _, Atom 0)    -> error "zip not meaningful for an Atom 0 argument"
   (Zip lfs, Atom n)    -> do let ((hf:_), vs@(hv:_)) = unzip $ map decurryLFun lfs
                              nonapplyLFunP hf hv (Atom $ n-1)
-                             (c2, _) <- getLastCountAndArity
-                             genLineOfCode a1 ("unzipmap2" <> " fun" <> show c2 <> " " <> show vs)
-  (Zip _, _) -> error "sadasdasd"
+                             (id2, _) <- getLastFunIdAndArity
+                             genLineOfCode a1 ("unzipmap2" <> id2 <> " " <> show vs)
+
+  (Zip _, _) -> error "illegal zip"
 
 --- error section
   (Red (List _), _)  -> error "Meaningless arity given to Red."
@@ -87,7 +88,6 @@ compileLFun linfun a1 = case (linfun, a1) of
   (Lplus _ _, _)     -> error "Lplus should have been desugared!"
 -- missing impl
   (Red _, _)         -> error "This relation not implemented in compiler"
-
 
 -- the Val is the constant(s) needed to partially apply the LFunP and turn it into a unary LFun.
 -- those that are already unary are given Zero as a dummy value, to be ignored.
@@ -113,28 +113,26 @@ nonapplyLFunP lfp1 v1 a1 = case (lfp1, a1, v1) of
   (LSecP op, _, v) -> genLineOfCode a1 $ "uncurry " <> (biop op (getArity v) a1)  -- <> " " <> show v)
   (RSecP op, _, v) -> genLineOfCode a1 $ "uncurry " <> ("flip " <> biop op (getArity v) a1) -- <> " " <> show v)
 
-  -- TODO: do these work?
-  (CompP lfp3 lfp2, _, Pair v3 v2) ->  do nonapplyLFunP lfp2 v2 a1
-                                          (c2, a2) <- getLastCountAndArity
-                                          nonapplyLFunP lfp3 v3 a2
-                                          (c3, a3) <- getLastCountAndArity
-                                          genLineOfCode a3 ("pass_consts_comp" <> " fun" <> show c3 <> " fun" <> show c2)
-  -- TODO: do these work?
+  (CompP lfp3 lfp2, _, Pair v3 v2) -> do nonapplyLFunP lfp2 v2 a1
+                                         (id2, a2) <- getLastFunIdAndArity
+                                         nonapplyLFunP lfp3 v3 a2
+                                         (id3, a3) <- getLastFunIdAndArity
+                                         genLineOfCode a3 ("pass_consts_comp" <> id3 <> id2)
   (ParaP lfp3 lfp2, APair a3 a2, Pair v3 v2) -> do nonapplyLFunP lfp2 v2 a2
-                                                   (c4, a4) <- getLastCountAndArity
+                                                   (id4, a4) <- getLastFunIdAndArity
                                                    nonapplyLFunP lfp3 v3 a3
-                                                   (c5, a5) <- getLastCountAndArity
-                                                   genLineOfCode (APair a5 a4) ("pass_consts__para" <> " fun" <> show c5 <> " fun" <> show c4)
+                                                   (id5, a5) <- getLastFunIdAndArity
+                                                   genLineOfCode (APair a5 a4) ("pass_consts__para" <> id5 <> id4)
 
   (LMapP _, Atom 0, _) -> error "LMapP not meaningful for an Atom 0 argument"
   (LMapP lfp2, Atom n, Tensor (h:_)) -> do nonapplyLFunP lfp2 h (Atom $ n-1)
-                                           (c2, _) <- getLastCountAndArity
-                                           genLineOfCode a1 ("map" <> " fun" <> show c2)
+                                           (id2, _) <- getLastFunIdAndArity
+                                           genLineOfCode a1 ("map" <> id2)
 
   (ZipP _, Atom 0, _) -> error "Zip not meaningful for an Atom 0 argument"
-  (ZipP lfp2, Atom n, Tensor (h:_)) -> do nonapplyLFunP lfp2 h (Atom $ n-1)
-                                          (c2, _) <- getLastCountAndArity
-                                          genLineOfCode a1 ("map2" <> " (\\x -> fun" <> show c2 <> " x)")
+  (ZipP lfp2, Atom n, Tensor (hv:_)) -> do nonapplyLFunP lfp2 hv (Atom $ n-1)
+                                           (id2, _) <- getLastFunIdAndArity
+                                           genLineOfCode a1 ("unzipmap2" <> id2)
 
 --- error section
   (RedP (List _), _, _)  -> error "Meaningless arity given to RedP."

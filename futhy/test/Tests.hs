@@ -30,16 +30,13 @@ main :: IO ()
 main = defaultMain $ localOption (mkTimeout $ second * 30) runAllTests
 
 goodCaseInterpretor :: (LFun, Val, Val) -> TestTree
-goodCaseInterpretor (lf, vin, vout) = testCase "Interpretor" $ interpret (caramelizeLFun lf) vin @?= return vout
+goodCaseInterpretor (lf, vin, vout) = testCase "Interpretor" $ interpret (caramelizeLFun lf) (caramelizeVal vin) @?= return (caramelizeVal vout)
 
 goodCaseExecution :: (LFun, Val, Val) -> TestTree
 goodCaseExecution (sugary_lf, sugary_vin, sugary_vout) =
   let (lf, vin, vout) = (caramelizeLFun sugary_lf, caramelizeVal sugary_vin, caramelizeVal sugary_vout) in
   testCase "Compiler" $ do compileRes <- runStrArg (compileProgram lf (getArity vin)) C (stdinShow vin)
                            compileResStr  <- case compileRes of
-                                              {-Right (Output (_, res, _)) -> return res
-                                              e -> assertFailure $ show e
-                                              -}
                                               Right (CommandResult (_, res, _)) -> return res
                                               e -> assertFailure $ show e
                            intComp <- runStr ("entry main = " <> show vout) C
@@ -366,6 +363,10 @@ zipTests =
           , Zip [Para (Scale 1) (Scale 2), Para (Scale 3) (Scale 4), Para (Scale 3) (Scale 4)]
           , Tensor [Pair (Scalar (-1)) (Scalar (-2)), Pair (Scalar 5) (Scalar 6),Pair (Scalar 7) (Scalar 8)]
           , Tensor [Pair (Scalar (-1)) (Scalar (-4)), Pair (Scalar 15) (Scalar 24),Pair (Scalar 21) (Scalar 32)])
+  , ("Para: Zip scale Zip scale"
+          , Para (Zip [Scale 1, Scale 3,Scale 3]) (Zip [Scale 2,Scale 4, Scale 4])
+          , Pair (Tensor [Scalar (-1), Scalar 5, Scalar 7]) (Tensor [Scalar (-2), Scalar 6, Scalar 8])
+          , Pair (Tensor [Scalar (-1), Scalar 15, Scalar 21]) (Tensor [Scalar (-4), Scalar 24, Scalar 32]))
   ]
 
 addTests :: [(String, LFun, Val, Val)]
