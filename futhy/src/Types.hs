@@ -4,12 +4,13 @@ module Types where
 
 import Control.Monad.Reader
 import Control.Monad.Except
-import GHC.IO.Exception (ExitCode)
+import GHC.IO.Exception( ExitCode ( ExitFailure ) )
 import Data.List (intercalate)
 import Data.Char (toLower)
 import Flow
 
 type RealNumber = Double
+type Index = Int
 
 data Val
   = Scalar RealNumber
@@ -160,6 +161,12 @@ data Env = Env
   , be :: Backend
   }
 
+
+isExitFailure :: ExitCode -> Bool
+isExitFailure (ExitFailure _) = True
+isExitFailure _               = False
+
+
 -- The data contained in the Right constructur of ExceptT trans:
 -- Maybe rename this to CmdResult
 type Stdin  = String
@@ -199,4 +206,3 @@ type InterpretorError    = String
 type InterpretorResult   = Val
 type InterpretorOutput a = Either InterpretorError a
 
-type Index = Int

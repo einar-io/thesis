@@ -6,16 +6,20 @@ module Matrix
   , lfun2mtcs
   , tnsr2mtx
   , compaction
-  , (@@)
+  , sparse2dense
+  , dense2matrix
+  , (@@) -- matmul
   )
   where
 
---import qualified Prelude
 import Prelude hiding ((<>))
 import Types
 import Numeric.LinearAlgebra hiding ((|>))
 import Flow
---import Control.Monad
+
+type Shape = (Int, Int)
+type LeftRightMultipliers = ([Matrix RealNumber], [Matrix RealNumber])
+
 
 {- MODULE DESCRIPTION
  - This module contains machinery for converting LFuns to matrices
@@ -40,9 +44,6 @@ import Flow
 (@@) :: Matrix RealNumber -> Matrix RealNumber -> Matrix RealNumber
 (@@) = (Numeric.LinearAlgebra.<>)
 
-type Shape = (Int, Int)
-type LeftRightMultipliers = ([Matrix RealNumber], [Matrix RealNumber])
-
 scalar2real :: Val -> RealNumber
 scalar2real (Scalar s) = s
 
@@ -52,7 +53,7 @@ tensor2reals (Tensor vs) = map scalar2real vs
 tnsr2mtx :: Val -> Shape -> Matrix RealNumber
 -- Tensor must be of rank 2 to be trivially convertable to a matrix.
 tnsr2mtx (Tensor ts@(Tensor _:_)) _shp = matrix (length ts) (ts |> map tensor2reals |> concat)
-tnsr2mtx _ _ = undefined
+tnsr2mtx (SparseTensor ss@(SparseTensor kvs)) shp = tnsr2mtx (sparse2dense ss) shp
 
 -- injects
 inl :: Matrix RealNumber -> [LeftRightMultipliers]
@@ -107,3 +108,11 @@ compaction :: LeftRightMultipliers -> Shape -> LeftRightMultipliers
 compaction (lfns, rfns) (m, _n) =
   let fmm = foldr (@@) (ident m)
    in ([fmm lfns], [fmm rfns])
+
+{-
+sparseVec2denseVec :: Val -> Vector RealNumber
+sparseVec2denseVec (SparseTensor alist) =
+  let amtx = map (\(i, Scalar rn) -> (i, rn)) alist :: AssocMatrix
+   in toDense amtx
+sparse2dense _ = undefined
+-}
