@@ -2,8 +2,8 @@ module Tests (main) where
 
 --import qualified Prelude
 import Prelude hiding (not)
-import qualified Numeric.LinearAlgebra ((<>))
-import Control.Monad (when)
+--import qualified Numeric.LinearAlgebra ((<>))
+--import Control.Monad (when)
 import Test.Tasty.HUnit
 import Test.Tasty
 import Flow
@@ -12,13 +12,13 @@ import Flow
 --import Prelude
 
 -- our libs
-import Optimizer
+--import Optimizer
 import Interpretor
 import Types
 import Compiler
-import Utils
+--import Utils
 import Caramelizer
-import Executor hiding (main)
+import Executor-- hiding (main)
 
 -- separate test files (called from here)
 import MatrixTests
@@ -30,16 +30,13 @@ main :: IO ()
 main = defaultMain $ localOption (mkTimeout $ second * 30) runAllTests
 
 goodCaseInterpretor :: (LFun, Val, Val) -> TestTree
-goodCaseInterpretor (lf, vin, vout) = testCase "Interpretor" $ interpret (caramelizeLFun lf) vin @?= return vout
+goodCaseInterpretor (lf, vin, vout) = testCase "Interpretor" $ interpret (caramelizeLFun lf) (caramelizeVal vin) @?= return (caramelizeVal vout)
 
 goodCaseExecution :: (LFun, Val, Val) -> TestTree
 goodCaseExecution (sugary_lf, sugary_vin, sugary_vout) =
   let (lf, vin, vout) = (caramelizeLFun sugary_lf, caramelizeVal sugary_vin, caramelizeVal sugary_vout) in
   testCase "Compiler" $ do compileRes <- runStrArg (compileProgram lf (getArity vin)) C (stdinShow vin)
                            compileResStr  <- case compileRes of
-                                              {-Right (Output (_, res, _)) -> return res
-                                              e -> assertFailure $ show e
-                                              -}
                                               Right (CommandResult (_, res, _)) -> return res
                                               e -> assertFailure $ show e
                            intComp <- runStr ("entry main = " <> show vout) C
@@ -56,7 +53,7 @@ goodCaseStaged name params = testGroup name [goodCaseInterpretor params, goodCas
 runAllTests :: TestTree
 runAllTests = testGroup "All features" <| concat
   [ map testFeature allFeatures
-  , [matrixTests]
+--  , [matrixTests]
   -- , [optimizerTests]
   ]
 
@@ -64,12 +61,12 @@ testFeature :: (String, [(String, LFun, Val, Val)]) -> TestTree
 testFeature (n,l) = testGroup n $ map (\(name, lf, vin, vout) -> goodCaseStaged name (lf, vin, vout)) l
 
 allFeatures :: [(String, [(String, LFun, Val, Val)])]
-allFeatures = wipFeatures <> doneFeatures
+allFeatures = wipFeatures -- <> doneFeatures
 
 wipFeatures :: [(String, [(String, LFun, Val, Val)])]
-wipFeatures = [ ("reduceTests", reduceTests)
-              , ("zipTests", zipTests)
-              , ("lmapTests", lmapTests)
+wipFeatures = [-- ("reduceTests", reduceTests)
+               ("zipTests", zipTests)
+             -- , ("lmapTests", lmapTests)
               ]
 
 doneFeatures :: [(String, [(String, LFun, Val, Val)])]
@@ -150,7 +147,7 @@ miscTests =
   [ ("Id (+) K0 $ (3.0, 5.0) -> (3.0, 0.0)"
         , Para Id KZero
         , Pair (Scalar 3.0) (Scalar 5.0)
-        , Pair (Scalar 3.0) Zero)
+        , Pair (Scalar 3.0) (Scalar 0.0))
   ]
 
 scaleTests :: [([Char], LFun, Val, Val)]
@@ -301,7 +298,7 @@ reduceTests =
   , ("Reduce primitive test: empty relation"
         , Red (List [])
         , Tensor [Scalar 0, Scalar 1,Scalar 2,Scalar 3]
-        , Zero)
+        , Tensor [Scalar 0, Scalar 0,Scalar 0,Scalar 0])
   , ("Reduce primitive test: empty values vector"
         , Red (List [(0,1), (2,3)])
         , Tensor []
@@ -337,21 +334,39 @@ lmapTests =
   [ ("LMap: map to zero"
           , LMap KZero
           , Tensor [Scalar (-1), Scalar 1, Scalar 2, Scalar 3]
-          , Tensor [Scalar (-0), Zero, Zero, Zero])
+          , Tensor [Scalar (-0), Scalar 0, Scalar 0, Scalar 0])
   ]
 
 zipTests :: [([Char], LFun, Val, Val)]
 zipTests =
-  [ ("Zip: simple functions"
-          , Zip [Id, Neg, Scale 45, KZero]
+  [ ("Zip: simple Scales"
+          , Zip [Scale 2, Scale 3, Scale 4, Scale 6]
           , Tensor [Scalar (-1), Scalar 1,Scalar 2,Scalar 3]
-          , Tensor [Scalar (-1), Scalar (-1),Scalar 90, Scalar 0])
-    {-
-    ("Zip: shape-changing functions"
-          , Zip [Dup, Dup, Dup, KZero]
-          , Tensor [Scalar (-1), Scalar 1,Scalar 1,Scalar 3]
-          , [(-1.0f32, -1.0f32), (1.0f32, 1.0f32), (1.0f32, 1.0f32), 0.0f32]) -}
-
+          , Tensor [Scalar (-2), Scalar 3,Scalar 8, Scalar 18])
+  , ("Zip: dot products"
+          , Zip [LSec (Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]) DotProd, LSec (Tensor [Scalar 4.0, Scalar 5.0, Scalar 6.0]) DotProd, LSec (Tensor [Scalar 7.0, Scalar 8.0, Scalar 9.0]) DotProd]
+          , Tensor [Tensor [Scalar 10, Scalar 11, Scalar 12], Tensor [Scalar 13, Scalar 14, Scalar 15], Tensor [Scalar 16, Scalar 17, Scalar 18]]
+          , Tensor [Scalar 68, Scalar 212, Scalar 410])
+  , ("Zip: dup"
+          , Zip [Dup, Dup, Dup]
+          , Tensor [Scalar (-1), Scalar 1,Scalar 3]
+          , Tensor [Pair (Scalar (-1)) (Scalar (-1)), Pair (Scalar 1) (Scalar 1),Pair (Scalar 3) (Scalar 3)])
+  , ("Zip: comp add dup"
+          , Zip [Comp Add Dup, Comp Add Dup, Comp Add Dup]
+          , Tensor [Scalar (-1), Scalar 1,Scalar 3]
+          , Tensor [Scalar (-2), Scalar 2, Scalar 6])
+  , ("Zip: comp dup scale"
+          , Zip [Comp Dup (Scale 2), Comp Dup (Scale 2), Comp Dup (Scale 2)]
+          , Tensor [Scalar (-1), Scalar 1,Scalar 3]
+          , Tensor [Pair (Scalar (-2)) (Scalar (-2)), Pair (Scalar 2) (Scalar 2),Pair (Scalar 6) (Scalar 6)])
+  , ("Zip: para scale scale"
+          , Zip [Para (Scale 1) (Scale 2), Para (Scale 3) (Scale 4), Para (Scale 3) (Scale 4)]
+          , Tensor [Pair (Scalar (-1)) (Scalar (-2)), Pair (Scalar 5) (Scalar 6),Pair (Scalar 7) (Scalar 8)]
+          , Tensor [Pair (Scalar (-1)) (Scalar (-4)), Pair (Scalar 15) (Scalar 24),Pair (Scalar 21) (Scalar 32)])
+  , ("Para: Zip scale Zip scale"
+          , Para (Zip [Scale 1, Scale 3,Scale 3]) (Zip [Scale 2,Scale 4, Scale 4])
+          , Pair (Tensor [Scalar (-1), Scalar 5, Scalar 7]) (Tensor [Scalar (-2), Scalar 6, Scalar 8])
+          , Pair (Tensor [Scalar (-1), Scalar 15, Scalar 21]) (Tensor [Scalar (-4), Scalar 24, Scalar 32]))
   ]
 
 addTests :: [(String, LFun, Val, Val)]
@@ -399,22 +414,22 @@ addTests =
 --      $ quickCheckWith stdArgs { maxSuccess = 1 } propInterpretorCompilerEqual
 --    ]
 
-goodCaseOptimizer :: TestName -> LFun -> LFun -> TestTree
-goodCaseOptimizer name vin vout = testCase name $ optimize vin @?= vout
+--goodCaseOptimizer :: TestName -> LFun -> LFun -> TestTree
+--goodCaseOptimizer name vin vout = testCase name $ optimize vin @?= vout
 
-optimizerTests :: TestTree
-optimizerTests =
-  testGroup "Optimizer"
-    [ goodCaseOptimizer "Comp Id Id -> Id"
-      (Comp (Comp Id (Comp Id Id)) (Comp Id Id))
-      (Id)
-    , goodCaseOptimizer "Combining many scales"
-      (Comp (Comp (Scale 2.0) (Comp (Scale 2.0) (Comp (Comp (Scale 2.0) (Comp (Scale 2.0) (Scale 2.0))) (Comp (Scale 2.0) (Scale 2.0))))) (Comp (Scale 2.0) (Scale 2.0)))
-      (Scale 512.0)
-    , goodCaseOptimizer "Combining many paras"
-      (Comp (Comp (Para (Scale 2.0) (Scale 2.0)) (Comp (Para (Scale 2.0) (Scale 2.0)) (Comp (Comp (Para (Scale 2.0) (Scale 2.0)) (Comp (Para (Scale 2.0) (Scale 2.0)) (Para (Scale 2.0) (Scale 2.0)))) (Comp (Para (Scale 2.0) (Scale 2.0)) (Para (Scale 2.0) (Scale 2.0)))))) (Comp (Para (Scale 2.0) (Scale 2.0)) (Para (Scale 2.0) (Scale 2.0))))
-      (Para (Scale 512.0) (Scale 512.0))
-    , goodCaseOptimizer "Flattening"
-      (Comp (Comp (KZero) (Comp (KZero) (Comp (Comp (KZero) (Comp (KZero) (KZero))) (Comp (KZero) (KZero))))) (Comp (KZero) (KZero)))
-      (Comp KZero (Comp KZero (Comp KZero (Comp KZero (Comp KZero (Comp KZero (Comp KZero (Comp KZero KZero))))))))
-    ]
+--optimizerTests :: TestTree
+--optimizerTests =
+--  testGroup "Optimizer"
+--    [ goodCaseOptimizer "Comp Id Id -> Id"
+--      (Comp (Comp Id (Comp Id Id)) (Comp Id Id))
+--      (Id)
+--    , goodCaseOptimizer "Combining many scales"
+--      (Comp (Comp (Scale 2.0) (Comp (Scale 2.0) (Comp (Comp (Scale 2.0) (Comp (Scale 2.0) (Scale 2.0))) (Comp (Scale 2.0) (Scale 2.0))))) (Comp (Scale 2.0) (Scale 2.0)))
+--      (Scale 512.0)
+--   , goodCaseOptimizer "Combining many paras"
+--      (Comp (Comp (Para (Scale 2.0) (Scale 2.0)) (Comp (Para (Scale 2.0) (Scale 2.0)) (Comp (Comp (Para (Scale 2.0) (Scale 2.0)) (Comp (Para (Scale 2.0) (Scale 2.0)) (Para (Scale 2.0) (Scale 2.0)))) (Comp (Para (Scale 2.0) (Scale 2.0)) (Para (Scale 2.0) (Scale 2.0)))))) (Comp (Para (Scale 2.0) (Scale 2.0)) (Para (Scale 2.0) (Scale 2.0))))
+--      (Para (Scale 512.0) (Scale 512.0))
+--    , goodCaseOptimizer "Flattening"
+--      (Comp (Comp (KZero) (Comp (KZero) (Comp (Comp (KZero) (Comp (KZero) (KZero))) (Comp (KZero) (KZero))))) (Comp (KZero) (KZero)))
+--      (Comp KZero (Comp KZero (Comp KZero (Comp KZero (Comp KZero (Comp KZero (Comp KZero (Comp KZero KZero))))))))
+--    ]
