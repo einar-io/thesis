@@ -1,4 +1,4 @@
-module Decurryer where
+module Parameterizer where
 import Types
 
 data LFunP -- expr
@@ -20,8 +20,8 @@ data LFunP -- expr
 dummyValue :: Val
 dummyValue = Scalar 9999999999
 
-decurryLFun :: LFun -> (LFunP, Val)
-decurryLFun lf = case lf of
+parameterizeLFun :: LFun -> (LFunP, Val)
+parameterizeLFun lf = case lf of
   Id            -> (IdP, dummyValue)
   Dup           -> (DupP, dummyValue)
   Fst           -> (FstP, dummyValue)
@@ -31,16 +31,16 @@ decurryLFun lf = case lf of
   Red r         -> (RedP r, dummyValue)
   LSec v op     -> (LSecP op, v)
   RSec op v     -> (RSecP op, v)
-  LMap lf2      -> let (lf2i, v) = decurryLFun lf2 in (LMapP lf2i, v)
-  Para lf3 lf2  -> let (lf2i, v2) = decurryLFun lf2 in
-                   let (lf3i, v3) = decurryLFun lf3 in
+  LMap lf2      -> let (lf2i, v) = parameterizeLFun lf2 in (LMapP lf2i, v)
+  Para lf3 lf2  -> let (lf2i, v2) = parameterizeLFun lf2 in
+                   let (lf3i, v3) = parameterizeLFun lf3 in
                    (ParaP lf3i lf2i, (Pair v3 v2))
-  Comp lf3 lf2  -> let (lf2i, v2) = decurryLFun lf2 in
-                   let (lf3i, v3) = decurryLFun lf3 in
+  Comp lf3 lf2  -> let (lf2i, v2) = parameterizeLFun lf2 in
+                   let (lf3i, v3) = parameterizeLFun lf3 in
                    (CompP lf3i lf2i, (Pair v3 v2))
                    -- assumes that the lfsis are identical
                    -- TODO: assert it!
-  Zip lfs       -> let ((h:_), vis) = unzip $ map decurryLFun lfs in
+  Zip lfs       -> let ((h:_), vis) = unzip $ map parameterizeLFun lfs in
                    (ZipP h, Tensor vis) -- HACK: doesnt keep tensor constraints
 
   Prj _ _       -> error "Proj should be desugared"

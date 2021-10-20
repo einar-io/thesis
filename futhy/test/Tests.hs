@@ -47,8 +47,24 @@ goodCaseExecution (sugary_lf, sugary_vin, sugary_vout) =
                             False -> assertFailure $ show (compileResStr, interpResStrn)
                             True -> return ()
 
+goodCaseParameterized :: (LFun, Val, Val) -> TestTree
+goodCaseParameterized (sugary_lf, sugary_vin, sugary_vout) =
+  let (lf_t, vin_t, vout_t) = (caramelizeLFun sugary_lf, caramelizeVal sugary_vin, caramelizeVal sugary_vout) in
+  let (lf, vin, vout) = (Zip [lf_t], Tensor [vin_t], Tensor [vout_t]) in
+  testCase "Parameterized" $ do compileRes <- runStrArg (compileProgram lf (getArity vin)) C (stdinShow vin)
+                                compileResStr <- case compileRes of
+                                                  Right (CommandResult (_, res, _)) -> return res
+                                                  e -> assertFailure $ show e
+                                intComp <- runStr ("entry main = " <> show vout) C
+                                interpResStrn <- case intComp of
+                                                  Right (CommandResult (_, res, _)) -> return res
+                                                  e -> assertFailure $ show e
+                                case (compileResStr == interpResStrn) of
+                                  False -> assertFailure $ show (compileResStr, interpResStrn)
+                                  True -> return ()
+
 goodCaseStaged :: TestName -> (LFun, Val, Val) -> TestTree
-goodCaseStaged name params = testGroup name [goodCaseInterpretor params, goodCaseExecution params]
+goodCaseStaged name params = testGroup name [goodCaseInterpretor params, goodCaseExecution params, goodCaseParameterized params]
 
 runAllTests :: TestTree
 runAllTests = testGroup "All features" <| concat
@@ -61,12 +77,12 @@ testFeature :: (String, [(String, LFun, Val, Val)]) -> TestTree
 testFeature (n,l) = testGroup n $ map (\(name, lf, vin, vout) -> goodCaseStaged name (lf, vin, vout)) l
 
 allFeatures :: [(String, [(String, LFun, Val, Val)])]
-allFeatures = wipFeatures -- <> doneFeatures
+allFeatures = wipFeatures <> doneFeatures
 
 wipFeatures :: [(String, [(String, LFun, Val, Val)])]
-wipFeatures = [-- ("reduceTests", reduceTests)
-               ("zipTests", zipTests)
-             -- , ("lmapTests", lmapTests)
+wipFeatures = [("reduceTests", reduceTests)
+               ,("zipTests", zipTests)
+               ,("lmapTests", lmapTests)
               ]
 
 doneFeatures :: [(String, [(String, LFun, Val, Val)])]

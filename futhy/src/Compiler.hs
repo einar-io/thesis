@@ -1,6 +1,6 @@
 module Compiler where
 import Types
-import Decurryer
+import Parameterizer
 
 type Program = String
 type Count = Int
@@ -66,11 +66,11 @@ compileLFun linfun a1 = case (linfun, a1) of
   (LMap lf, Atom n) -> do compileLFun lf $ Atom $ n-1
                           (id2, _) <- getLastFunIdAndArity
                           genLineOfCode a1 ("map" <> id2)
-  (Zip _, Atom 0)    -> error "zip not meaningful for an Atom 0 argument"
-  (Zip lfs, Atom n)    -> do let ((hf:_), vs@(hv:_)) = unzip $ map decurryLFun lfs
-                             nonapplyLFunP hf hv (Atom $ n-1)
-                             (id2, _) <- getLastFunIdAndArity
-                             genLineOfCode a1 ("unzipmap2" <> id2 <> " " <> show vs)
+  (Zip _, Atom 0)   -> error "zip not meaningful for an Atom 0 argument"
+  (Zip lfs, Atom n) -> do let ((hf:_), vs@(hv:_)) = unzip $ map parameterizeLFun lfs
+                          compileLFunP hf hv (Atom $ n-1)
+                          (id2, _) <- getLastFunIdAndArity
+                          genLineOfCode a1 ("unzipmap2" <> id2 <> " " <> show vs)
 
   (Zip _, _) -> error "illegal zip"
 
@@ -93,14 +93,9 @@ compileLFun linfun a1 = case (linfun, a1) of
 -- those that are already unary are given Zero as a dummy value, to be ignored.
 -- those recursive contain the values of their children.
 
-helper :: Arity -> String
-helper a = case a of
-  APair _ _ -> "_bi"
-  _ -> "_un"
-
 -- TODO: If flag set, visualize constant to right of function to effect partial application, somehow?
-nonapplyLFunP :: LFunP -> Val -> Arity -> Compiler ()
-nonapplyLFunP lfp1 v1 a1 = case (lfp1, a1, v1) of
+compileLFunP :: LFunP -> Val -> Arity -> Compiler ()
+compileLFunP lfp1 v1 a1 = case (lfp1, a1, v1) of
   (IdP,_, _)             -> genLineOfCode a1 "toss_dummy_const id"
   (DupP,_,_)             -> genLineOfCode (APair a1 a1) "toss_dummy_const dupe"
   (FstP, APair a3 _, _)  -> genLineOfCode a3 "toss_dummy_const fst"
@@ -111,26 +106,26 @@ nonapplyLFunP lfp1 v1 a1 = case (lfp1, a1, v1) of
   (RedP (List ls), Atom n, _) -> genLineOfCode a1 ("toss_dummy_const reduce_" <> show n <> " " <> show ls)
 
   (LSecP op, _, v) -> genLineOfCode a1 $ "uncurry " <> (biop op (getArity v) a1)  -- <> " " <> show v)
-  (RSecP op, _, v) -> genLineOfCode a1 $ "uncurry " <> ("flip " <> biop op (getArity v) a1) -- <> " " <> show v)
+  (RSecP op, _, v) -> genLineOfCode a1 $ "uncurry " <> ("(flip " <> biop op (getArity v) a1) <> ")" -- <> " " <> show v)
 
-  (CompP lfp3 lfp2, _, Pair v3 v2) -> do nonapplyLFunP lfp2 v2 a1
+  (CompP lfp3 lfp2, _, Pair v3 v2) -> do compileLFunP lfp2 v2 a1
                                          (id2, a2) <- getLastFunIdAndArity
-                                         nonapplyLFunP lfp3 v3 a2
+                                         compileLFunP lfp3 v3 a2
                                          (id3, a3) <- getLastFunIdAndArity
                                          genLineOfCode a3 ("pass_consts_comp" <> id3 <> id2)
-  (ParaP lfp3 lfp2, APair a3 a2, Pair v3 v2) -> do nonapplyLFunP lfp2 v2 a2
+  (ParaP lfp3 lfp2, APair a3 a2, Pair v3 v2) -> do compileLFunP lfp2 v2 a2
                                                    (id4, a4) <- getLastFunIdAndArity
-                                                   nonapplyLFunP lfp3 v3 a3
+                                                   compileLFunP lfp3 v3 a3
                                                    (id5, a5) <- getLastFunIdAndArity
                                                    genLineOfCode (APair a5 a4) ("pass_consts__para" <> id5 <> id4)
 
   (LMapP _, Atom 0, _) -> error "LMapP not meaningful for an Atom 0 argument"
-  (LMapP lfp2, Atom n, Tensor (h:_)) -> do nonapplyLFunP lfp2 h (Atom $ n-1)
+  (LMapP lfp2, Atom n, Tensor (h:_)) -> do compileLFunP lfp2 h (Atom $ n-1)
                                            (id2, _) <- getLastFunIdAndArity
                                            genLineOfCode a1 ("map" <> id2)
 
   (ZipP _, Atom 0, _) -> error "Zip not meaningful for an Atom 0 argument"
-  (ZipP lfp2, Atom n, Tensor (hv:_)) -> do nonapplyLFunP lfp2 hv (Atom $ n-1)
+  (ZipP lfp2, Atom n, Tensor (hv:_)) -> do compileLFunP lfp2 hv (Atom $ n-1)
                                            (id2, _) <- getLastFunIdAndArity
                                            genLineOfCode a1 ("unzipmap2" <> id2)
 
