@@ -103,7 +103,7 @@ compileLFunP lfp1 v1 a1 = case (lfp1, a1, v1) of
   (AddP, APair a3 a2, _) -> genLineOfCode a2 ("toss_dummy_const add_" <> show a3 <> "_" <> show a2)
   (NegP, _, _)           -> genLineOfCode a1 ("toss_dummy_const neg_" <> show a1)
   (RedP (List _), Atom 0, _)  -> error "Red not meaningful for an Atom 0 argument"
-  (RedP (List ls), Atom n, _) -> genLineOfCode a1 ("toss_dummy_const reduce_" <> show n <> " " <> show ls)
+  (RedP (List ls), Atom n, _) -> genLineOfCode a1 ("toss_dummy_const (reduce_" <> show n <> " " <> show ls <> ")")
 
   (LSecP op, _, v) -> genLineOfCode a1 $ "uncurry " <> (biop op (getArity v) a1)  -- <> " " <> show v)
   (RSecP op, _, v) -> genLineOfCode a1 $ "uncurry " <> ("(flip " <> biop op (getArity v) a1) <> ")" -- <> " " <> show v)
@@ -117,7 +117,7 @@ compileLFunP lfp1 v1 a1 = case (lfp1, a1, v1) of
                                                    (id4, a4) <- getLastFunIdAndArity
                                                    compileLFunP lfp3 v3 a3
                                                    (id5, a5) <- getLastFunIdAndArity
-                                                   genLineOfCode (APair a5 a4) ("pass_consts__para" <> id5 <> id4)
+                                                   genLineOfCode (APair a5 a4) ("pass_consts_para" <> id5 <> id4)
 
   (LMapP _, Atom 0, _) -> error "LMapP not meaningful for an Atom 0 argument"
   (LMapP lfp2, Atom n, Tensor (h:_)) -> do compileLFunP lfp2 h (Atom $ n-1)
@@ -127,7 +127,7 @@ compileLFunP lfp1 v1 a1 = case (lfp1, a1, v1) of
   (ZipP _, Atom 0, _) -> error "Zip not meaningful for an Atom 0 argument"
   (ZipP lfp2, Atom n, Tensor (hv:_)) -> do compileLFunP lfp2 hv (Atom $ n-1)
                                            (id2, _) <- getLastFunIdAndArity
-                                           genLineOfCode a1 ("unzipmap2" <> id2)
+                                           genLineOfCode a1 ("map2z" <> id2)
 
 --- error section
   (RedP (List _), _, _)  -> error "Meaningless arity given to RedP."
