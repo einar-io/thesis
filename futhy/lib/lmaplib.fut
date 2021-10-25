@@ -120,19 +120,17 @@ let rep1 n ne = replicate n ne
 let rep2 n m ne = rep1 n (rep1 m ne)
 let rep3 n m p ne = rep2 n m (rep1 p ne)
 
-
-let reduce_h (rel : [](i64, i64)) vals ne f =
+let reduce_h 't (rel : [](i64, i64)) vals ne (k : i64) f : [k]t =
 	let (srcs, is) = unzip rel
-	let k = reduce i64.max 0 is
-	let output = replicate (k+1) ne
+	let output = replicate k ne
 	let as = map (\i -> if i < length vals then vals[i] else ne) srcs
 	in reduce_by_index output (applyAsTuple f) ne is as
 
-let reduce_1 (rel : [](i64, i64)) (vals : []r) =
-	reduce_h rel vals 0.0 add_0_0
+let reduce_1 (rel : [](i64, i64)) (k : i64) (vals : []r) : [k]r =
+	reduce_h rel vals 0.0 k add_0_0
 
-let reduce_2 [n] (rel : [](i64, i64)) (vals : [][n]r) =
-	reduce_h rel vals (rep1 n 0.0) add_1_1
+let reduce_2 [n] (rel : [](i64, i64)) (k : i64) (vals : [][n]r) : [k][n]r =
+	reduce_h rel vals (rep1 n 0.0) k add_1_1
 
-let reduce_3 [m][n] (rel : [](i64, i64)) (vals : [][m][n]r) =
-	reduce_h rel vals (rep2 m n 0.0) add_2_2
+let reduce_3 [m][n] (rel : [](i64, i64)) (k : i64) (vals : [][m][n]r) : [k][m][n]r =
+	reduce_h rel vals (rep2 m n 0.0) k add_2_2

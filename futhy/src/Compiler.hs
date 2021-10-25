@@ -39,6 +39,11 @@ genLineOfCode r fun =
       let new_loc = "let" <> " fun" <> show c <> " = (" <> fun <> ")" <> "\n"
       in ((), (p <> new_loc, r, c+1)))
 
+
+getReduceResultDim :: [(Int, Int)] -> Int
+getReduceResultDim ls = let (_, dst) = unzip ls in (maximum dst) - 1
+
+
 compileLFun :: LFun -> Arity -> Compiler ()
 compileLFun linfun a1 = case (linfun, a1) of
   (Id, _)              -> genLineOfCode a1 "id"
@@ -48,7 +53,7 @@ compileLFun linfun a1 = case (linfun, a1) of
   (Add, APair a3 a2)   -> genLineOfCode a2 ("add_" <> show a3 <> "_" <> show a2)
   (Neg, _)             -> genLineOfCode a1 ("neg_" <> show a1)
   (Red (List _), Atom 0)  -> error "Red not meaningful for an Atom 0 argument"
-  (Red (List ls), Atom n) -> genLineOfCode a1 ("reduce_" <> show n <> " " <> show ls)
+  (Red (List ls), Atom n) -> genLineOfCode a1 ("reduce_" <> show n <> " " <> show ls <> " " <> show (getReduceResultDim ls))
 
   (LSec v b, _)        -> genLineOfCode a1 (biop b (getArity v) a1 <> " " <> show v)
   (RSec b v, _)        -> genLineOfCode a1 ("flip " <> biop b (getArity v) a1 <> " " <> show v)
@@ -103,7 +108,8 @@ compileLFunP lfp1 v1 a1 = case (lfp1, a1, v1) of
   (AddP, APair a3 a2, _) -> genLineOfCode a2 ("toss_dummy_const add_" <> show a3 <> "_" <> show a2)
   (NegP, _, _)           -> genLineOfCode a1 ("toss_dummy_const neg_" <> show a1)
   (RedP (List _), Atom 0, _)  -> error "Red not meaningful for an Atom 0 argument"
-  (RedP (List ls), Atom n, _) -> genLineOfCode a1 ("toss_dummy_const (reduce_" <> show n <> " " <> show ls <> ")")
+  (RedP (List ls), Atom n, _) -> genLineOfCode a1 ("toss_dummy_const (reduce_" <> show n <> " " <> show ls <> " " <> show (getReduceResultDim ls) <> ")")
+
 
   (LSecP op, _, v) -> genLineOfCode a1 $ "uncurry " <> (biop op (getArity v) a1)  -- <> " " <> show v)
   (RSecP op, _, v) -> genLineOfCode a1 $ "uncurry " <> ("(flip " <> biop op (getArity v) a1) <> ")" -- <> " " <> show v)
