@@ -1,6 +1,8 @@
 module Utils where
 import Types
 
+import Data.List (isPrefixOf)
+
 mkT1 :: [RealNumber] -> Val
 mkT1 x = Tensor $ map Scalar x
 
@@ -30,3 +32,10 @@ nth :: Int -> [a] -> Maybe a
 nth _ []       = Nothing
 nth 0 (x : _)  = Just x
 nth n (_ : xs) = nth (n - 1) xs
+
+---- from https://programming-idioms.org/idiom/116/remove-occurrences-of-word-from-string/1380/haskell
+remove :: String -> String -> String
+remove w "" = ""
+remove w s@(c:cs)
+  | w `isPrefixOf` s = remove w (drop (length w) s)
+  | otherwise = c : remove w cs

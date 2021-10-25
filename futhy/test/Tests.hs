@@ -7,6 +7,7 @@ import Prelude hiding (not)
 import Test.Tasty.HUnit
 import Test.Tasty
 import Flow
+
 --import Test.QuickCheck
 --import GHC.IO.Unsafe
 --import Prelude
@@ -16,7 +17,7 @@ import Flow
 import Interpretor
 import Types
 import Compiler
---import Utils
+import Utils
 import Caramelizer
 import Executor-- hiding (main)
 
@@ -30,41 +31,43 @@ main :: IO ()
 main = defaultMain $ localOption (mkTimeout $ second * 30) runAllTests
 
 goodCaseInterpretor :: (LFun, Val, Val) -> TestTree
-goodCaseInterpretor (lf, vin, vout) = testCase "Interpretor" $ interpret (caramelizeLFun lf) (caramelizeVal vin) @?= return (caramelizeVal vout)
+goodCaseInterpretor params = let (lf, vin, vout) = caramelizeTestParams params in
+  testCase "Interpretor" $ interpret lf vin @?= return vout
 
-goodCaseExecution :: (LFun, Val, Val) -> TestTree
-goodCaseExecution (sugary_lf, sugary_vin, sugary_vout) =
-  let (lf, vin, vout) = (caramelizeLFun sugary_lf, caramelizeVal sugary_vin, caramelizeVal sugary_vout) in
-  testCase "Compiler" $ do compileRes <- runStrArg (compileProgram lf (getArity vin)) C (stdinShow vin)
+showCleanError :: Failure -> IO a
+showCleanError (CommandFailure _ (_, _, i)) = assertFailure $ remove "\ESC" i --TODO: IMPORTANT: Format the string in output!
+
+genCompilerTestCase :: String -> (LFun, Val, Val) -> TestTree
+genCompilerTestCase testname (lf, vin, vout) =
+    testCase testname $ do compileRes <- runStrArg (compileProgram lf (getArity vin)) C (stdinShow vin)
                            compileResStr  <- case compileRes of
                                               Right (CommandResult (_, res, _)) -> return res
-                                              e -> assertFailure $ show e
+                                              Left e -> showCleanError e
                            intComp <- runStr ("entry main = " <> show vout) C
                            interpResStrn <-  case intComp of
                                               Right (CommandResult (_, res, _)) -> return res
-                                              e -> assertFailure $ show e
+                                              Left e -> showCleanError e
                            case (compileResStr == interpResStrn) of
                             False -> assertFailure $ show (compileResStr, interpResStrn)
                             True -> return ()
 
+caramelizeTestParams :: (LFun, Val, Val) -> (LFun, Val, Val)
+caramelizeTestParams (lf, vin, vout) = (caramelizeLFun lf, caramelizeVal vin, caramelizeVal vout)
+
+goodCaseExecution :: (LFun, Val, Val) -> TestTree
+goodCaseExecution params = genCompilerTestCase "Compiler" $ caramelizeTestParams params
+
 goodCaseParameterized :: (LFun, Val, Val) -> TestTree
-goodCaseParameterized (sugary_lf, sugary_vin, sugary_vout) =
-  let (lf_t, vin_t, vout_t) = (caramelizeLFun sugary_lf, caramelizeVal sugary_vin, caramelizeVal sugary_vout) in
-  let (lf, vin, vout) = (Zip [lf_t], Tensor [vin_t], Tensor [vout_t]) in
-  testCase "Parameterized" $ do compileRes <- runStrArg (compileProgram lf (getArity vin)) C (stdinShow vin)
-                                compileResStr <- case compileRes of
-                                                  Right (CommandResult (_, res, _)) -> return res
-                                                  e -> assertFailure $ show e
-                                intComp <- runStr ("entry main = " <> show vout) C
-                                interpResStrn <- case intComp of
-                                                  Right (CommandResult (_, res, _)) -> return res
-                                                  e -> assertFailure $ show e
-                                case (compileResStr == interpResStrn) of
-                                  False -> assertFailure $ show (compileResStr, interpResStrn)
-                                  True -> return ()
+goodCaseParameterized params =
+      let (lf_t, vin_t, vout_t) = caramelizeTestParams params
+      in genCompilerTestCase "Parameterized" (Zip [lf_t], Tensor [vin_t], Tensor [vout_t])
 
 goodCaseStaged :: TestName -> (LFun, Val, Val) -> TestTree
 goodCaseStaged name params = testGroup name [goodCaseInterpretor params, goodCaseExecution params, goodCaseParameterized params]
+
+
+
+
 
 runAllTests :: TestTree
 runAllTests = testGroup "All features" <| concat
