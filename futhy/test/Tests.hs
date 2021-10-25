@@ -40,11 +40,11 @@ showCleanError (CommandFailure _ (_, _, i)) = assertFailure $ remove "\ESC" i --
 genCompilerTestCase :: String -> (LFun, Val, Val) -> TestTree
 genCompilerTestCase testname (lf, vin, vout) =
     testCase testname $ do compileRes <- runStrArg (compileProgram lf (getArity vin)) C (stdinShow vin)
-                           compileResStr  <- case compileRes of
+                           compileResStr <- case compileRes of
                                               Right (CommandResult (_, res, _)) -> return res
                                               Left e -> showCleanError e
                            intComp <- runStr ("entry main = " <> show vout) C
-                           interpResStrn <-  case intComp of
+                           interpResStrn <- case intComp of
                                               Right (CommandResult (_, res, _)) -> return res
                                               Left e -> showCleanError e
                            case (compileResStr == interpResStrn) of
@@ -314,14 +314,6 @@ reduceTests =
         , Red (List [(0,1)])
         , Tensor [Scalar 0]
         , SparseTensor [(1, 0)])
-  , ("Reduce primitive test: empty relation"
-        , Red (List [])
-        , Tensor [Scalar 0, Scalar 1,Scalar 2,Scalar 3]
-        , Tensor [Scalar 0, Scalar 0,Scalar 0,Scalar 0])
-  , ("Reduce primitive test: empty values vector"
-        , Red (List [(0,1), (2,3)])
-        , Tensor []
-        , SparseTensor [])
   , ("Reduce primitive test: duplicates."
         , Red (List [(1,2), (1,2), (1,1), (1,2)])
         , Tensor [Scalar (-1), Scalar 1,Scalar 2,Scalar 3]
@@ -378,10 +370,6 @@ zipTests =
           , Zip [Comp Dup (Scale 2), Comp Dup (Scale 2), Comp Dup (Scale 2)]
           , Tensor [Scalar (-1), Scalar 1,Scalar 3]
           , Tensor [Pair (Scalar (-2)) (Scalar (-2)), Pair (Scalar 2) (Scalar 2),Pair (Scalar 6) (Scalar 6)])
-  , ("Zip: para scale scale"
-          , Zip [Para (Scale 1) (Scale 2), Para (Scale 3) (Scale 4), Para (Scale 3) (Scale 4)]
-          , Tensor [Pair (Scalar (-1)) (Scalar (-2)), Pair (Scalar 5) (Scalar 6),Pair (Scalar 7) (Scalar 8)]
-          , Tensor [Pair (Scalar (-1)) (Scalar (-4)), Pair (Scalar 15) (Scalar 24),Pair (Scalar 21) (Scalar 32)])
   , ("Para: Zip scale Zip scale"
           , Para (Zip [Scale 1, Scale 3,Scale 3]) (Zip [Scale 2,Scale 4, Scale 4])
           , Pair (Tensor [Scalar (-1), Scalar 5, Scalar 7]) (Tensor [Scalar (-2), Scalar 6, Scalar 8])
