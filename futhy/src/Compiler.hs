@@ -44,6 +44,10 @@ getReduceResultDim :: [(Int, Int)] -> Int
 getReduceResultDim ls = let (_, dst) = unzip ls in 1 + maximum dst
 
 
+verifyZipToMap2Legality :: [LFunP] -> Bool
+verifyZipToMap2Legality _ = True
+
+
 compileLFun :: LFun -> Arity -> Compiler ()
 compileLFun linfun a1 = case (linfun, a1) of
   (Id, _)              -> genLineOfCode a1 "id"
@@ -75,6 +79,10 @@ compileLFun linfun a1 = case (linfun, a1) of
   (Zip lfs, Atom n) -> do let ((hf:_), vs@(hv:_)) = unzip $ map parameterizeLFun lfs
                           compileLFunP hf hv (Atom $ n-1)
                           (id2, _) <- getLastFunIdAndArity
+                          -- TODO CALL verifyZipToMap2Legality
+                          -- TODO CALL verifyZipToMap2Legality
+                          -- TODO CALL verifyZipToMap2Legality
+                          -- TODO CALL verifyZipToMap2Legality
                           genLineOfCode a1 ("unzipmap2" <> id2 <> " " <> show vs)
 
   (Zip _, _) -> error "illegal zip"
@@ -133,7 +141,11 @@ compileLFunP lfp1 v1 a1 = case (lfp1, a1, v1) of
   (ZipP _, Atom 0, _) -> error "Zip not meaningful for an Atom 0 argument"
   (ZipP lfp2, Atom n, Tensor (hv:_)) -> do compileLFunP lfp2 hv (Atom $ n-1)
                                            (id2, _) <- getLastFunIdAndArity
-                                           genLineOfCode a1 ("map2z" <> id2)
+                                           genLineOfCode a1 ("map2variant" <> id2)
+                                           -- TODO CALL verifyZipToMap2Legality
+                                           -- TODO CALL verifyZipToMap2Legality
+                                           -- TODO CALL verifyZipToMap2Legality
+                                           -- TODO CALL verifyZipToMap2Legality
 
 --- error section
   (RedP (List _), _, _)  -> error "Meaningless arity given to RedP."
