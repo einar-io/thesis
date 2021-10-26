@@ -1,25 +1,25 @@
-  module Tests (main) where
+module Tests (main) where
 
-  --import qualified Prelude
-  import Prelude hiding (not)
-  --import qualified Numeric.LinearAlgebra ((<>))
-  import Control.Monad (when)
-  import Test.Tasty.HUnit
-  import Test.Tasty
-  import Flow
+--import qualified Prelude
+import Prelude hiding (not)
+--import qualified Numeric.LinearAlgebra ((<>))
+import Control.Monad (when)
+import Test.Tasty.HUnit
+import Test.Tasty
+import Flow
 
-  --import Test.QuickCheck
-  --import GHC.IO.Unsafe
-  --import Prelude
+--import Test.QuickCheck
+--import GHC.IO.Unsafe
+--import Prelude
 
-  -- our libs
-  --import Optimizer
-  import Interpretor
-  import Types
-  import Compiler
-  import Utils
-  import Caramelizer
-  import Executor-- hiding (main)
+-- our libs
+--import Optimizer
+import Interpretor
+import Types
+import Compiler
+import Utils
+import Caramelizer
+import Executor-- hiding (main)
 
   -- separate test files (called from here)
 import MatrixTests
@@ -50,7 +50,7 @@ genCompilerTestCase testname (lf, vin, vout) =
                                               Left e -> showCleanError e
                            when (compileResStr /= interpResStrn)
                              <| assertFailure
-                             <| show <| compileResStr interpResStrn)
+                             <| show (compileResStr, interpResStrn)
 
 caramelizeTestParams :: (LFun, Val, Val) -> (LFun, Val, Val)
 caramelizeTestParams (lf, vin, vout) = (caramelizeLFun lf, caramelizeVal vin, caramelizeVal vout)

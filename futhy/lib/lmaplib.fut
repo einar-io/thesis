@@ -17,7 +17,7 @@ let toss_dummy_const f (_,a) = f a
 let pass_consts_comp f g ((x,y),z) = f (x,(g (y,z)))
 let pass_consts_para f g ((x,y),(a,b)) = (f (x,a), g (y,b))
 
-let map2z f (x,y) = map2 (\xi yi -> f (xi,yi)) x y
+let map2variant f xy = map2 f ((uncurry zip) xy)
 
 let unzipmap2 f = map2 (\x y -> f (x,y))
 
