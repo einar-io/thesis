@@ -28,7 +28,7 @@ reduceTests =
   , ("Reduce compound test: duplicates and out-of-bounds indices."
         , Red (List [(1,2), (0,2), (1,3), (5,6)])
         , Tensor [Scalar (-1), Scalar 1, Scalar 2, Scalar 3]
-        , Tensor [Scalar (-1), Scalar 1, Scalar 2, Scalar 3]
+        , Tensor [Scalar 0, Scalar 0, Scalar 0, Scalar 1]
         --, Tensor [(3, 1), (2, 0)]
         )
   ]

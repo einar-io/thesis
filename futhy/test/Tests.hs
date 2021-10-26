@@ -7,6 +7,7 @@ import Prelude hiding (not)
 import Test.Tasty.HUnit
 import Test.Tasty
 import Flow
+
 --import Test.QuickCheck
 --import GHC.IO.Unsafe
 --import Prelude
@@ -16,7 +17,7 @@ import Flow
 import Interpretor
 import Types
 import Compiler
---import Utils
+import Utils
 import Caramelizer
 import Executor-- hiding (main)
 
@@ -31,43 +32,62 @@ main :: IO ()
 main = defaultMain $ localOption (mkTimeout $ second * 30) runAllTests
 
 goodCaseInterpretor :: (LFun, Val, Val) -> TestTree
-goodCaseInterpretor (lf, vin, vout) = testCase "Interpretor" $ interpret (caramelizeLFun lf) (caramelizeVal vin) @?= return (caramelizeVal vout)
+goodCaseInterpretor params = let (lf, vin, vout) = caramelizeTestParams params in
+  testCase "Interpretor" $ interpret lf vin @?= return vout
 
-goodCaseExecution :: (LFun, Val, Val) -> TestTree
-goodCaseExecution (sugary_lf, sugary_vin, sugary_vout) =
-  let (lf, vin, vout) = (caramelizeLFun sugary_lf, caramelizeVal sugary_vin, caramelizeVal sugary_vout) in
-  testCase "Compiler" $ do compileRes <- runStrArg (compileProgram lf (getArity vin)) C (stdinShow vin)
-                           compileResStr  <- case compileRes of
+showCleanError :: Failure -> IO a
+showCleanError (CommandFailure _ (_, _, i)) = assertFailure $ remove "\ESC" i --TODO: IMPORTANT: Format the string in output!
+
+genCompilerTestCase :: String -> (LFun, Val, Val) -> TestTree
+genCompilerTestCase testname (lf, vin, vout) =
+    testCase testname $ do compileRes <- runStrArg (compileProgram lf (getArity vin)) C (stdinShow vin)
+                           compileResStr <- case compileRes of
                                               Right (CommandResult (_, res, _)) -> return res
-                                              e -> assertFailure $ show e
+                                              Left e -> showCleanError e
                            intComp <- runStr ("entry main = " <> show vout) C
-                           interpResStrn <-  case intComp of
+                           interpResStrn <- case intComp of
                                               Right (CommandResult (_, res, _)) -> return res
-                                              e -> assertFailure $ show e
+                                              Left e -> showCleanError e
                            case (compileResStr == interpResStrn) of
                             False -> assertFailure $ show (compileResStr, interpResStrn)
                             True -> return ()
 
+caramelizeTestParams :: (LFun, Val, Val) -> (LFun, Val, Val)
+caramelizeTestParams (lf, vin, vout) = (caramelizeLFun lf, caramelizeVal vin, caramelizeVal vout)
+
+goodCaseExecution :: (LFun, Val, Val) -> TestTree
+goodCaseExecution params = genCompilerTestCase "Compiler" $ caramelizeTestParams params
+
+goodCaseParameterized :: (LFun, Val, Val) -> TestTree
+goodCaseParameterized params =
+      let (lf_t, vin_t, vout_t) = caramelizeTestParams params
+      in genCompilerTestCase "Parameterized" (Zip [lf_t], Tensor [vin_t], Tensor [vout_t])
+
 goodCaseStaged :: TestName -> (LFun, Val, Val) -> TestTree
-goodCaseStaged name params = testGroup name [goodCaseInterpretor params, goodCaseExecution params]
+goodCaseStaged name params = testGroup name [goodCaseInterpretor params, goodCaseExecution params, goodCaseParameterized params]
+
+
+
+
 
 runAllTests :: TestTree
 runAllTests = testGroup "All features" <| concat
   [ map testFeature allFeatures
-  --, [matrixTests]
-  --, [optimizerTests]
+  {- , [matrixTests]
+   , [optimizerTests]
+   -}
   ]
 
 testFeature :: (String, [(String, LFun, Val, Val)]) -> TestTree
 testFeature (n,l) = testGroup n $ map (\(name, lf, vin, vout) -> goodCaseStaged name (lf, vin, vout)) l
 
 allFeatures :: [(String, [(String, LFun, Val, Val)])]
-allFeatures = wipFeatures -- <> doneFeatures
+allFeatures = wipFeatures <> doneFeatures
 
 wipFeatures :: [(String, [(String, LFun, Val, Val)])]
-wipFeatures = [("reduceTests", reduceTests)
-             --,  ("zipTests", zipTests)
-             -- , ("lmapTests", lmapTests)
+wipFeatures = [ ("reduceTests", reduceTests)
+              , ("zipTests", zipTests)
+              , ("lmapTests", lmapTests)
               ]
 
 doneFeatures :: [(String, [(String, LFun, Val, Val)])]
@@ -208,8 +228,8 @@ matmulTests =
           , LSec (Tensor [ Tensor [Scalar 7.0, Scalar 8.0]
                          , Tensor [Scalar 9.0, Scalar 10.0]
                          , Tensor [Scalar 11.0, Scalar 12.0]]) MatrixMult
-          , (Tensor [ Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]
-                    , Tensor [Scalar 4.0, Scalar 5.0, Scalar 6.0]])
+          , Tensor [ Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]
+                    , Tensor [Scalar 4.0, Scalar 5.0, Scalar 6.0]]
           , Tensor [ Tensor [Scalar 39.0, Scalar 54.0, Scalar 69.0]
                    , Tensor [Scalar 49.0, Scalar 68.0, Scalar 87.0]
                    , Tensor [Scalar 59.0, Scalar 82.0, Scalar 105.0]])
@@ -336,10 +356,6 @@ zipTests =
           , Zip [Comp Dup (Scale 2), Comp Dup (Scale 2), Comp Dup (Scale 2)]
           , Tensor [Scalar (-1), Scalar 1,Scalar 3]
           , Tensor [Pair (Scalar (-2)) (Scalar (-2)), Pair (Scalar 2) (Scalar 2),Pair (Scalar 6) (Scalar 6)])
-  , ("Zip: para scale scale"
-          , Zip [Para (Scale 1) (Scale 2), Para (Scale 3) (Scale 4), Para (Scale 3) (Scale 4)]
-          , Tensor [Pair (Scalar (-1)) (Scalar (-2)), Pair (Scalar 5) (Scalar 6),Pair (Scalar 7) (Scalar 8)]
-          , Tensor [Pair (Scalar (-1)) (Scalar (-4)), Pair (Scalar 15) (Scalar 24),Pair (Scalar 21) (Scalar 32)])
   , ("Para: Zip scale Zip scale"
           , Para (Zip [Scale 1, Scale 3,Scale 3]) (Zip [Scale 2,Scale 4, Scale 4])
           , Pair (Tensor [Scalar (-1), Scalar 5, Scalar 7]) (Tensor [Scalar (-2), Scalar 6, Scalar 8])

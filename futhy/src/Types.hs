@@ -84,6 +84,7 @@ getArity :: Val -> Arity
 getArity v = case v of
   Scalar _ -> Atom 0
   Zero -> Atom 0
+  Tensor (Pair _ _: _) -> error "illegal tensor of pairs!"
   Tensor (h:_) -> let (Atom i) = getArity h
                   in Atom (i+1)
   Pair v1 v2 -> APair (getArity v1) (getArity v2)
