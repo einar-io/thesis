@@ -1,7 +1,4 @@
-module MatrixTests
-  ( matrixTests
-  )
-where
+module MatrixTests (matrixTests) where
 
 import Prelude hiding (not)
 import Test.Tasty.HUnit
@@ -33,47 +30,50 @@ not _ name vin vout shp =
             <| assertFailure "Unexpected Success.  The values are supposed to be distinct."
 
 {- Example values -}
+
+
 a :: Val
-b :: Val
-c :: Val
-ab :: Val
-ba :: Val
-neye :: Val
-eye :: Val
-diag818 :: Val
-zero :: Val
-
-
 a = Tensor [ Tensor [Scalar 0, Scalar 1]
            , Tensor [Scalar 2, Scalar 3]
            ]
+
+b :: Val
 b = Tensor [ Tensor [Scalar 2, Scalar 3]
            , Tensor [Scalar 5, Scalar 7]
            ]
+
+c :: Val
 c = Tensor [ Tensor [Scalar 23, Scalar 31]
            , Tensor [Scalar 57, Scalar 74]
            ]
+
 -- Hand calculation:
+ab :: Val
 ab = Tensor [ Tensor [Scalar  5, Scalar  7]
             , Tensor [Scalar 19, Scalar 27]
             ]
 
+ba :: Val
 ba = Tensor [ Tensor [Scalar  5, Scalar  7]
             , Tensor [Scalar 19, Scalar 27]
             ]
 
+neye :: Val
 neye = Tensor [ Tensor [Scalar (-1), Scalar 0   ]
               , Tensor [Scalar 0,    Scalar (-1)]
               ]
 
+eye :: Val
 eye = Tensor [ Tensor [Scalar 1, Scalar 0]
              , Tensor [Scalar 0, Scalar 1]
              ]
 
+diag818 :: Val
 diag818 = Tensor [ Tensor [Scalar 818, Scalar 0]
                  , Tensor [Scalar 0, Scalar 818]
                  ]
 
+zero :: Val
 zero = Tensor [ Tensor [Scalar 0, Scalar 0]
               , Tensor [Scalar 0, Scalar 0]
               ]

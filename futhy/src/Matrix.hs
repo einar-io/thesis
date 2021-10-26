@@ -6,8 +6,7 @@ module Matrix
   , lfun2mtcs
   , tnsr2mtx
   , compaction
-  , sparse2dense
-  , dense2matrix
+  , denseVecFromSparseVec
   , (@@) -- matmul
   )
   where
@@ -16,6 +15,7 @@ import Prelude hiding ((<>))
 import Types
 import Numeric.LinearAlgebra hiding ((|>))
 import Flow
+import Data.AssocList
 
 type Shape = (Int, Int)
 type LeftRightMultipliers = ([Matrix RealNumber], [Matrix RealNumber])
@@ -112,10 +112,15 @@ compaction (lfns, rfns) (m, _n) =
   let fmm = foldr (@@) (ident m)
    in ([fmm lfns], [fmm rfns])
 
-{-
-sparseVec2denseVec :: Val -> Vector RealNumber
-sparseVec2denseVec (SparseTensor alist) =
-  let amtx = map (\(i, Scalar rn) -> (i, rn)) alist :: AssocMatrix
-   in toDense amtx
-sparse2dense _ = undefined
--}
+denseVecFromSparseVec :: Val -> Val
+denseVecFromSparseVec (SparseTensor alist) =
+  let length = maximum <| map fst alist
+   in Tensor <| buildVec alist (length + 1) 0
+
+buildVec :: AssocList Int Val -> Int -> Int -> [Val]
+buildVec al length i
+  | i == length = []
+  | otherwise   = lookupDef 0 i al : buildVec al length (i+1)
+
+genBasis :: Int -> Int -> Val
+genBasis = undefined

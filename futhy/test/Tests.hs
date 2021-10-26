@@ -22,6 +22,7 @@ import Executor-- hiding (main)
 
 -- separate test files (called from here)
 import MatrixTests
+import ReduceTests
 
 second :: Integer
 second = 1000000
@@ -53,8 +54,8 @@ goodCaseStaged name params = testGroup name [goodCaseInterpretor params, goodCas
 runAllTests :: TestTree
 runAllTests = testGroup "All features" <| concat
   [ map testFeature allFeatures
---  , [matrixTests]
-  -- , [optimizerTests]
+  --, [matrixTests]
+  --, [optimizerTests]
   ]
 
 testFeature :: (String, [(String, LFun, Val, Val)]) -> TestTree
@@ -64,8 +65,8 @@ allFeatures :: [(String, [(String, LFun, Val, Val)])]
 allFeatures = wipFeatures -- <> doneFeatures
 
 wipFeatures :: [(String, [(String, LFun, Val, Val)])]
-wipFeatures = [-- ("reduceTests", reduceTests)
-               ("zipTests", zipTests)
+wipFeatures = [("reduceTests", reduceTests)
+             --,  ("zipTests", zipTests)
              -- , ("lmapTests", lmapTests)
               ]
 
@@ -287,30 +288,6 @@ lplusTests =
         , Lplus  (Scale 3.0) (Scale 7.0)
         , Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]
         , Tensor [Scalar 10.0, Scalar 20.0, Scalar 30.0])
-  ]
-
-reduceTests :: [([Char], LFun, Val, Val)]
-reduceTests =
-  [ ("Reduce primitive test: happy path"
-        , Red (List [(0,1)])
-        , Tensor [Scalar 0]
-        , SparseTensor [(1, 0)])
-  , ("Reduce primitive test: empty relation"
-        , Red (List [])
-        , Tensor [Scalar 0, Scalar 1,Scalar 2,Scalar 3]
-        , Tensor [Scalar 0, Scalar 0,Scalar 0,Scalar 0])
-  , ("Reduce primitive test: empty values vector"
-        , Red (List [(0,1), (2,3)])
-        , Tensor []
-        , SparseTensor [])
-  , ("Reduce primitive test: duplicates."
-        , Red (List [(1,2), (1,2), (1,1), (1,2)])
-        , Tensor [Scalar (-1), Scalar 1,Scalar 2,Scalar 3]
-        , SparseTensor [(1, 1), (2, 3)])
-  , ("Reduce compound test: duplicates and out-of-bounds indices."
-        , Red (List [(1,2), (0,2), (1,3), (5,6)])
-        , Tensor [Scalar (-1), Scalar 1,Scalar 2,Scalar 3]
-        , SparseTensor [(3, 1), (2, 0)])
   ]
 
 negTests :: [([Char], LFun, Val, Val)]
