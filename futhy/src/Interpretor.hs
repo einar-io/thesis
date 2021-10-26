@@ -7,6 +7,7 @@ import Utils
 import Data.AssocList.List.Eq as AList
 import Data.Maybe
 import Flow
+import Matrix
 
 -- general implementation - outer product, no contraction
 outer :: Val -> Val -> Val
@@ -101,11 +102,14 @@ interpret f v = case (f, v) of
                            Right $ vl `vectorspacePlus` vr
 
   (Red (List []), _) -> return Zero
-  (Red (List r ), _) -> Right $ SparseTensor $ reduce r v
+  (Red (List r ), _) -> Right
+                        <| denseVecFromSparseVec
+                        <| SparseTensor
+                        <| reduce r v
   (Red r, _)         -> Left <| "Invalid argument to Red.  rel: "
-                        ++ show r
-                        ++ " v: "
-                        ++ show v
+                             ++ show r
+                             ++ " v: "
+                             ++ show v
 
   (Neg   , _) -> return (negate v)
 

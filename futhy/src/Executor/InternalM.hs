@@ -22,18 +22,15 @@ compile = do
   let futParams = [show backend, filepath]
   p $ "[Futhark] Command going to be run: " ++ showCommandForUser futExec futParams
 
-  output <- liftIO $ readProcessWithExitCode futExec futParams ""
-  let (exitcode, stdout, stdin) = output
-  case exitcode of
-         ExitFailure _ -> throwError <| CommandFailure CompilationError output
-         ExitSuccess   -> return ()
+  output@(exitcode, stdout, stdin) <- liftIO $ readProcessWithExitCode futExec futParams ""
+  when (isExitFailure exitcode)    <| throwError (CommandFailure CompilationError output)
 
   p   "[Futhark] Compilation results:"
   p $ "[Futhark] ExitCode: " ++ show exitcode
   p $ "[Futhark] stdout:   " ++ show stdout
   p $ "[Futhark] stdin :   " ++ show stdin
   p   "[Futhark] Compilation COMPLETED"
-  return <| CommandResult output
+  return (CommandResult output)
 
 -- |Execute the compiled Futhark executable 'futExec' containing the compiled linear program.
 makeTemp :: Command FutPgmFile
@@ -74,18 +71,15 @@ executeArg arg = do
   let params = []
   p $ "[LinPgm] Command going to be run: " ++ showCommandForUser executable params <> " " <> arg
 
-  output <- liftIO $ readProcessWithExitCode executable params arg
-  let (exitcode, stdout, stdin) = output
-  case exitcode of
-         ExitFailure _ -> throwError <| CommandFailure ExecutionError output
-         ExitSuccess   -> return ()
+  output@(exitcode, stdout, stdin) <- liftIO $ readProcessWithExitCode executable params arg
+  when (isExitFailure exitcode)    <| throwError (CommandFailure ExecutionError output)
 
   p   "[LinPgm] Execution results:"
   p $ "[LinPgm] ExitCode: " ++ show exitcode
   p $ "[LinPgm] stdout:   " ++ show stdout
   p $ "[LinPgm] stdin :   " ++ show stdin
   p   "[LinPgm] Execution ENDED"
-  return <| CommandResult output
+  return (CommandResult output)
 
 
 runStrArg :: FutPgmStr -> Backend -> StdInArg -> IO (CommandExecution Result)
