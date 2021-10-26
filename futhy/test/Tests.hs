@@ -1,27 +1,27 @@
-module Tests (main) where
+  module Tests (main) where
 
---import qualified Prelude
-import Prelude hiding (not)
---import qualified Numeric.LinearAlgebra ((<>))
---import Control.Monad (when)
-import Test.Tasty.HUnit
-import Test.Tasty
-import Flow
+  --import qualified Prelude
+  import Prelude hiding (not)
+  --import qualified Numeric.LinearAlgebra ((<>))
+  import Control.Monad (when)
+  import Test.Tasty.HUnit
+  import Test.Tasty
+  import Flow
 
---import Test.QuickCheck
---import GHC.IO.Unsafe
---import Prelude
+  --import Test.QuickCheck
+  --import GHC.IO.Unsafe
+  --import Prelude
 
--- our libs
---import Optimizer
-import Interpretor
-import Types
-import Compiler
-import Utils
-import Caramelizer
-import Executor-- hiding (main)
+  -- our libs
+  --import Optimizer
+  import Interpretor
+  import Types
+  import Compiler
+  import Utils
+  import Caramelizer
+  import Executor-- hiding (main)
 
--- separate test files (called from here)
+  -- separate test files (called from here)
 import MatrixTests
 import ReduceTests
 
@@ -48,9 +48,9 @@ genCompilerTestCase testname (lf, vin, vout) =
                            interpResStrn <- case intComp of
                                               Right (CommandResult (_, res, _)) -> return res
                                               Left e -> showCleanError e
-                           case (compileResStr == interpResStrn) of
-                            False -> assertFailure $ show (compileResStr, interpResStrn)
-                            True -> return ()
+                           when (compileResStr /= interpResStrn)
+                             <| assertFailure
+                             <| show <| compileResStr interpResStrn)
 
 caramelizeTestParams :: (LFun, Val, Val) -> (LFun, Val, Val)
 caramelizeTestParams (lf, vin, vout) = (caramelizeLFun lf, caramelizeVal vin, caramelizeVal vout)
@@ -82,12 +82,14 @@ testFeature :: (String, [(String, LFun, Val, Val)]) -> TestTree
 testFeature (n,l) = testGroup n $ map (\(name, lf, vin, vout) -> goodCaseStaged name (lf, vin, vout)) l
 
 allFeatures :: [(String, [(String, LFun, Val, Val)])]
-allFeatures = wipFeatures <> doneFeatures
+allFeatures = wipFeatures -- <> doneFeatures
 
 wipFeatures :: [(String, [(String, LFun, Val, Val)])]
 wipFeatures = [ ("reduceTests", reduceTests)
+              {-
               , ("zipTests", zipTests)
               , ("lmapTests", lmapTests)
+              -}
               ]
 
 doneFeatures :: [(String, [(String, LFun, Val, Val)])]

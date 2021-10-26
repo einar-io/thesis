@@ -41,7 +41,7 @@ genLineOfCode r fun =
 
 
 getReduceResultDim :: [(Int, Int)] -> Int
-getReduceResultDim ls = let (_, dst) = unzip ls in (maximum dst) - 1
+getReduceResultDim ls = let (_, dst) = unzip ls in 1 + maximum dst
 
 
 compileLFun :: LFun -> Arity -> Compiler ()

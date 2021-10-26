@@ -15,7 +15,7 @@ reduceTests =
         , Tensor [Scalar 0, Scalar 1, Scalar 2, Scalar 3]
         )
   , ("Reduce primitive test: unused associations"
-        , Red (List [(1,1), (2,3), (4,5)])
+        , Red (List [(0,1), (2,3), (4,5)])
         , Tensor [Scalar 1]
         , Tensor [Scalar 0, Scalar 1]
         )
