@@ -133,7 +133,7 @@ compileLFunP lfp1 v1 a1 = case (lfp1, a1, v1) of
   (ZipP _, Atom 0, _) -> error "Zip not meaningful for an Atom 0 argument"
   (ZipP lfp2, Atom n, Tensor (hv:_)) -> do compileLFunP lfp2 hv (Atom $ n-1)
                                            (id2, _) <- getLastFunIdAndArity
-                                           genLineOfCode a1 ("map2z" <> id2)
+                                           genLineOfCode a1 ("map2variant" <> id2)
 
 --- error section
   (RedP (List _), _, _)  -> error "Meaningless arity given to RedP."
