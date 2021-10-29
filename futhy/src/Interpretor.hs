@@ -102,8 +102,9 @@ interpret f v = case (f, v) of
                            Right $ vl `vectorspacePlus` vr
 
   (Red (List []), _) -> return Zero
-  (Red (List r ), _) -> Right
-                        <| denseVecFromSparseVec
+  (Red (List r ), _) -> let l = map snd r |> maximum |> Just in
+                        Right
+                        <| flip denseVecFromSparseVecL l
                         <| SparseTensor
                         <| reduce r v
   (Red r, _)         -> Left <| "Invalid argument to Red.  rel: "

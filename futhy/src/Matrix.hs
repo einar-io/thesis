@@ -6,7 +6,8 @@ module Matrix
   , lfun2mtcs
   , tnsr2mtx
   , compaction
-  , denseVecFromSparseVec
+  -- , denseVecFromSparseVec
+  , denseVecFromSparseVecL
   , (@@) -- matmul
   )
   where
@@ -112,15 +113,19 @@ compaction (lfns, rfns) (m, _n) =
   let fmm = foldr (@@) (ident m)
    in ([fmm lfns], [fmm rfns])
 
-denseVecFromSparseVec :: Val -> Val
-denseVecFromSparseVec (SparseTensor alist) =
-  let length = maximum <| map fst alist
-   in Tensor <| buildVec alist (length + 1) 0
-
 buildVec :: AssocList Int Val -> Int -> Int -> [Val]
 buildVec al length i
   | i == length = []
   | otherwise   = lookupDef 0 i al : buildVec al length (i+1)
+
+denseVecFromSparseVecL :: Val -> Maybe Int -> Val
+denseVecFromSparseVecL (SparseTensor []) _ = undefined
+denseVecFromSparseVecL (SparseTensor alist) Nothing =
+  let length = maximum <| map fst alist
+   in Tensor <| buildVec alist (length + 1) 0
+denseVecFromSparseVecL (SparseTensor alist) (Just length) =
+   Tensor <| buildVec alist (length + 1) 0
+
 
 genBasis :: Int -> Int -> Val
 genBasis = undefined
