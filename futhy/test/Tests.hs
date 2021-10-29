@@ -50,7 +50,7 @@ genCompilerTestCase testname (lf, vin, vout) =
                                               Left e -> showCleanError e
                            when (compileResStr /= interpResStrn)
                              <| assertFailure
-                             <| show (compileResStr, interpResStrn)
+                             <|  "expected: " ++ show interpResStrn ++ "\n but got: " ++ show compileResStr
 
 caramelizeTestParams :: (LFun, Val, Val) -> (LFun, Val, Val)
 caramelizeTestParams (lf, vin, vout) = (caramelizeLFun lf, caramelizeVal vin, caramelizeVal vout)
