@@ -1,4 +1,7 @@
-module MatrixTests (matrixTests) where
+module MatrixTests
+  ( matrixTests
+  , genBasisTests
+  ) where
 
 import Prelude hiding (not)
 import Test.Tasty.HUnit
@@ -13,7 +16,6 @@ import Matrix
 goodCaseMatrix :: TestName -> LFun -> LFun -> Shape -> TestTree
 goodCaseMatrix name vin vout shp = testCase (" " ++ name)
                                 <| lfun2mtcs vin shp @?= lfun2mtcs vout shp
-
 
 goodCompactMatrix :: TestName -> LFun -> LFun -> Shape -> TestTree
 goodCompactMatrix name vin vout shp = testCase (" " ++ name)
@@ -77,6 +79,7 @@ zero :: Val
 zero = Tensor [ Tensor [Scalar 0, Scalar 0]
               , Tensor [Scalar 0, Scalar 0]
               ]
+
 shp2x2 :: (Int, Int)
 shp2x2 = (2,2)
 
@@ -152,3 +155,65 @@ matrixTests =
       @?=
           [(map (`tnsr2mtx` shp2x2) [b,b,c,b,c], map (`tnsr2mtx` shp2x2) [a,c,a,a])]
       ]
+
+--goodBasisTests :: TestName ->  -> LFun -> TestTree
+goodBasisTests name vin vout = testCase (" " ++ name)
+                            <| vin @?= vout
+
+{- Test cases handed out by Robert -}
+genBasisTests :: TestTree
+genBasisTests =
+  testGroup "genBasis"
+    [ goodBasisTests "genBasis [2]"
+      (genBasis [2])
+      [
+        [1.0, 0.0],
+        [0.0, 1.0]
+      ]
+    , goodBasisTests "genBasis [2,2]"
+      (genBasis [2,2])
+      [
+        [ [1.0, 0.0],
+          [0.0, 0.0]
+        ],
+        [ [0.0, 1.0],
+          [0.0, 0.0]
+        ],
+        [ [0.0, 0.0],
+          [1.0, 0.0]
+        ],
+        [ [0.0, 0.0],
+          [0.0, 1.0]
+        ]
+      ]
+    , goodBasisTests "genBasis [3,2]"
+      (genBasis [3,2])
+      [
+        [ [1.0, 0.0]
+        , [0.0, 0.0]
+        , [0.0, 0.0]
+        ] ,
+        [ [0.0, 1.0]
+        , [0.0, 0.0]
+        , [0.0, 0.0]
+        ] ,
+        [ [0.0, 0.0]
+        , [1.0, 0.0]
+        , [0.0, 0.0]
+        ] ,
+        [ [0.0, 0.0]
+        , [0.0, 1.0]
+        , [0.0, 0.0]
+        ] ,
+        [ [0.0, 0.0]
+        , [0.0, 0.0]
+        , [1.0, 0.0]
+        ] ,
+        [ [0.0, 0.0]
+        , [0.0, 0.0]
+        , [0.0, 1.0]
+        ]
+      ]
+    ]
+
+

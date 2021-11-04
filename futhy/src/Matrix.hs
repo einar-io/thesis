@@ -9,6 +9,7 @@ module Matrix
   -- , denseVecFromSparseVec
   , denseVecFromSparseVecL
   , (@@) -- matmul
+  , genBasis
   )
   where
 
@@ -126,6 +127,14 @@ denseVecFromSparseVecL (SparseTensor alist) Nothing =
 denseVecFromSparseVecL (SparseTensor alist) (Just length) =
    Tensor <| buildVec alist (length + 1) 0
 
+oneHot :: Int -> Int -> [Int]
+oneHot l n
+  | n < 1 = undefined
+  | l < n = undefined
+  | otherwise = before ++ [1] ++ after
+  where  before = repeat 0 |> take (n-1)
+         after  = repeat 0 |> take (l-n)
 
-genBasis :: Int -> Int -> Val
-genBasis = undefined
+-- genBasis :: [Int] -> [[Int]]
+genBasis [r] = [ oneHot r n | n <- [1..r] ]
+
