@@ -7,6 +7,7 @@ import Control.Monad.Except
 import GHC.IO.Exception( ExitCode ( ExitFailure ) )
 import Data.List (intercalate)
 import Flow
+import Data.Time.Clock (UTCTime)
 
 type RealNumber = Double
 type Index = Int
@@ -175,13 +176,23 @@ type Stdin  = String
 type Stdout = String
 type CommandOutput = (ExitCode, Stdout, Stdin)
 
+type TimeStamp = UTCTime
+
+data Log = Log
+  { exitcode :: ExitCode
+  , stdout   :: Stdout
+  , stdin    :: Stdin
+  , begin    :: TimeStamp
+  , finish   :: TimeStamp
+  }
+
 data FailedStep
   = CompilationError
   | ExecutionError
   deriving (Show, Eq)
 
-newtype Result = CommandResult CommandOutput
-  deriving (Show, Eq)
+newtype Result = CommandResult Log
+--  deriving (Show, Eq)
 
 data Failure = CommandFailure FailedStep CommandOutput
   deriving (Show, Eq)

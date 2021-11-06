@@ -8,11 +8,24 @@ import Control.Monad.Reader
 import Control.Monad.Except (throwError)
 import GHC.IO.Exception (ExitCode(..))
 import Flow
+import Data.Time.Clock
 
 p :: String -> Command ()
 p s =
   let debug = False
   in when debug (liftIO <| hPrint stderr s)
+
+getTime :: Command TimeStamp
+getTime = liftIO getCurrentTime
+
+makeLog :: CommandOutput -> TimeStamp -> TimeStamp -> Log
+makeLog (exitcode, stdout, stdin) begin finish = Log
+  { exitcode = exitcode
+  , stdout   = stdout
+  , stdin    = stdin
+  , begin    = begin
+  , finish   = finish
+  }
 
 -- |Compile the Futhark source code in env.
 compile :: Command Result
@@ -22,15 +35,18 @@ compile = do
   let futParams = [show backend, filepath]
   p $ "[Futhark] Command going to be run: " ++ showCommandForUser futExec futParams
 
-  output@(exitcode, stdout, stdin) <- liftIO $ readProcessWithExitCode futExec futParams ""
+  begin <- getTime
+  output@(exitcode, stdout, stdin) <- liftIO <| readProcessWithExitCode futExec futParams ""
   when (isExitFailure exitcode)    <| throwError (CommandFailure CompilationError output)
+  finish <- getTime
 
   p   "[Futhark] Compilation results:"
   p $ "[Futhark] ExitCode: " ++ show exitcode
   p $ "[Futhark] stdout:   " ++ show stdout
   p $ "[Futhark] stdin :   " ++ show stdin
   p   "[Futhark] Compilation COMPLETED"
-  return (CommandResult output)
+  let log = makeLog output begin finish
+  return (CommandResult log)
 
 -- |Execute the compiled Futhark executable 'futExec' containing the compiled linear program.
 makeTemp :: Command FutPgmFile
@@ -71,15 +87,18 @@ executeArg arg = do
   let params = []
   p $ "[LinPgm] Command going to be run: " ++ showCommandForUser executable params <> " " <> arg
 
+  begin <- getTime
   output@(exitcode, stdout, stdin) <- liftIO $ readProcessWithExitCode executable params arg
   when (isExitFailure exitcode)    <| throwError (CommandFailure ExecutionError output)
+  finish <- getTime
 
   p   "[LinPgm] Execution results:"
   p $ "[LinPgm] ExitCode: " ++ show exitcode
   p $ "[LinPgm] stdout:   " ++ show stdout
   p $ "[LinPgm] stdin :   " ++ show stdin
   p   "[LinPgm] Execution ENDED"
-  return (CommandResult output)
+  let log = makeLog output begin finish
+  return (CommandResult log)
 
 
 runStrArg :: FutPgmStr -> Backend -> StdInArg -> IO (CommandExecution Result)
