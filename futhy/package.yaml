@@ -12,6 +12,8 @@ dependencies:
   - flow
   - hmatrix
   - hxt
+  - time
+  - tasty-bench
 
 ghc-options: -Wall
 
@@ -33,14 +35,26 @@ tests:
   integration-tests:
     main:                Tests.hs
     source-dirs:         test
-    ghc-options:
-    - -main-is           Tests
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
     dependencies:
     - futhy
     - tasty
     - tasty-hunit
 #    - QuickCheck
 #    - tasty-quickcheck
+#    Consider moving quickcheck to a new category
+
+benchmarks:
+  bench:
+    main:                Benchmarks.hs
+    source-dirs:         benchmark
+    #ghc-options:
+    #- -main-is           Benchmarks.hs
+    #- -threaded
+    dependencies:
+    - base
+    - containers
+    - futhy
+    - tasty
+    - tasty-bench
+    - deepseq
+
