@@ -4,6 +4,7 @@ module Types where
 
 import Control.Monad.Reader
 import Control.Monad.Except
+import Control.DeepSeq
 import GHC.IO.Exception( ExitCode ( ExitFailure ) )
 import Data.List (intercalate)
 import Flow
@@ -43,6 +44,9 @@ instance Num Val where
  signum Zero = 0
  signum (_) = undefined
  fromInteger i = Scalar (fromInteger i)
+
+instance NFData Val where
+ rnf a = ()
 
 instance Show Val where
   show v = case v of

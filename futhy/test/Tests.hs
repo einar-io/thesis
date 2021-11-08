@@ -1,4 +1,4 @@
-module Tests (main) where
+module Tests (main, runAllTests, caramelizeTestParams) where
 
 --import qualified Prelude
 import Prelude hiding (not)
@@ -42,11 +42,11 @@ genCompilerTestCase :: String -> (LFun, Val, Val) -> TestTree
 genCompilerTestCase testname (lf, vin, vout) =
     testCase testname $ do compileRes <- runStrArg (compileProgram lf (getArity vin)) C (stdinShow vin)
                            compileResStr <- case compileRes of
-                                              Right (CommandResult (_, res, _)) -> return res
+                                              Right (CommandResult log) -> return <| stdout log
                                               Left e -> showCleanError e
                            intComp <- runStr ("entry main = " <> show vout) C
                            interpResStrn <- case intComp of
-                                              Right (CommandResult (_, res, _)) -> return res
+                                              Right (CommandResult log) -> return <| stdout log
                                               Left e -> showCleanError e
                            when (compileResStr /= interpResStrn)
                              <| assertFailure
@@ -72,9 +72,13 @@ goodCaseStaged name params = testGroup name [goodCaseInterpretor params, goodCas
 
 runAllTests :: TestTree
 runAllTests = testGroup "All features" <| concat
-  [ map testFeature allFeatures
+  [ 
+    map testFeature allFeatures
+  {-
+    [genBasisTests]
   , [matrixTests]
---  , [optimizerTests]
+  , [optimizerTests]
+  -}
   ]
 
 testFeature :: (String, [(String, LFun, Val, Val)]) -> TestTree

@@ -13,9 +13,13 @@ dependencies:
   - hmatrix
   - hxt
   - time
-  - tasty-bench
+  - deepseq
 
-ghc-options: -Wall
+ghc-options:
+  - -Wall
+  - -fforce-recomp
+  - -fprof-auto
+  - -fprof-cafs
 
 library:
   source-dirs: src
@@ -26,8 +30,9 @@ executables:
     source-dirs:         app
     ghc-options:
     - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
+    #- -rtsopts
+    #- -with-rtsopts=-N
+    - -with-rtsopts=-A32m
     dependencies:
     - futhy
 
@@ -46,15 +51,18 @@ tests:
 benchmarks:
   bench:
     main:                Benchmarks.hs
-    source-dirs:         benchmark
-    #ghc-options:
-    #- -main-is           Benchmarks.hs
+    #main-is:             main
+    source-dirs:
+    - benchmark
+    - test
+    ghc-options:
+    - -with-rtsopts=-A32m
+    - "+RTS --nonmoving-gc -T -RTS"
     #- -threaded
     dependencies:
-    - base
-    - containers
     - futhy
     - tasty
     - tasty-bench
+    - tasty-hunit
     - deepseq
 
