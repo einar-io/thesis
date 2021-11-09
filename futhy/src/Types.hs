@@ -1,7 +1,8 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving, DeriveGeneric, DeriveAnyClass #-}
 
 module Types where
 
+import GHC.Generics (Generic, Generic1)
 import Control.Monad.Reader
 import Control.Monad.Except
 import Control.DeepSeq
@@ -19,8 +20,11 @@ data Val
   | Tensor [Val]
   | Pair Val Val
   | SparseTensor [(Index, Val)]
-  deriving (Eq)
-
+  deriving
+    ( Eq
+    , Generic
+    , NFData
+    )
 
 instance Num Val where
  (Scalar n1) + (Scalar n2) = Scalar (n1 + n2)
@@ -44,9 +48,6 @@ instance Num Val where
  signum Zero = 0
  signum (_) = undefined
  fromInteger i = Scalar (fromInteger i)
-
-instance NFData Val where
- rnf a = ()
 
 instance Show Val where
   show v = case v of

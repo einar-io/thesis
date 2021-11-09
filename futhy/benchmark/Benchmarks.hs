@@ -1,8 +1,4 @@
-
--- module Benchmarks (main) where
-
-import Interpretor (interpret)
-import ReduceTests
+module Benchmarks (main) where
 
 {-
 1. Measure time for interpreter on random value.
@@ -11,10 +7,16 @@ import ReduceTests
 4. Expand to compiler.
 -}
 
+import Interpretor (interpret)
+import ReduceTests
 import Test.Tasty.Bench
 import Tests hiding (main)
+import Matrix
+import Random
+import Types
+import Flow
 
-
+{-
 countDown :: Int -> Int
 countDown a
   | a == 0    = 1 -- print "bottom"
@@ -27,25 +29,25 @@ countDownGroup = bgroup "Counting Down"
   , bench  "10000" $ nf countDown  10000
   , bench "100000" $ nf countDown 100000
   ]
-
+-}
 
 main :: IO ()
 main = defaultMain
-  [ countDownGroup
-  , interpretorGroup
-  --, wipFeatures
+  [
+  reduce
+  -- wipFeatures
+  -- interpretorGroup
+  -- countDownGroup
   ]
 
-someRandomVal = undefined
 
 -- goodCaseInterpretor :: (LFun, Val, Val) -> TestTree
-goodCaseInterpretor params = let (lf, vin, _) = caramelizeTestParams params in
-  bench  "name" $ nf (interpret lf) vin
-
-interpretorGroup :: Benchmark
-interpretorGroup = bgroup "Interpretor bench"
- $ map goodCaseInterpretor (map (\(_, a, b, c) -> (a, b, c)) reduceTests)
+benchInterpretor name lf1 vin1 =
+  let (lf, vin, _vout) = caramelizeTestParams (lf1, vin1, Zero)
+   in bench name <| nf (interpret lf) vin
 
 
---futhyBench = bench "Futhy" runAllTests
-
+reduce :: Benchmark
+reduce = bgroup "Reduce"
+  [ benchInterpretor "1000" (Red <| rndRel 1000) (rndVecVals 1000)
+  ]
