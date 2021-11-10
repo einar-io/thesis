@@ -51,3 +51,8 @@ reduce :: Benchmark
 reduce = bgroup "Reduce"
   [ benchInterpretor "1000" (Red <| rndRel 1000) (rndVecVals 1000)
   ]
+
+lmap :: Benchmark
+lmap = bgroup "LMap"
+  [ benchInterpretor "1000" (LMap (Scale 1.0)) (rndVecVals 1000)
+  ]
