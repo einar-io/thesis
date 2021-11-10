@@ -1,4 +1,4 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving, DeriveGeneric, DeriveAnyClass #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving, DeriveGeneric, DeriveAnyClass, DerivingStrategies #-}
 
 module Types where
 
@@ -176,7 +176,6 @@ isExitFailure _               = False
 
 
 -- The data contained in the Right constructur of ExceptT trans:
--- Maybe rename this to CmdResult
 type Stdin  = String
 type Stdout = String
 type CommandOutput = (ExitCode, Stdout, Stdin)
@@ -207,7 +206,7 @@ type CommandExecution a = Either Failure a
 -- Command evaluation monad.
 type Cmd a = ReaderT Env (ExceptT Failure IO) a
 newtype Command a = Command { runCmd :: Cmd a }
-  deriving
+  deriving newtype
   ( Functor
   , Applicative
   , Monad
