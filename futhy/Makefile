@@ -1,26 +1,29 @@
-default:
-	stack build --force-dirty
+.PHONY: default build bench test tags t e f b
 
-t: test
+default:
+	stack build --force-dirty #--ghc-options="-fforce-recomp -fprof-auto -fprof-cafs"
+
+build:
+	stack build
+
+bench:
+	stack bench
 
 test:
 	rm -f build/lmaplib.fut
 	cp lib/lmaplib.fut build/lmaplib.fut
 	stack test
 
-.PHONY: tags
 tags:
 	hasktags .
+
+t: test
 
 e: tags
 	stack build
 	stack test 2> /dev/null
 
-f:
-	stack build
-	stack test
+f: build test
 
 b: bench
 
-bench:
-	stack bench
