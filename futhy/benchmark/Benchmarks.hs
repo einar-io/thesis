@@ -35,6 +35,7 @@ main :: IO ()
 main = defaultMain
   [ reduce
   , lmap
+  , zipBench
   -- wipFeatures
   -- interpretorGroup
   -- countDownGroup
@@ -49,10 +50,20 @@ benchInterpretor name lf1 vin1 =
 
 reduce :: Benchmark
 reduce = bgroup "Reduce"
-  [ benchInterpretor "1000" (Red <| rndRel 1000) (rndVecVals 1000)
+  [ benchInterpretor "10000" (Red <| rndRel 10000) (rndVecVals 10000)
   ]
 
 lmap :: Benchmark
 lmap = bgroup "LMap"
-  [ benchInterpretor "1000" (LMap (Scale 1.0)) (rndVecVals 1000)
+  [ benchInterpretor "10000" (LMap (Scale 1.0)) (rndVecVals 10000)
   ]
+
+
+zipBench :: Benchmark
+zipBench = bgroup "Zip"
+  [ benchInterpretor "10000" (Zip [Scale 1.0]) (Tensor [rndVecVals 10000])
+  ]
+
+
+-- [U] Make benchmarks work over [1..10] or similar.
+-- [U] Zip benchmark
