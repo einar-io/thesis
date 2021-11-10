@@ -1,42 +1,44 @@
 module Random
-  ( rndRel
-  , vecToVal
+  ( vecToVal
   , rndVecInts
+  , rndVecRealNumbers
   , rndVecVals
+  , rndRelCap
   ) where
 
 import Types
+import System.Random
 import Numeric.LinearAlgebra hiding ((|>))
 import Flow
-import System.Random
 
 seed :: Seed
-seed = 17981471111 -- Prime, but for no good reason.
+seed = 17981471111 -- unnecessarily prime
 
 rndVecInts :: Int -> [Int]
-rndVecInts length
-  = (randoms (mkStdGen seed) :: [Int])
-  |> map abs
-  |> map (`mod` 1000)
-  |> take length
+rndVecInts len = take len <| randoms (mkStdGen seed) :: [Int]
 
-vecToVal :: [Int] -> Val
-vecToVal = Tensor . map (Scalar . fromIntegral)
+rndVecRealNumbers :: Int -> [RealNumber]
+rndVecRealNumbers len = take len <| randoms (mkStdGen seed) :: [RealNumber]
+
+vecToVal :: [RealNumber] -> Val
+vecToVal = Tensor . map Scalar
 
 rndVecVals :: Int -> Val
-rndVecVals length = rndVecInts length |> vecToVal
+rndVecVals = vecToVal . rndVecRealNumbers
+
+rndRelCap :: Int -> Int -> Int -> Rel
+rndRelCap len maxIdx maxVal =
+  let indices = rndVecInts len
+                |> map abs
+                |> map (`mod` maxIdx)
+      values  = rndVecInts len
+                |> map abs
+                |> map (`mod` maxVal)
+   in List <| zip indices values
 
 {-
 rndVec :: Int -> Vector Double
 rndVec length = randomVector seed Uniform length
--}
-
---E.g. rndRel _size = List [(1,2), (0,2), (1,3), (5,6)]
-rndRelStatic :: Int -> Rel
-rndRelStatic length =
-  [1..10000]
-    |> map (\x -> (x,x))
-  |> List
 
 rndRel :: Int -> Rel
 rndRel length =
@@ -45,4 +47,5 @@ rndRel length =
       values  = rndVecInts length
                   |> map abs
    in List <| zip indices values
+-}
 

@@ -16,38 +16,28 @@ import Random
 import Types
 import Flow
 
-{-
-countDown :: Int -> Int
-countDown a
-  | a == 0    = 1 -- print "bottom"
-  | otherwise = countDown (a-1)
-
-
-countDownGroup :: Benchmark
-countDownGroup = bgroup "Counting Down"
-  [ bench   "1000" $ nf countDown   1000
-  , bench  "10000" $ nf countDown  10000
-  , bench "100000" $ nf countDown 100000
-  ]
--}
-
 main :: IO ()
 main = defaultMain
-  [
-  reduce
-  -- wipFeatures
-  -- interpretorGroup
-  -- countDownGroup
+  [ reduce
   ]
 
-
--- goodCaseInterpretor :: (LFun, Val, Val) -> TestTree
+benchInterpretor :: String -> LFun -> Val -> Benchmark
 benchInterpretor name lf1 vin1 =
   let (lf, vin, _vout) = caramelizeTestParams (lf1, vin1, Zero)
    in bench name <| nf (interpret lf) vin
 
-
 reduce :: Benchmark
 reduce = bgroup "Reduce"
-  [ benchInterpretor "1000" (Red <| rndRel 1000) (rndVecVals 1000)
+  [ reduce1000
   ]
+
+reduce1000 :: Benchmark
+reduce1000 =
+  let vecLen = 1000
+      relLen = 20
+      maxIdx = vecLen
+      maxVal = 256
+   in benchInterpretor
+        (show vecLen)
+        (Red <| rndRelCap relLen maxIdx maxVal)
+        (rndVecVals vecLen)
