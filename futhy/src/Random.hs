@@ -14,35 +14,36 @@ seed :: Seed
 seed = 17981471111 -- Prime, but for no good reason.
 
 rndVecInts :: Int -> [Int]
-rndVecInts length
+rndVecInts len
   = (randoms (mkStdGen seed) :: [Int])
   |> map abs
   |> map (`mod` 1000)
-  |> take length
+  |> take len
 
 vecToVal :: [Int] -> Val
 vecToVal = Tensor . map (Scalar . fromIntegral)
 
 rndVecVals :: Int -> Val
-rndVecVals length = rndVecInts length |> vecToVal
+rndVecVals len = rndVecInts len |> vecToVal
 
 {-
 rndVec :: Int -> Vector Double
 rndVec length = randomVector seed Uniform length
 -}
 
+{-
 --E.g. rndRel _size = List [(1,2), (0,2), (1,3), (5,6)]
 rndRelStatic :: Int -> Rel
-rndRelStatic length =
+rndRelStatic _ =
   [1..10000]
     |> map (\x -> (x,x))
   |> List
+-}
 
 rndRel :: Int -> Rel
-rndRel length =
-  let indices = rndVecInts length
+rndRel len =
+  let indices = rndVecInts len
                   |> map abs
-      values  = rndVecInts length
+      values  = rndVecInts len
                   |> map abs
    in List <| zip indices values
-

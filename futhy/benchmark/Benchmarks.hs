@@ -33,8 +33,8 @@ countDownGroup = bgroup "Counting Down"
 
 main :: IO ()
 main = defaultMain
-  [
-  reduce
+  [ reduce
+  , lmap
   -- wipFeatures
   -- interpretorGroup
   -- countDownGroup

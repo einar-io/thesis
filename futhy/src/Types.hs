@@ -2,7 +2,7 @@
 
 module Types where
 
-import GHC.Generics (Generic, Generic1)
+import GHC.Generics (Generic)
 import Control.Monad.Reader
 import Control.Monad.Except
 import Control.DeepSeq
@@ -223,4 +223,3 @@ execCmd cmd env = runExceptT $ runReaderT (runCmd cmd) env
 type InterpretorError    = String
 type InterpretorResult   = Val
 type InterpretorOutput a = Either InterpretorError a
-

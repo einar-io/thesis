@@ -11,7 +11,7 @@ import System.Process (readProcessWithExitCode, showCommandForUser)
 import System.FilePath (dropExtension)
 import Control.Monad.Reader
 import Control.Monad.Except (throwError)
-import GHC.IO.Exception (ExitCode(..))
+-- import GHC.IO.Exception (ExitCode(..))
 import Flow
 import Data.Time.Clock
 
@@ -24,12 +24,12 @@ getTime :: Command TimeStamp
 getTime = liftIO getCurrentTime
 
 makeLog :: CommandOutput -> TimeStamp -> TimeStamp -> Log
-makeLog (exitcode, stdout, stdin) begin finish = Log
-  { exitcode = exitcode
-  , stdout   = stdout
-  , stdin    = stdin
-  , begin    = begin
-  , finish   = finish
+makeLog (exitcode2, stdout2, stdin2) begin_time finish_time = Log
+  { exitcode = exitcode2
+  , stdout   = stdout2
+  , stdin    = stdin2
+  , begin    = begin_time
+  , finish   = finish_time
   }
 
 -- |Compile the Futhark source code in env.
@@ -40,18 +40,18 @@ compile = do
   let futParams = [show backend, filepath]
   p $ "[Futhark] Command going to be run: " ++ showCommandForUser futExec futParams
 
-  begin <- getTime
-  output@(exitcode, stdout, stdin) <- liftIO <| readProcessWithExitCode futExec futParams ""
-  when (isExitFailure exitcode)    <| throwError (CommandFailure CompilationError output)
-  finish <- getTime
+  begin_time <- getTime
+  output@(exitcode2, stdout2, stdin2) <- liftIO <| readProcessWithExitCode futExec futParams ""
+  when (isExitFailure exitcode2)    <| throwError (CommandFailure CompilationError output)
+  finish_time <- getTime
 
   p   "[Futhark] Compilation results:"
-  p $ "[Futhark] ExitCode: " ++ show exitcode
-  p $ "[Futhark] stdout:   " ++ show stdout
-  p $ "[Futhark] stdin :   " ++ show stdin
+  p $ "[Futhark] ExitCode: " ++ show exitcode2
+  p $ "[Futhark] stdout:   " ++ show stdout2
+  p $ "[Futhark] stdin :   " ++ show stdin2
   p   "[Futhark] Compilation COMPLETED"
-  let log = makeLog output begin finish
-  return (CommandResult log)
+  let current_log = makeLog output begin_time finish_time
+  return (CommandResult current_log)
 
 -- |Execute the compiled Futhark executable 'futExec' containing the compiled linear program.
 makeTemp :: Command FutPgmFile
@@ -92,18 +92,18 @@ executeArg arg = do
   let params = []
   p $ "[LinPgm] Command going to be run: " ++ showCommandForUser executable params <> " " <> arg
 
-  begin <- getTime
-  output@(exitcode, stdout, stdin) <- liftIO $ readProcessWithExitCode executable params arg
-  when (isExitFailure exitcode)    <| throwError (CommandFailure ExecutionError output)
-  finish <- getTime
+  begin_time <- getTime
+  output@(exitcode2, stdout2, stdin2) <- liftIO $ readProcessWithExitCode executable params arg
+  when (isExitFailure exitcode2)    <| throwError (CommandFailure ExecutionError output)
+  finish_time <- getTime
 
   p   "[LinPgm] Execution results:"
-  p $ "[LinPgm] ExitCode: " ++ show exitcode
-  p $ "[LinPgm] stdout:   " ++ show stdout
-  p $ "[LinPgm] stdin :   " ++ show stdin
+  p $ "[LinPgm] ExitCode: " ++ show exitcode2
+  p $ "[LinPgm] stdout:   " ++ show stdout2
+  p $ "[LinPgm] stdin :   " ++ show stdin2
   p   "[LinPgm] Execution ENDED"
-  let log = makeLog output begin finish
-  return (CommandResult log)
+  let current_log = makeLog output begin_time finish_time
+  return (CommandResult current_log)
 
 
 runStrArg :: FutPgmStr -> Backend -> StdInArg -> IO (CommandExecution Result)

@@ -154,9 +154,10 @@ compileLFunP lfp1 v1 a1 = case (lfp1, a1, v1) of
   (SndP , _, _)          -> error "Meaningless arity given to SndP."
   (AddP , _, _)          -> error "Meaningless arity given to AddP."
   (LMapP _, _, _)        -> error "Meaningless arity given to LMapP."
+  (CompP _ _, _, _)      -> error "Wrong constants given to CompP"
+  (ZipP _, _, _)         -> error "Wrong arguments given to ZipP"
 -- missing impl
   (RedP _, _, _)         -> error "This relation not implemented in compiler"
-
 
 finishProg :: Arity -> Compiler ()
 finishProg a =
