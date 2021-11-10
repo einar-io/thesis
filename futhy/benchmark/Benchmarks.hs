@@ -19,6 +19,7 @@ import Flow
 main :: IO ()
 main = defaultMain
   [ reduce
+  , lmap
   ]
 
 benchInterpretor :: String -> LFun -> Val -> Benchmark
@@ -41,3 +42,8 @@ reduce1000 =
         (show vecLen)
         (Red <| rndRelCap relLen maxIdx maxVal)
         (rndVecVals vecLen)
+
+lmap :: Benchmark
+lmap = bgroup "LMap"
+  [ benchInterpretor "1000" (LMap (Scale 1.0)) (rndVecVals 1000)
+  ]

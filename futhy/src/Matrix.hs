@@ -115,17 +115,18 @@ compaction (lfns, rfns) (m, _n) =
    in ([fmm lfns], [fmm rfns])
 
 buildVec :: AssocList Int Val -> Int -> Int -> [Val]
-buildVec al length i
-  | i == length = []
-  | otherwise   = lookupDef 0 i al : buildVec al length (i+1)
+buildVec al len i
+  | i == len = []
+  | otherwise   = lookupDef 0 i al : buildVec al len (i+1)
 
 denseVecFromSparseVecL :: Val -> Maybe Int -> Val
 denseVecFromSparseVecL (SparseTensor []) _ = undefined
 denseVecFromSparseVecL (SparseTensor alist) Nothing =
-  let length = maximum <| map fst alist
-   in Tensor <| buildVec alist (length + 1) 0
-denseVecFromSparseVecL (SparseTensor alist) (Just length) =
-   Tensor <| buildVec alist (length + 1) 0
+  let len = maximum <| map fst alist
+   in Tensor <| buildVec alist (len + 1) 0
+denseVecFromSparseVecL (SparseTensor alist) (Just len) =
+   Tensor <| buildVec alist (len + 1) 0
+denseVecFromSparseVecL _ _ = undefined
 
 oneHot :: Int -> Int -> [Int]
 oneHot l n
@@ -135,6 +136,6 @@ oneHot l n
   where  before = repeat 0 |> take (n-1)
          after  = repeat 0 |> take (l-n)
 
--- genBasis :: [Int] -> [[Int]]
+genBasis :: [Int] -> [[Int]]
 genBasis [r] = [ oneHot r n | n <- [1..r] ]
-
+genBasis _ = undefined
