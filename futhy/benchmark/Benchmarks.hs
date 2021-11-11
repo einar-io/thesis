@@ -15,6 +15,7 @@ import Matrix
 import Random
 import Types
 import Flow
+import Executor
 
 main :: IO ()
 main = defaultMain
@@ -34,16 +35,17 @@ benchInterpretor name lf1 vin1 =
 reduce :: Benchmark
 reduce = bgroup "Reduce"
   [ reduce1000
+  , reduce1000C
   ]
 
 reduce1000 :: Benchmark
 reduce1000 =
-  let vecLen = 1000
+  let vecLen = 100000
       relLen = 20
       maxIdx = vecLen
       maxVal = 256
    in benchInterpretor
-        (show vecLen)
+        (show vecLen ++ " Interpretor")
         (Red <| rndRelCap relLen maxIdx maxVal)
         (rndVecVals vecLen)
 
@@ -57,6 +59,26 @@ zipBench :: Benchmark
 zipBench = bgroup "Zip"
   [ benchInterpretor "10000" (Zip [Scale 1.0]) (Tensor [rndVecVals 10000])
   ]
+
+
+benchCompiler :: String -> LFun -> Val -> Benchmark
+benchCompiler name lf1 vin1 =
+  let (lf, vin, _vout) = caramelizeTestParams (lf1, vin1, Zero)
+   in bench name
+      <| nfIO
+      <| runStrArg (show lf) OPENCL (show vin)
+
+reduce1000C :: Benchmark
+reduce1000C =
+  let vecLen = 100000
+      relLen = 20
+      maxIdx = vecLen
+      maxVal = 256
+   in benchCompiler
+        (show vecLen ++ " Compiler")
+        (Red <| rndRelCap relLen maxIdx maxVal)
+        (rndVecVals vecLen)
+
 
 
 -- [U] Make benchmarks work over [1..10] or similar.
