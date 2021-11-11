@@ -16,48 +16,28 @@ import Random
 import Types
 import Flow
 
-main :: IO ()
-main = defaultMain
-  [ reduce
-  , lmap
-  , zipBench
-  -- wipFeatures
-  -- interpretorGroup
-  -- countDownGroup
-  ]
-
 benchInterpretor :: String -> LFun -> Val -> Benchmark
 benchInterpretor name lf1 vin1 =
   let (lf, vin, _vout) = caramelizeTestParams (lf1, vin1, Zero)
    in bench name <| nf (interpret lf) vin
 
-reduce :: Benchmark
-reduce = bgroup "Reduce"
-  [ reduce1000
+main :: IO ()
+main = defaultMain
+  [ genBenchmarkGroups "Reduce" (genReduceBenchmark) 4
+  , genBenchmarkGroups "LMap" (genLmapBenchmark) 5
+  , genBenchmarkGroups "Zip" (genZipBenchmark) 5
   ]
 
-reduce1000 :: Benchmark
-reduce1000 =
-  let vecLen = 1000
-      relLen = 20
-      maxIdx = vecLen
-      maxVal = 256
-   in benchInterpretor
-        (show vecLen)
-        (Red <| rndRelCap relLen maxIdx maxVal)
-        (rndVecVals vecLen)
+genBenchmarkGroups :: String -> (Int -> Benchmark) -> Int ->  Benchmark
+genBenchmarkGroups n f i = bgroup n $ map f $ powersof10 i
 
-lmap :: Benchmark
-lmap = bgroup "LMap"
-  [ benchInterpretor "10000" (LMap (Scale 1.0)) (rndVecVals 10000)
-  ]
+genLmapBenchmark :: Int -> Benchmark
+genLmapBenchmark i = benchInterpretor (show i) (LMap (Scale 2.0)) (rndVecVals i)
 
+genZipBenchmark :: Int -> Benchmark
+genZipBenchmark i = benchInterpretor (show i) (Zip [Scale 2.0]) (Tensor [rndVecVals i])
 
-zipBench :: Benchmark
-zipBench = bgroup "Zip"
-  [ benchInterpretor "10000" (Zip [Scale 1.0]) (Tensor [rndVecVals 10000])
-  ]
+genReduceBenchmark :: Int -> Benchmark
+genReduceBenchmark i = benchInterpretor (show i) (Red <| rndRelCap i i (i `div` 4)) (rndVecVals i)
 
-
--- [U] Make benchmarks work over [1..10] or similar.
--- [U] Zip benchmark
+powersof10 i = [10 ^ ii | ii <- [1..i]]
