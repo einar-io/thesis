@@ -17,20 +17,42 @@ import Types
 import Flow
 import Executor
 
-main :: IO ()
-main = defaultMain
-  [ reduce
-  , lmap
-  , zipBench
-  -- wipFeatures
-  -- interpretorGroup
-  -- countDownGroup
-  ]
-
 benchInterpretor :: String -> LFun -> Val -> Benchmark
 benchInterpretor name lf1 vin1 =
   let (lf, vin, _vout) = caramelizeTestParams (lf1, vin1, Zero)
    in bench name <| nf (interpret lf) vin
+
+main :: IO ()
+main = defaultMain
+  [ genBenchmarkGroups "Reduce" genReduceBenchmark 4
+  , genBenchmarkGroups "LMap" genLmapBenchmark 5
+  , genBenchmarkGroups "Zip" genZipBenchmark 5
+  , reduce -- to be removed
+  ]
+
+genBenchmarkGroups :: String -> (Int -> Benchmark) -> Int ->  Benchmark
+genBenchmarkGroups n f i = bgroup n $ map f $ powersof10 i
+
+genLmapBenchmark :: Int -> Benchmark
+genLmapBenchmark i = benchInterpretor (show i) (LMap (Scale 2.0)) (rndVecVals i)
+
+genZipBenchmark :: Int -> Benchmark
+genZipBenchmark i = benchInterpretor (show i) (Zip [Scale 2.0]) (Tensor [rndVecVals i])
+
+genReduceBenchmark :: Int -> Benchmark
+genReduceBenchmark i = benchInterpretor (show i) (Red <| rndRelCap i i (i `div` 4)) (rndVecVals i)
+
+powersof10 i = [10 ^ ii | ii <- [1..i]]
+
+
+{- Old-flavour benchmarks for testing GPU -}
+
+benchCompiler :: String -> LFun -> Val -> Benchmark
+benchCompiler name lf1 vin1 =
+  let (lf, vin, _vout) = caramelizeTestParams (lf1, vin1, Zero)
+   in bench name
+      <| nfIO
+      <| runStrArg (show lf) OPENCL (show vin)
 
 reduce :: Benchmark
 reduce = bgroup "Reduce"
@@ -49,25 +71,6 @@ reduce1000 =
         (Red <| rndRelCap relLen maxIdx maxVal)
         (rndVecVals vecLen)
 
-lmap :: Benchmark
-lmap = bgroup "LMap"
-  [ benchInterpretor "10000" (LMap (Scale 1.0)) (rndVecVals 10000)
-  ]
-
-
-zipBench :: Benchmark
-zipBench = bgroup "Zip"
-  [ benchInterpretor "10000" (Zip [Scale 1.0]) (Tensor [rndVecVals 10000])
-  ]
-
-
-benchCompiler :: String -> LFun -> Val -> Benchmark
-benchCompiler name lf1 vin1 =
-  let (lf, vin, _vout) = caramelizeTestParams (lf1, vin1, Zero)
-   in bench name
-      <| nfIO
-      <| runStrArg (show lf) OPENCL (show vin)
-
 reduce1000C :: Benchmark
 reduce1000C =
   let vecLen = 100000
@@ -78,8 +81,3 @@ reduce1000C =
         (show vecLen ++ " Compiler")
         (Red <| rndRelCap relLen maxIdx maxVal)
         (rndVecVals vecLen)
-
-
-
--- [U] Make benchmarks work over [1..10] or similar.
--- [U] Zip benchmark
