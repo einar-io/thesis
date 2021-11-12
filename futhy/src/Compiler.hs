@@ -134,14 +134,14 @@ compileLFunP lfp1 v1 a1 = case (lfp1, a1, v1) of
                                                    genLineOfCode (APair a5 a4) ("pass_consts_para" <> id5 <> id4)
 
   (LMapP _, Atom 0, _) -> error "LMapP not meaningful for an Atom 0 argument"
-  (LMapP lfp2, Atom n, Tensor (h:_)) -> do compileLFunP lfp2 h (Atom $ n-1)
-                                           (id2, _) <- getLastFunIdAndArity
-                                           genLineOfCode a1 ("map" <> id2)
+  (LMapP lfp2, Atom n, v) -> do compileLFunP lfp2 v $ Atom $ n-1
+                                (id2, _) <- getLastFunIdAndArity
+                                genLineOfCode a1 ("constPassingMap" <> id2)
 
   (ZipP _, Atom 0, _) -> error "Zip not meaningful for an Atom 0 argument"
-  (ZipP lfp2, Atom n, Tensor (hv:_)) -> do compileLFunP lfp2 hv (Atom $ n-1)
+  (ZipP lfp2, Atom n, Tensor (hv:_)) -> do compileLFunP lfp2 hv $ Atom $ n-1
                                            (id2, _) <- getLastFunIdAndArity
-                                           genLineOfCode a1 ("map2variant" <> id2)
+                                           genLineOfCode a1 ("constPassingMap2" <> id2)
                                            -- TODO CALL verifyZipToMap2Legality
                                            -- TODO CALL verifyZipToMap2Legality
                                            -- TODO CALL verifyZipToMap2Legality
