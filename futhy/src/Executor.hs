@@ -42,7 +42,7 @@ compile = do
 
   begin_time <- getTime
   output@(exitcode2, stdout2, stdin2) <- liftIO <| readProcessWithExitCode futExec futParams ""
-  when (isExitFailure exitcode2)    <| throwError (CommandFailure CompilationError output)
+  when (isExitFailure exitcode2)                <| throwError (CommandFailure CompilationError output)
   finish_time <- getTime
 
   p   "[Futhark] Compilation results:"
@@ -93,8 +93,8 @@ executeArg arg = do
   p $ "[LinPgm] Command going to be run: " ++ showCommandForUser executable params <> " " <> arg
 
   begin_time <- getTime
-  output@(exitcode2, stdout2, stdin2) <- liftIO $ readProcessWithExitCode executable params arg
-  when (isExitFailure exitcode2)    <| throwError (CommandFailure ExecutionError output)
+  output@(exitcode2, stdout2, stdin2) <- liftIO <| readProcessWithExitCode executable params arg
+  when (isExitFailure exitcode2)                <| throwError (CommandFailure ExecutionError output)
   finish_time <- getTime
 
   p   "[LinPgm] Execution results:"

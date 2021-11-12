@@ -1,4 +1,4 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving, DeriveGeneric, DeriveAnyClass, DerivingStrategies #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving, DeriveGeneric, DeriveAnyClass, DerivingStrategies, StandaloneDeriving #-}
 
 module Types where
 
@@ -169,11 +169,9 @@ data Env = Env
   , be :: Backend
   }
 
-
 isExitFailure :: ExitCode -> Bool
 isExitFailure (ExitFailure _) = True
 isExitFailure _               = False
-
 
 -- The data contained in the Right constructur of ExceptT trans:
 type Stdin  = String
@@ -188,18 +186,19 @@ data Log = Log
   , stdin    :: Stdin
   , begin    :: TimeStamp
   , finish   :: TimeStamp
-  }
+  } deriving (Show, Eq, Generic, NFData)
 
 data FailedStep
   = CompilationError
   | ExecutionError
-  deriving (Show, Eq)
+  deriving (Show, Eq, Generic, NFData)
 
 newtype Result = CommandResult Log
---  deriving (Show, Eq)
+  deriving stock    (Show, Eq, Generic)
+  deriving anyclass (NFData)
 
 data Failure = CommandFailure FailedStep CommandOutput
-  deriving (Show, Eq)
+  deriving (Show, Eq, Generic, NFData)
 
 type CommandExecution a = Either Failure a
 
@@ -207,17 +206,16 @@ type CommandExecution a = Either Failure a
 type Cmd a = ReaderT Env (ExceptT Failure IO) a
 newtype Command a = Command { runCmd :: Cmd a }
   deriving newtype
-  ( Functor
-  , Applicative
-  , Monad
-  , MonadIO
-  , MonadReader Env
-  , MonadError Failure
-  )
+    ( Functor
+    , Applicative
+    , Monad
+    , MonadIO
+    , MonadReader Env
+    , MonadError Failure
+    )
 
 execCmd :: Command a -> Env -> IO (CommandExecution a)
 execCmd cmd env = runExceptT $ runReaderT (runCmd cmd) env
-
 
 type InterpretorError    = String
 type InterpretorResult   = Val
