@@ -32,26 +32,34 @@ makeLog (exitcode2, stdout2, stdin2) begin_time finish_time = Log
   , finish   = finish_time
   }
 
+runCommand :: String -> [Char] -> [String] -> FilePath -> [Char] -> Command Result
+runCommand arg cxt params executable thingtodo = do
+  p $ cxt <> " Command going to be run: " ++ showCommandForUser executable params <> arg
+
+  begin_time <- getTime
+  output@(exitcode2, stdout2, stdin2) <- liftIO <| readProcessWithExitCode executable params arg
+  when (isExitFailure exitcode2)                <| throwError (CommandFailure ExecutionError output)
+  finish_time <- getTime
+
+  p $ cxt <> " " <> thingtodo <> " results:"
+  p $ cxt <> " ExitCode: " ++ show exitcode2
+  p $ cxt <> " stdout:   " ++ show stdout2
+  p $ cxt <> " stdin :   " ++ show stdin2
+  p $ cxt <> " " <> thingtodo <> " ENDED"
+  let current_log = makeLog output begin_time finish_time
+  return (CommandResult current_log)
+
 -- |Compile the Futhark source code in env.
 compile :: Command Result
 compile = do
   Env filepath backend <- ask
-  let futExec = "futhark"
-  let futParams = [show backend, filepath]
-  p $ "[Futhark] Command going to be run: " ++ showCommandForUser futExec futParams
+  runCommand "" "[Futhark]" [show backend, filepath] "futhark" "Compilation"
 
-  begin_time <- getTime
-  output@(exitcode2, stdout2, stdin2) <- liftIO <| readProcessWithExitCode futExec futParams ""
-  when (isExitFailure exitcode2)                <| throwError (CommandFailure CompilationError output)
-  finish_time <- getTime
-
-  p   "[Futhark] Compilation results:"
-  p $ "[Futhark] ExitCode: " ++ show exitcode2
-  p $ "[Futhark] stdout:   " ++ show stdout2
-  p $ "[Futhark] stdin :   " ++ show stdin2
-  p   "[Futhark] Compilation COMPLETED"
-  let current_log = makeLog output begin_time finish_time
-  return (CommandResult current_log)
+--- but with std'ins
+executeArg :: StdInArg -> Command Result
+executeArg arg = do
+  filepath <- asks fp
+  runCommand (" " <> arg) "[LinPgm]" [] (dropExtension filepath) "Execution"
 
 -- |Execute the compiled Futhark executable 'futExec' containing the compiled linear program.
 makeTemp :: Command FutPgmFile
@@ -76,40 +84,6 @@ store futPgmStr = do
   local (const envNew) (writeTemp futPgmStr)
   return filepath
 
-runStr :: FutPgmStr -> Backend -> IO (CommandExecution Result)
-runStr futPgmStr backend = runStrArg futPgmStr backend "\n"
-
-runFile :: FutPgmFile -> Backend -> IO (CommandExecution Result)
-runFile futPgmFile backend =
-  let envInit = Env { fp = futPgmFile, be = backend }
-  in execCmd (runFileArgM "\n") envInit
-
---- but with std'ins
-executeArg :: StdInArg -> Command Result
-executeArg arg = do
-  filepath <- asks fp
-  let executable = dropExtension filepath
-  let params = []
-  p $ "[LinPgm] Command going to be run: " ++ showCommandForUser executable params <> " " <> arg
-
-  begin_time <- getTime
-  output@(exitcode2, stdout2, stdin2) <- liftIO <| readProcessWithExitCode executable params arg
-  when (isExitFailure exitcode2)                <| throwError (CommandFailure ExecutionError output)
-  finish_time <- getTime
-
-  p   "[LinPgm] Execution results:"
-  p $ "[LinPgm] ExitCode: " ++ show exitcode2
-  p $ "[LinPgm] stdout:   " ++ show stdout2
-  p $ "[LinPgm] stdin :   " ++ show stdin2
-  p   "[LinPgm] Execution ENDED"
-  let current_log = makeLog output begin_time finish_time
-  return (CommandResult current_log)
-
-
-runStrArg :: FutPgmStr -> Backend -> StdInArg -> IO (CommandExecution Result)
-runStrArg futPgmStr backend arg =
-  let envInit = Env { fp = "", be = backend }
-  in execCmd (runStrArgM futPgmStr arg) envInit
 
 runStrArgM :: FutPgmStr -> StdInArg -> Command Result
 runStrArgM futPgmStr arg = do
@@ -120,3 +94,17 @@ runStrArgM futPgmStr arg = do
 
 runFileArgM :: StdInArg -> Command Result
 runFileArgM arg = compile >> executeArg arg
+
+------ interface
+runStr :: FutPgmStr -> Backend -> IO (CommandExecution Result)
+runStr futPgmStr backend = runStrArg futPgmStr backend "\n"
+
+runFile :: FutPgmFile -> Backend -> IO (CommandExecution Result)
+runFile futPgmFile backend =
+  let envInit = Env { fp = futPgmFile, be = backend }
+  in execCmd (runFileArgM "\n") envInit
+
+runStrArg :: FutPgmStr -> Backend -> StdInArg -> IO (CommandExecution Result)
+runStrArg futPgmStr backend arg =
+  let envInit = Env { fp = "", be = backend }
+  in execCmd (runStrArgM futPgmStr arg) envInit
