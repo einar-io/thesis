@@ -27,14 +27,14 @@ rndVecVals :: Int -> Val
 rndVecVals = vecToVal . rndVecRealNumbers
 
 rndRelCap :: Int -> Int -> Int -> Rel
-rndRelCap len maxIdx maxVal =
-  let indices = rndVecInts len
+rndRelCap numPairs pastSrc pastDst =
+  let srcs = rndVecInts (numPairs*2)
                 |> map abs
-                |> map (`mod` maxIdx)
-      values  = rndVecInts len
+                |> map (`mod` pastSrc)
+      dsts  = rndVecInts numPairs
                 |> map abs
-                |> map (`mod` maxVal)
-   in List <| zip indices values
+                |> map (`mod` pastDst)
+   in List <| zip srcs dsts
 
 {-
 rndVec :: Int -> Vector Double
@@ -48,4 +48,3 @@ rndRel length =
                   |> map abs
    in List <| zip indices values
 -}
-

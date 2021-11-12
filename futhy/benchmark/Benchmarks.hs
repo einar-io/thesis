@@ -23,13 +23,17 @@ benchInterpretor name lf1 vin1 =
 
 main :: IO ()
 main = defaultMain
-  [ genBenchmarkGroups "Reduce" (genReduceBenchmark) 4
-  , genBenchmarkGroups "LMap" (genLmapBenchmark) 5
-  , genBenchmarkGroups "Zip" (genZipBenchmark) 5
+  [ genBs "Reduce" (genReduceBenchmark) 4
+  , genBs "Scale" (genScaleBenchmark) 5
+  , genBs "LMap" (genLmapBenchmark) 5
+  , genBs "Zip" (genZipBenchmark) 5
   ]
 
-genBenchmarkGroups :: String -> (Int -> Benchmark) -> Int ->  Benchmark
-genBenchmarkGroups n f i = bgroup n $ map f $ powersof10 i
+genBs :: String -> (Int -> Benchmark) -> Int ->  Benchmark
+genBs n f i = bgroup n $ map f $ powersof10 i
+
+genScaleBenchmark :: Int -> Benchmark
+genScaleBenchmark i = benchInterpretor (show i) (Scale 2.0) (rndVecVals i)
 
 genLmapBenchmark :: Int -> Benchmark
 genLmapBenchmark i = benchInterpretor (show i) (LMap (Scale 2.0)) (rndVecVals i)
