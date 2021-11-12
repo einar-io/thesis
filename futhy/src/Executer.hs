@@ -1,4 +1,4 @@
-module Executor
+module Executer
   ( runFile
   , runStr
   , runStrArg

@@ -14,12 +14,12 @@ import Flow
 
 -- our libs
 --import Optimizer
-import Interpretor
+import Interpreter
 import Types
 import CodeGen
 import Utils
-import Caramelizer
-import Executor-- hiding (main)
+import Preprocesser
+import Executer-- hiding (main)
 
   -- separate test files (called from here)
 --import MatrixTests

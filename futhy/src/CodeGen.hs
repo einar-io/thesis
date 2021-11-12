@@ -1,6 +1,6 @@
 module CodeGen where
 import Types
-import ConstExtractor
+import ConstExtracter
 
 type Program = String
 type Count = Int

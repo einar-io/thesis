@@ -1,4 +1,4 @@
-module ConstExtractor where
+module ConstExtracter where
 import Types
 
 data LFunP -- expr
