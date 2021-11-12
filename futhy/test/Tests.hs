@@ -16,7 +16,7 @@ import Flow
 --import Optimizer
 import Interpretor
 import Types
-import Compiler
+import CodeGen
 import Utils
 import Caramelizer
 import Executor-- hiding (main)
@@ -38,30 +38,30 @@ goodCaseInterpretor params = let (lf, vin, vout) = caramelizeTestParams params i
 showCleanError :: Failure -> IO a
 showCleanError (CommandFailure _ (_, _, i)) = assertFailure $ remove "\ESC" i --TODO: IMPORTANT: Format the string in output!
 
-genCompilerTestCase :: String -> (LFun -> Arity -> Program) -> (LFun, Val, Val) -> TestTree
-genCompilerTestCase testname compiler (lf, vin, vout) =
-    testCase testname $ do compileRes <- runStrArg (compiler lf (getArity vin)) C (stdinShow vin)
-                           compileResStr <- case compileRes of
+genCodeGenrTestCase :: String -> (LFun -> Arity -> Program) -> (LFun, Val, Val) -> TestTree
+genCodeGenrTestCase testname codeGenr (lf, vin, vout) =
+    testCase testname $ do codeGenRes <- runStrArg (codeGenr lf (getArity vin)) C (stdinShow vin)
+                           codeGenResStr <- case codeGenRes of
                                               Right (CommandResult log) -> return <| stdout log
                                               Left e -> showCleanError e
                            intComp <- runStr ("entry main = " <> show vout) C
                            interpResStrn <- case intComp of
                                               Right (CommandResult log) -> return <| stdout log
                                               Left e -> showCleanError e
-                           when (compileResStr /= interpResStrn)
+                           when (codeGenResStr /= interpResStrn)
                              <| assertFailure
-                             <|  "expected: " ++ show interpResStrn ++ "\n but got: " ++ show compileResStr
+                             <|  "expected: " ++ show interpResStrn ++ "\n but got: " ++ show codeGenResStr
 
 caramelizeTestParams :: (LFun, Val, Val) -> (LFun, Val, Val)
 caramelizeTestParams (lf, vin, vout) = (caramelizeLFun lf, caramelizeVal vin, caramelizeVal vout)
 
 goodCaseExecution :: (LFun, Val, Val) -> TestTree
-goodCaseExecution params = genCompilerTestCase "Compiler" compileProgram $ caramelizeTestParams params
+goodCaseExecution params = genCodeGenrTestCase "CodeGener" codeGenProgram $ caramelizeTestParams params
 
 goodCaseConstExtracted :: (LFun, Val, Val) -> TestTree
 goodCaseConstExtracted params =
       let (lf_t, vin_t, vout_t) = caramelizeTestParams params
-      in genCompilerTestCase "ConstExtracted" compileProgramConstExtracted (lf_t, vin_t, vout_t)
+      in genCodeGenrTestCase "ConstExtracted" codeGenProgramConstExtracted (lf_t, vin_t, vout_t)
 
 goodCaseStaged :: TestName -> (LFun, Val, Val) -> TestTree
 goodCaseStaged name params = testGroup name [goodCaseInterpretor params, goodCaseExecution params, goodCaseConstExtracted params]
@@ -398,14 +398,14 @@ addTests =
 --  arbitrary = oneof
 --    [ pure Id ]
 
---propInterpretorCompilerEqual :: LFun -> Val -> Property
---propInterpretorCompilerEqual lf vin =
+--propInterpretorCodeGenrEqual :: LFun -> Val -> Property
+--propInterpretorCodeGenrEqual lf vin =
 
 --qcTests :: TestTree
 --qcTests =
 --  testGroup "qc tests"
---    [ testCase "propInterpretorCompilerEqual"
---      $ quickCheckWith stdArgs { maxSuccess = 1 } propInterpretorCompilerEqual
+--    [ testCase "propInterpretorCodeGenrEqual"
+--      $ quickCheckWith stdArgs { maxSuccess = 1 } propInterpretorCodeGenrEqual
 --    ]
 
 --goodCaseOptimizer :: TestName -> LFun -> LFun -> TestTree
