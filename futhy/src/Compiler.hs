@@ -1,6 +1,6 @@
 module Compiler where
 import Types
-import Parameterizer
+import ConstExtractor
 
 type Program = String
 type Count = Int
@@ -76,7 +76,7 @@ compileLFun linfun a1 = case (linfun, a1) of
                           (id2, _) <- getLastFunIdAndArity
                           genLineOfCode a1 ("map" <> id2)
   (Zip _, Atom 0)   -> error "zip not meaningful for an Atom 0 argument"
-  (Zip lfs, Atom n) -> do let ((hf:_), vs@(hv:_)) = unzip $ map parameterizeLFun lfs
+  (Zip lfs, Atom n) -> do let ((hf:_), vs@(hv:_)) = unzip $ map extractLFunConsts lfs
                           compileLFunP hf hv (Atom $ n-1)
                           (id2, _) <- getLastFunIdAndArity
                           -- TODO CALL verifyZipToMap2Legality
@@ -159,12 +159,7 @@ compileLFunP lfp1 v1 a1 = case (lfp1, a1, v1) of
 -- missing impl
   (RedP _, _, _)         -> error "This relation not implemented in compiler"
 
-finishProg :: Arity -> Compiler ()
-finishProg a =
-  Co (\(p, r, c) ->
-    let (params, args, _) = inputArgDeclaration a 0 in
-    let new_loc = "entry main " <> params <>  " =" <> " fun" <> show (c-1) <> " " <> args
-    in ((), (p <> new_loc, r, c)))
+
 
 inputArgDeclaration :: Arity -> Int -> (String, String, Int)
 inputArgDeclaration a1 c1
@@ -186,12 +181,35 @@ put cs = Co (\_ -> ((), cs))
 getProgr :: Compiler Program
 getProgr = Co (\cs@(prog, _, _) -> (prog, cs))
 
+finishProg :: Arity -> Compiler ()
+finishProg a =
+  Co (\(p, r, c) ->
+    let (params, args, _) = inputArgDeclaration a 0 in
+    let new_loc = "entry main " <> params <>  " =" <> " fun" <> show (c-1) <> " " <> args
+    in ((), (p <> new_loc, r, c)))
+
 compileProgram :: LFun -> Arity -> Program
-compileProgram lf arit = let initial_program =
-                               "open import \"lmaplib\"\n\n" in
-                         let initial = (initial_program, arit, 1) in
-                         let act = do put initial
-                                      compileLFun lf arit
-                                      finishProg arit
-                                      getProgr
-                         in (fst . runCo act) initial
+compileProgram lf arit =
+  let initial = ("open import \"lmaplib\"\n\n", arit, 1) in
+  let act = do put initial
+               compileLFun lf arit
+               finishProg arit
+               getProgr
+  in (fst . runCo act) initial
+
+finishProgWithConsts :: Val -> Arity -> Compiler ()
+finishProgWithConsts consts a =
+  Co (\(p, r, c) ->
+    let (params, args, _) = inputArgDeclaration a 0 in
+    let new_loc = "entry main " <> params <>  " =" <> " fun" <> show (c-1) <> " (" <> show consts <> ", " <> args <> ")"
+    in ((), (p <> new_loc, r, c)))
+
+compileProgramConstExtracted :: LFun -> Arity -> Program
+compileProgramConstExtracted lf arit =
+  let initial = ("open import \"lmaplib\"\n\n", arit, 1) in
+  let (lf_extracted, consts) = extractLFunConsts lf in
+  let act = do put initial
+               compileLFunP lf_extracted consts arit
+               finishProgWithConsts consts arit
+               getProgr
+  in (fst . runCo act) initial

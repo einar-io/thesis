@@ -38,9 +38,9 @@ goodCaseInterpretor params = let (lf, vin, vout) = caramelizeTestParams params i
 showCleanError :: Failure -> IO a
 showCleanError (CommandFailure _ (_, _, i)) = assertFailure $ remove "\ESC" i --TODO: IMPORTANT: Format the string in output!
 
-genCompilerTestCase :: String -> (LFun, Val, Val) -> TestTree
-genCompilerTestCase testname (lf, vin, vout) =
-    testCase testname $ do compileRes <- runStrArg (compileProgram lf (getArity vin)) C (stdinShow vin)
+genCompilerTestCase :: String -> (LFun -> Arity -> Program) -> (LFun, Val, Val) -> TestTree
+genCompilerTestCase testname compiler (lf, vin, vout) =
+    testCase testname $ do compileRes <- runStrArg (compiler lf (getArity vin)) C (stdinShow vin)
                            compileResStr <- case compileRes of
                                               Right (CommandResult log) -> return <| stdout log
                                               Left e -> showCleanError e
@@ -56,17 +56,15 @@ caramelizeTestParams :: (LFun, Val, Val) -> (LFun, Val, Val)
 caramelizeTestParams (lf, vin, vout) = (caramelizeLFun lf, caramelizeVal vin, caramelizeVal vout)
 
 goodCaseExecution :: (LFun, Val, Val) -> TestTree
-goodCaseExecution params = genCompilerTestCase "Compiler" $ caramelizeTestParams params
+goodCaseExecution params = genCompilerTestCase "Compiler" compileProgram $ caramelizeTestParams params
 
-goodCaseParameterized :: (LFun, Val, Val) -> TestTree
-goodCaseParameterized params =
+goodCaseConstExtracted :: (LFun, Val, Val) -> TestTree
+goodCaseConstExtracted params =
       let (lf_t, vin_t, vout_t) = caramelizeTestParams params
-      in genCompilerTestCase "Parameterized" (Zip [lf_t], Tensor [vin_t], Tensor [vout_t])
+      in genCompilerTestCase "ConstExtracted" compileProgramConstExtracted (lf_t, vin_t, vout_t)
 
 goodCaseStaged :: TestName -> (LFun, Val, Val) -> TestTree
-goodCaseStaged name params = testGroup name [goodCaseInterpretor params, goodCaseExecution params, goodCaseParameterized params]
-
-
+goodCaseStaged name params = testGroup name [goodCaseInterpretor params, goodCaseExecution params, goodCaseConstExtracted params]
 
 
 
