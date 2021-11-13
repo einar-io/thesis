@@ -42,11 +42,11 @@ genCodeGenrTestCase :: String -> (LFun -> Arity -> Program) -> (LFun, Val, Val) 
 genCodeGenrTestCase testname codeGenr (lf, vin, vout) =
     testCase testname $ do codeGenRes <- runStrArg (codeGenr lf (getArity vin)) C (stdinShow vin)
                            codeGenResStr <- case codeGenRes of
-                                              Right (CommandResult log) -> return <| stdout log
+                                              Right (CommandResult log2) -> return <| stdout log2
                                               Left e -> showCleanError e
                            intComp <- runStr ("entry main = " <> show vout) C
                            interpResStrn <- case intComp of
-                                              Right (CommandResult log) -> return <| stdout log
+                                              Right (CommandResult log2) -> return <| stdout log2
                                               Left e -> showCleanError e
                            when (codeGenResStr /= interpResStrn)
                              <| assertFailure
