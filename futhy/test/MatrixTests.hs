@@ -7,8 +7,6 @@ import Prelude hiding (not)
 import Test.Tasty.HUnit
 import Test.Tasty
 import Types
---import Numeric.LinearAlgebra hiding ((|>))
---import Data.Maybe
 import Flow
 import Control.Monad
 import Matrix
@@ -163,28 +161,27 @@ goodBasisTests name vin vout = testCase (" " ++ name)
 {- Test cases handed out by Robert -}
 genBasisTests :: TestTree
 genBasisTests =
-  testGroup "genBasis" []
-  {-
+  testGroup "genBasis"
     [ goodBasisTests "genBasis [2]"
       (genBasis [2])
-      [
-        [1.0, 0.0],
-        [0.0, 1.0]
+      [ [1.0, 0.0]
+      , [0.0, 1.0]
       ]
+    {-
     , goodBasisTests "genBasis [2,2]"
       (genBasis [2,2])
       [
-        [ [1.0, 0.0],
-          [0.0, 0.0]
+        [ [1.0, 0.0]
+        , [0.0, 0.0]
         ],
-        [ [0.0, 1.0],
-          [0.0, 0.0]
+        [ [0.0, 1.0]
+        , [0.0, 0.0]
         ],
-        [ [0.0, 0.0],
-          [1.0, 0.0]
+        [ [0.0, 0.0]
+        , [1.0, 0.0]
         ],
-        [ [0.0, 0.0],
-          [0.0, 1.0]
+        [ [0.0, 0.0]
+        , [0.0, 1.0]
         ]
       ]
     , goodBasisTests "genBasis [3,2]"
@@ -215,7 +212,5 @@ genBasisTests =
         , [0.0, 1.0]
         ]
       ]
+    -}
     ]
-
-
--}

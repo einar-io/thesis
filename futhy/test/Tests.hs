@@ -22,7 +22,7 @@ import Caramelizer
 import Executor-- hiding (main)
 
   -- separate test files (called from here)
---import MatrixTests
+import MatrixTests
 import ReduceTests
 
 second :: Integer
@@ -73,9 +73,9 @@ goodCaseStaged name params = testGroup name [goodCaseInterpretor params, goodCas
 runAllTests :: TestTree
 runAllTests = testGroup "All features" <| concat
   [
-    map testFeature allFeatures
-  {-
     [genBasisTests]
+  {-
+    map testFeature allFeatures
   , [matrixTests]
   , [optimizerTests]
   -}

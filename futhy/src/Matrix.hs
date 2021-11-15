@@ -128,7 +128,10 @@ denseVecFromSparseVecL (SparseTensor alist) (Just len) =
    Tensor <| buildVec alist (len + 1) 0
 denseVecFromSparseVecL _ _ = undefined
 
-oneHot :: Int -> Int -> [Int]
+
+{-
+Old
+oneHot :: Int -> Int -> [RealNumber]
 oneHot l n
   | n < 1 = undefined
   | l < n = undefined
@@ -136,6 +139,19 @@ oneHot l n
   where  before = repeat 0 |> take (n-1)
          after  = repeat 0 |> take (l-n)
 
-genBasis :: [Int] -> [[Int]]
+genBasis :: [Int] -> [[Val]]
 genBasis [r] = [ oneHot r n | n <- [1..r] ]
 genBasis _ = undefined
+-}
+
+--genZero :: [Int] -> Val
+genZero [] = Zero
+genZero (n:ns) = Tensor <| replicate n (genZero ns)
+
+--genBasis :: [Int] -> [Val]
+genBasis [] = [Scalar 1]
+genBasis (n:ns) = do
+  i <- [0..n-1]
+  b <- genBasis ns
+  replicate i (genZero ns) ++ [b] ++ replicate (n-i) (genZero ns)
+
