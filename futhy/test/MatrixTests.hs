@@ -154,12 +154,9 @@ matrixTests =
           [(map (`tnsr2mtx` shp2x2) [b,b,c,b,c], map (`tnsr2mtx` shp2x2) [a,c,a,a])]
       ]
 
-{-
 --goodBasisTests :: TestName ->  -> LFun -> TestTree
 goodBasisTests name vin vout = testCase (" " ++ name)
                             <| vin @?= vout
-
--}
 
 {- Test cases handed out by Robert -}
 genBasisTests :: TestTree
@@ -167,53 +164,49 @@ genBasisTests =
   testGroup "genBasis"
     [ goodBasisTests "genBasis [2]"
       (genBasis [2])
-      [ [1.0, 0.0]
-      , [0.0, 1.0]
-      ]
-    {-
+      [ Tensor [Scalar 1.0, Scalar 0.0]
+             , Tensor [Scalar 0.0, Scalar 1.0]
+             ]
     , goodBasisTests "genBasis [2,2]"
       (genBasis [2,2])
-      [
-        [ [1.0, 0.0]
-        , [0.0, 0.0]
-        ],
-        [ [0.0, 1.0]
-        , [0.0, 0.0]
-        ],
-        [ [0.0, 0.0]
-        , [1.0, 0.0]
-        ],
-        [ [0.0, 0.0]
-        , [0.0, 1.0]
-        ]
+      [ Tensor [ Tensor [Scalar 1.0, Scalar 0.0]
+                      , Tensor [Scalar 0.0, Scalar 0.0]
+             ]
+             , Tensor [ Tensor [Scalar 0.0, Scalar 1.0]
+                      , Tensor [Scalar 0.0, Scalar 0.0]
+             ]
+             , Tensor [ Tensor [Scalar 0.0, Scalar 0.0]
+                      , Tensor [Scalar 1.0, Scalar 0.0]
+             ]
+             , Tensor [ Tensor [Scalar 0.0, Scalar 0.0]
+                      , Tensor [Scalar 0.0, Scalar 1.0]
+             ]
       ]
     , goodBasisTests "genBasis [3,2]"
       (genBasis [3,2])
-      [
-        [ [1.0, 0.0]
-        , [0.0, 0.0]
-        , [0.0, 0.0]
-        ] ,
-        [ [0.0, 1.0]
-        , [0.0, 0.0]
-        , [0.0, 0.0]
-        ] ,
-        [ [0.0, 0.0]
-        , [1.0, 0.0]
-        , [0.0, 0.0]
-        ] ,
-        [ [0.0, 0.0]
-        , [0.0, 1.0]
-        , [0.0, 0.0]
-        ] ,
-        [ [0.0, 0.0]
-        , [0.0, 0.0]
-        , [1.0, 0.0]
-        ] ,
-        [ [0.0, 0.0]
-        , [0.0, 0.0]
-        , [0.0, 1.0]
-        ]
+       [Tensor [ Tensor [Scalar 1.0, Scalar 0.0]
+              ,Tensor [Scalar 0.0, Scalar 0.0]
+              ,Tensor [Scalar 0.0, Scalar 0.0]
+              ]
+              ,Tensor [Tensor [Scalar 0.0, Scalar 1.0]
+              ,Tensor [Scalar 0.0, Scalar 0.0]
+              ,Tensor [Scalar 0.0, Scalar 0.0]
+              ]
+              ,Tensor [Tensor [Scalar 0.0, Scalar 0.0]
+              ,Tensor [Scalar 1.0, Scalar 0.0]
+              ,Tensor [Scalar 0.0, Scalar 0.0]
+              ]
+              ,Tensor [Tensor [Scalar 0.0, Scalar 0.0]
+              ,Tensor [Scalar 0.0, Scalar 1.0]
+              ,Tensor [Scalar 0.0, Scalar 0.0]
+              ]
+              ,Tensor [Tensor [Scalar 0.0, Scalar 0.0]
+              ,Tensor [Scalar 0.0, Scalar 0.0]
+              ,Tensor [Scalar 1.0, Scalar 0.0]
+              ]
+              ,Tensor [Tensor [Scalar 0.0, Scalar 0.0]
+              ,Tensor [Scalar 0.0, Scalar 0.0]
+              ,Tensor [Scalar 0.0, Scalar 1.0]
+              ]
       ]
-    -}
     ]
