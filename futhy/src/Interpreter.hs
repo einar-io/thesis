@@ -1,6 +1,6 @@
 {-# LANGUAGE GADTs #-}
 
-module Interpretor where
+module Interpreter where
 import Types
 import Control.Monad
 import Utils

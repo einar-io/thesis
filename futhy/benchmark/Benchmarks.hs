@@ -7,15 +7,36 @@ module Benchmarks (main) where
 4. Expand to compiler.
 -}
 
-import Interpretor (interpret)
-import ReduceTests
+import Interpreter (interpret)
+--import ReduceTests
 import Test.Tasty.Bench
 import Tests hiding (main)
-import Matrix
+--import Matrix
 import Random
 import Types
-import Flow
-import Executor
+--import Flow
+import Executer
+
+
+
+{-
+
+
+https://futhark.readthedocs.io/en/stable/man/futhark-bench.html#futhark-bench-1
+
+blabla lf val = progstrn <- compile
+        inputval = show val
+        bench = "-- ==\n-- input{" <> show val <> "}"
+        resultprogstrn = bench <> progstrn
+
+
+-- ==
+-- input { VAL LITERAL }
+
+
+-}
+
+
 
 benchInterpretor :: String -> LFun -> Val -> Benchmark
 benchInterpretor name lf1 vin1 =
