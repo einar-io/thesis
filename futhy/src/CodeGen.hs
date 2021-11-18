@@ -182,7 +182,7 @@ finishProg :: Arity -> CodeGen ()
 finishProg a =
   Co (\(p, r, c) ->
     let (params, args, _) = inputArgDeclaration a 0 in
-    let new_loc = "entry main " <> params <>  " =" <> " fun" <> show (c-1) <> " " <> args
+    let new_loc = "entry main " <> params <>  " =" <> " fun" <> show (c-1) <> " " <> args <>"\n"
     in ((), (p <> new_loc, r, c)))
 
 codeGenProgram :: LFun -> Arity -> Program

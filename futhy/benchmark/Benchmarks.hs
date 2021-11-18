@@ -16,25 +16,7 @@ import Random
 import Types
 import Flow
 import Executer
-import CodeGen (completeCodeGenProgram)
 
-
-{-
-
-
-https://futhark.readthedocs.io/en/stable/man/futhark-bench.html#futhark-bench-1
-
-blabla lf val = progstrn <- compile
-        inputval = show val
-        bench = "-- ==\n-- input{" <> show val <> "}"
-        resultprogstrn = bench <> progstrn
-
-
--- ==
--- input { VAL LITERAL }
-
-
--}
 
 
 
@@ -109,27 +91,18 @@ reduce1000C =
 
 {- New-flavour benchmarks for testing GPU -}
 
-benchCompilerNew :: String -> Program -> Val -> IO (CommandExecution Result)
-benchCompilerNew name lf1 vin1 =
-  let (lf, vin, _vout) = caramelizeTestParams (lf1, vin1, Zero)
-   in benchmark (show lf) OPENCL (show vin)
-
 reduce1000Cnew :: IO (CommandExecution Result)
 reduce1000Cnew =
-  let vecLen = 10
-      relLen = 20
+  let vecLen = 100000
+      relLen = 200
       maxIdx = vecLen
       maxVal = 256
-   in benchCompilerNew
-        (show vecLen ++ " Compiler")
-        <| completeCodeGenProgram
-             (Red $ rndRelCap relLen maxIdx maxVal)
-             (rndVecVals vecLen)
-
-
-
-
-
+      runs = 5
+   in benchmark
+        (Red <| rndRelCap relLen maxIdx maxVal)
+        (rndVecVals vecLen)
+        C
+        runs
 
 main :: IO (CommandExecution Result)
 main = do

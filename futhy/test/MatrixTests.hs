@@ -162,7 +162,6 @@ goodBasisTests name vin vout = testCase (" " ++ name)
 genBasisTests :: TestTree
 genBasisTests =
   testGroup "genBasis"
-    []
     [ goodBasisTests "genBasis [2]"
       (genBasis [2])
       [ Tensor [Scalar 1.0, Scalar 0.0]
