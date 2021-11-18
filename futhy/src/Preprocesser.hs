@@ -120,7 +120,6 @@ caramelizeLFunbak sfl = case sfl of
   Zip ls@(h:_) -> Zip $ map caramelizeLFun sfs
 -}
 
-
 data LFunP -- expr
   = IdP
   | DupP
