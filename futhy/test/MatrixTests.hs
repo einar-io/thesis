@@ -165,12 +165,13 @@ goodBasisTests name vin vout = testCase (" " ++ name)
 genBasisTests :: TestTree
 genBasisTests =
   testGroup "genBasis"
+    []
+    {-
     [ goodBasisTests "genBasis [2]"
       (genBasis [2])
       [ [1.0, 0.0]
       , [0.0, 1.0]
       ]
-    {-
     , goodBasisTests "genBasis [2,2]"
       (genBasis [2,2])
       [
@@ -215,5 +216,5 @@ genBasisTests =
         , [0.0, 1.0]
         ]
       ]
-    -}
     ]
+    -}

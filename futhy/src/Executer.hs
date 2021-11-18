@@ -1,9 +1,13 @@
+
+
+-- {-# LANGUAGE QuasiQuotes #-}
+
 module Executer
   ( runFile
   , runStr
   , runStrArg
-  )
-where
+  , benchmark
+  ) where
 
 import Types
 import System.IO (openTempFile, hClose, stderr, hPrint)
@@ -11,55 +15,39 @@ import System.Process (readProcessWithExitCode, showCommandForUser)
 import System.FilePath (dropExtension)
 import Control.Monad.Reader
 import Control.Monad.Except (throwError)
--- import GHC.IO.Exception (ExitCode(..))
 import Flow
-import Data.Time.Clock
 
 p :: String -> Command ()
 p s =
-  let debug = False
+  let debug = True
   in when debug (liftIO <| hPrint stderr s)
 
-getTime :: Command TimeStamp
-getTime = liftIO getCurrentTime
-
-makeLog :: CommandOutput -> TimeStamp -> TimeStamp -> Log
-makeLog (exitcode2, stdout2, stdin2) begin_time finish_time = Log
-  { exitcode = exitcode2
-  , stdout   = stdout2
-  , stdin    = stdin2
-  , begin    = begin_time
-  , finish   = finish_time
+makeLog :: CommandOutput -> Maybe Json -> Log
+makeLog (exitcode, stdout, stdin) maybeJson = Log
+  { exitcode = exitcode
+  , stdout   = stdout
+  , stdin    = stdin
+  , mjson    = maybeJson
   }
-
-runCommand :: String -> [Char] -> [String] -> FilePath -> [Char] -> Command Result
-runCommand arg cxt params executable thingtodo = do
-  p $ cxt <> " Command going to be run: " ++ showCommandForUser executable params <> arg
-
-  begin_time <- getTime
-  output@(exitcode2, stdout2, stdin2) <- liftIO <| readProcessWithExitCode executable params arg
-  when (isExitFailure exitcode2)                <| throwError (CommandFailure ExecutionError output)
-  finish_time <- getTime
-
-  p $ cxt <> " " <> thingtodo <> " results:"
-  p $ cxt <> " ExitCode: " ++ show exitcode2
-  p $ cxt <> " stdout:   " ++ show stdout2
-  p $ cxt <> " stdin :   " ++ show stdin2
-  p $ cxt <> " " <> thingtodo <> " ENDED"
-  let current_log = makeLog output begin_time finish_time
-  return (CommandResult current_log)
 
 -- |Compile the Futhark source code in env.
 compile :: Command Result
 compile = do
   Env filepath backend <- ask
-  runCommand "" "[Futhark]" [show backend, filepath] "futhark" "Compilation"
+  let futExec = "futhark"
+  let futParams = [show backend, filepath]
+  p $ "[Futhark] Command going to be run: " ++ showCommandForUser futExec futParams
 
---- but with std'ins
-executeArg :: StdInArg -> Command Result
-executeArg arg = do
-  filepath <- asks fp
-  runCommand (" " <> arg) "[LinPgm]" [] (dropExtension filepath) "Execution"
+  output@(exitcode, stdout, stdin) <- liftIO <| readProcessWithExitCode futExec futParams ""
+  when (isExitFailure exitcode)    <| throwError (CommandFailure CompilationError output)
+
+  p   "[Futhark] Compilation results:"
+  p $ "[Futhark] ExitCode: " ++ show exitcode
+  p $ "[Futhark] stdout:   " ++ show stdout
+  p $ "[Futhark] stdin :   " ++ show stdin
+  p   "[Futhark] Compilation COMPLETED"
+  let log = makeLog output Nothing
+  return (CommandResult log)
 
 -- |Execute the compiled Futhark executable 'futExec' containing the compiled linear program.
 makeTemp :: Command FutPgmFile
@@ -79,23 +67,11 @@ writeTemp futStr = do
 store :: FutPgmStr -> Command FutPgmFile
 store futPgmStr = do
   filepath <- makeTemp
-  backend <- asks be
+  backend  <- asks be
   let envNew = Env { fp = filepath, be = backend }
   local (const envNew) (writeTemp futPgmStr)
   return filepath
 
-
-runStrArgM :: FutPgmStr -> StdInArg -> Command Result
-runStrArgM futPgmStr arg = do
-  filepath <- store futPgmStr
-  backend <- asks be
-  let envNew = Env { fp = filepath, be = backend }
-  local (const envNew) (runFileArgM arg)
-
-runFileArgM :: StdInArg -> Command Result
-runFileArgM arg = compile >> executeArg arg
-
------- interface
 runStr :: FutPgmStr -> Backend -> IO (CommandExecution Result)
 runStr futPgmStr backend = runStrArg futPgmStr backend "\n"
 
@@ -104,7 +80,117 @@ runFile futPgmFile backend =
   let envInit = Env { fp = futPgmFile, be = backend }
   in execCmd (runFileArgM "\n") envInit
 
+--- but with std'ins
+executeArg :: StdInArg -> Command Result
+executeArg val = do
+  filepath <- asks fp
+  let executable = dropExtension filepath
+  let params = []
+  p $ "[LinPgm] Command going to be run: " ++ showCommandForUser executable params ++ " " ++ val
+
+  output@(exitcode, stdout, stdin) <- liftIO $ readProcessWithExitCode executable params val
+  when (isExitFailure exitcode)    <| throwError (CommandFailure ExecutionError output)
+
+  p   "[LinPgm] Execution results:"
+  p $ "[LinPgm] ExitCode: " ++ show exitcode
+  p $ "[LinPgm] stdout:   " ++ show stdout
+  p $ "[LinPgm] stdin :   " ++ show stdin
+  p   "[LinPgm] Execution ENDED"
+  let log = makeLog output Nothing
+  return (CommandResult log)
+
+runFileArgM :: StdInArg -> Command Result
+runFileArgM val = compile >> executeArg val
+
+runStrArgM :: FutPgmStr -> StdInArg -> Command Result
+runStrArgM futPgmStr val = do
+  filepath <- store futPgmStr
+  backend  <- asks be
+  let envNew = Env { fp = filepath, be = backend }
+  local (const envNew) (runFileArgM val)
+
 runStrArg :: FutPgmStr -> Backend -> StdInArg -> IO (CommandExecution Result)
-runStrArg futPgmStr backend arg =
+runStrArg futPgmStr backend val =
   let envInit = Env { fp = "", be = backend }
-  in execCmd (runStrArgM futPgmStr arg) envInit
+  in execCmd (runStrArgM futPgmStr val) envInit
+
+{-
+-- BENCHMARKS
+
+-- How quickly can we reduce arrays?
+--
+-- ==
+-- nobench input { 0i64 }
+-- output { 0i64 }
+-- input { 100i64 }
+-- output { 4950i64 }
+-- compiled input { 10000i64 }
+-- output { 49995000i64 }
+-- compiled input { 1000000i64 }
+-- output { 499999500000i64 }
+
+let main(n: i64): i64 =
+  reduce (+) 0 (iota n)
+
+-}
+
+printHeader :: StdInArg -> IO ()
+printHeader = putStrLn . makeHeader
+
+makeHeader :: StdInArg -> FutPgmStr
+makeHeader val = concat
+  [ "-- Autogenerated benchmark.  Edits will be overwritten.\n"
+  , "--\n"
+  , "-- ==\n"
+  , "-- input { " ++ show val ++ " }\n\n"
+--  ++ "-- output { " ++ show val ++ " }"
+  ]
+
+{-
+-- nobench input { 0i64 }
+-- output { 0i64 }
+-- input { 100i64 }
+-- output { 4950i64 }
+-- compiled input { 10000i64 }
+-- output { 49995000i64 }
+-- compiled input { 1000000i64 }
+-- output { 499999500000i64 }
+-}
+
+
+
+emptyEnv :: Env
+emptyEnv =  Env { fp = "", be = C }
+
+benchmark :: FutPgmStr -> Backend -> StdInArg -> IO (CommandExecution Result)
+benchmark futPgmStr backend val = execCmd (benchmarkM futPgmStr val) <| emptyEnv { be = backend }
+
+benchmarkM :: FutPgmStr -> StdInArg -> Command Result
+benchmarkM futPgmStr val = do
+  filepath <- store <| makeHeader val ++ futPgmStr
+  backend  <- asks be
+  let subEnv = Env { fp = filepath, be = backend }
+  local (const subEnv) runBenchmark
+
+runBenchmark :: Command Result
+runBenchmark = do
+  filepath <- asks fp
+  backend  <- asks be
+  let executable = "futhark"
+  let jsonfile = dropExtension filepath ++ ".json"
+  --let params = ["bench", "--json=build/testbench.json", "build/testbench.fut"]
+  let params = ["bench", "--json=" ++ jsonfile, filepath]
+  p $ "[Benchmark] Command going to be run: " ++ showCommandForUser executable params
+
+  output@(exitcode, stdout, stdin) <- liftIO <| readProcessWithExitCode executable params ""
+  when (isExitFailure exitcode)              <| throwError (CommandFailure ExecutionError output)
+
+  json <- liftIO <| readFile jsonfile
+
+  p   "[Benchmark] Execution results:"
+  p $ "[Benchmark] ExitCode: " ++ show exitcode
+  p $ "[Benchmark] stdout:   " ++ show stdout
+  p $ "[Benchmark] stdin :   " ++ show stdin
+  p   "[Benchmark] Execution ENDED"
+  let log = makeLog output (Just json)
+  return (CommandResult log)

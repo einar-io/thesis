@@ -2,9 +2,6 @@ module CodeGen where
 import Types
 import ConstExtracter
 
-type Program = String
-type Count = Int
-type CState = (Program, Arity, Count)
 newtype CodeGen a = Co {runCo :: CState -> (a, CState)}
 instance Functor CodeGen where
   fmap f (Co g) = Co (\s0 -> let (a, s1) = g s0

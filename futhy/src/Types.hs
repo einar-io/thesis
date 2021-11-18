@@ -9,7 +9,6 @@ import Control.DeepSeq
 import GHC.IO.Exception( ExitCode ( ExitFailure ) )
 import Data.List (intercalate)
 import Flow
-import Data.Time.Clock (UTCTime)
 
 type RealNumber = Double
 type Index = Int
@@ -20,6 +19,9 @@ data Val
   | Tensor [Val]
   | Pair Val Val
   | SparseTensor [(Index, Val)]
+  | FastTensor -- Data.Array
+  | Matrix -- hmatrix
+  -- |
   deriving
     ( Eq
     , Generic
@@ -36,17 +38,17 @@ instance Num Val where
  (Tensor vs1) * (Tensor vs2) = Tensor (zipWith (*) vs1 vs2)
  Zero * _ = Zero
  _ * Zero = Zero
- (_) * (_) = undefined
+ _ * _ = undefined
  negate (Scalar n) = Scalar (-n)
  negate (Tensor vs) = Tensor (map negate vs)
  negate (SparseTensor pivs) = SparseTensor $ map (\(idx, v) -> (idx, negate v)) pivs
  negate Zero = Zero
  negate (Pair l r) = Pair (negate l) (negate r)
  abs (Scalar n) = Scalar (abs n)
- abs (_) = undefined
+ abs _ = undefined
  signum (Scalar n) = Scalar (signum n)
  signum Zero = 0
- signum (_) = undefined
+ signum _ = undefined
  fromInteger i = Scalar (fromInteger i)
 
 instance Show Val where
@@ -165,8 +167,8 @@ instance Show Backend where
     CUDA -> "cuda"
 
 data Env = Env
-  { fp :: FilePath
-  , be :: Backend
+  { fp  :: FilePath
+  , be  :: Backend
   }
 
 isExitFailure :: ExitCode -> Bool
@@ -177,15 +179,13 @@ isExitFailure _               = False
 type Stdin  = String
 type Stdout = String
 type CommandOutput = (ExitCode, Stdout, Stdin)
-
-type TimeStamp = UTCTime
+type Json = String
 
 data Log = Log
   { exitcode :: ExitCode
   , stdout   :: Stdout
   , stdin    :: Stdin
-  , begin    :: TimeStamp
-  , finish   :: TimeStamp
+  , mjson    :: Maybe Json
   } deriving (Show, Eq, Generic, NFData)
 
 data FailedStep
@@ -193,12 +193,12 @@ data FailedStep
   | ExecutionError
   deriving (Show, Eq, Generic, NFData)
 
+data Failure = CommandFailure FailedStep CommandOutput
+  deriving (Show, Eq, Generic, NFData)
+
 newtype Result = CommandResult Log
   deriving stock    (Show, Eq, Generic)
   deriving anyclass (NFData)
-
-data Failure = CommandFailure FailedStep CommandOutput
-  deriving (Show, Eq, Generic, NFData)
 
 type CommandExecution a = Either Failure a
 
@@ -220,3 +220,9 @@ execCmd cmd env = runExceptT $ runReaderT (runCmd cmd) env
 type InterpretorError    = String
 type InterpretorResult   = Val
 type InterpretorOutput a = Either InterpretorError a
+
+
+
+type Program = String
+type Count = Int
+type CState = (Program, Arity, Count)

@@ -15,6 +15,7 @@ dependencies:
   - time
   - deepseq
   - random
+    #  - raw-strings-qq
 
 ghc-options:
   - -Wall

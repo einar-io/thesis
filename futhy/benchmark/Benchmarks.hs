@@ -14,9 +14,9 @@ import Tests hiding (main)
 --import Matrix
 import Random
 import Types
---import Flow
+import Flow
 import Executer
-
+import CodeGen (completeCodeGenProgram)
 
 
 {-
@@ -43,8 +43,8 @@ benchInterpretor name lf1 vin1 =
   let (lf, vin, _vout) = caramelizeTestParams (lf1, vin1, Zero)
    in bench name <| nf (interpret lf) vin
 
-main :: IO ()
-main = defaultMain
+mainOld :: IO ()
+mainOld = defaultMain
   [ genBs "Reduce" genReduceBenchmark 4
   , genBs "Scale" genScaleBenchmark 5
   , genBs "LMap" genLmapBenchmark 5
@@ -106,3 +106,31 @@ reduce1000C =
         (show vecLen ++ " Compiler")
         (Red <| rndRelCap relLen maxIdx maxVal)
         (rndVecVals vecLen)
+
+{- New-flavour benchmarks for testing GPU -}
+
+benchCompilerNew :: String -> Program -> Val -> IO (CommandExecution Result)
+benchCompilerNew name lf1 vin1 =
+  let (lf, vin, _vout) = caramelizeTestParams (lf1, vin1, Zero)
+   in benchmark (show lf) OPENCL (show vin)
+
+reduce1000Cnew :: IO (CommandExecution Result)
+reduce1000Cnew =
+  let vecLen = 10
+      relLen = 20
+      maxIdx = vecLen
+      maxVal = 256
+   in benchCompilerNew
+        (show vecLen ++ " Compiler")
+        <| completeCodeGenProgram
+             (Red $ rndRelCap relLen maxIdx maxVal)
+             (rndVecVals vecLen)
+
+
+
+
+
+
+main :: IO (CommandExecution Result)
+main = do
+  reduce1000Cnew
