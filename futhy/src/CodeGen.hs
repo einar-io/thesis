@@ -1,6 +1,6 @@
 module CodeGen where
 import Types
-import ConstExtracter
+import Preprocesser
 
 type Program = String
 type Count = Int
@@ -213,3 +213,13 @@ codeGenProgramConstExtracted lf arit =
                finishProgWithConsts consts arit
                getProgr
   in (fst . runCo act) initial
+
+--- please use this function to codegen
+--- takes a sugary (if you want) lfun
+--- and a val used as input to the lfun
+ --- (necessary for arity-type disambiguation)
+completeCodeGen :: LFun -> Val -> Program
+completeCodeGen inlf vin =
+          let lf = optimize (caramelizeLFun inlf) in
+          let arit = getArity vin
+          in  codeGenProgram lf arit
