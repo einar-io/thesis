@@ -9,6 +9,12 @@ module Benchmarks (main) where
 
 import Interpreter (interpret)
 --import ReduceTests
+import Control.Monad
+import Control.Monad.Except
+import Control.Monad.Trans.Maybe
+import Data.Maybe
+import Data.Either
+import Data.Either
 import Test.Tasty.Bench
 import Tests hiding (main)
 --import Matrix
@@ -94,4 +100,16 @@ reduce1000Cnew =
 
 main :: IO (CommandExecution Result)
 main = do
-  reduce1000Cnew
+  benchAndGenPlot reduce1000Cnew
+
+benchAndGenPlot :: IO (CommandExecution Result) -> IO (CommandExecution Result)
+benchAndGenPlot bench = do
+  cmp <- bench
+  case cmp of
+    Left _ -> return ()
+    Right (CommandResult log) -> maybe (return ()) plotJson (mjson log)
+  return cmp
+
+plotJson :: Json -> IO ()
+plotJson = putStrLn
+-- Do something with the json here, e.g. `matplotlib json`.
