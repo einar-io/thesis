@@ -18,8 +18,6 @@ import Flow
 import Executer
 
 
-
-
 benchInterpretor :: String -> LFun -> Val -> Benchmark
 benchInterpretor name lf1 vin1 =
   let (lf, vin, _vout) = caramelizeTestParams (lf1, vin1, Zero)
@@ -78,16 +76,6 @@ reduce1000 =
         (Red <| rndRelCap relLen maxIdx maxVal)
         (rndVecVals vecLen)
 
-reduce1000C :: Benchmark
-reduce1000C =
-  let vecLen = 100000
-      relLen = 20
-      maxIdx = vecLen
-      maxVal = 256
-   in benchCompiler
-        (show vecLen ++ " Compiler")
-        (Red <| rndRelCap relLen maxIdx maxVal)
-        (rndVecVals vecLen)
 
 {- New-flavour benchmarks for testing GPU -}
 
@@ -99,6 +87,7 @@ reduce1000Cnew =
       maxVal = 256
       runs = 5
    in benchmark
+        "einartest"
         (Red <| rndRelCap relLen maxIdx maxVal)
         (rndVecVals vecLen)
         C
