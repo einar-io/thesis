@@ -51,7 +51,6 @@ genCodeGenrTestCase testname codeGenr (lf, vin, vout) =
                            when (codeGenResStr /= interpResStrn)
                              <| assertFailure
                              <|  "expected: " ++ show interpResStrn ++ "\n but got: " ++ show codeGenResStr
-
 caramelizeTestParams :: (LFun, Val, Val) -> (LFun, Val, Val)
 caramelizeTestParams (lf, vin, vout) = (caramelizeLFun lf, caramelizeVal vin, caramelizeVal vout)
 
@@ -73,7 +72,7 @@ runAllTests = testGroup "All features" <| concat
   [
     [genStdBasisTests]
   {-
-    map testFeature allFeatures
+  , map testFeature allFeatures
   , [matrixTests]
   , [optimizerTests]
   -}

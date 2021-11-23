@@ -154,7 +154,7 @@ matrixTests =
           [(map (`tnsr2mtx` shp2x2) [b,b,c,b,c], map (`tnsr2mtx` shp2x2) [a,c,a,a])]
       ]
 
---goodBasisTests :: TestName ->  -> LFun -> TestTree
+goodBasisTests :: (Eq a, Show a) => [Char] -> a -> a -> TestTree
 goodBasisTests name vin vout = testCase (" " ++ name)
                             <| vin @?= vout
 

@@ -9,7 +9,7 @@ module Matrix
   -- , denseVecFromSparseVec
   , denseVecFromSparseVecL
   , (@@) -- matmul
-  , genBasis
+  , genStdBasis
   )
   where
 
@@ -144,16 +144,13 @@ genBasis [r] = [ oneHot r n | n <- [1..r] ]
 genBasis _ = undefined
 -}
 
---genZero :: [Int] -> Val
+genZero :: [Int] -> Val
 genZero [] = Scalar 0
 genZero (n:ns) = Tensor <| replicate n (genZero ns)
 
-s = Scalar
-t = Tensor
-
-genBasis :: [Int] -> [Val]
-genBasis [] = [s 1]
-genBasis (n : ns) = do
+genStdBasis :: [Int] -> [Val]
+genStdBasis [] = [Scalar 1]
+genStdBasis (n : ns) = do
   i <- [0 .. n - 1]
-  v <- genBasis ns
-  return $ t $ replicate i (genZero ns) ++ [v] ++ replicate (n-i-1) (genZero ns)
+  v <- genStdBasis ns
+  return $ Tensor $ replicate i (genZero ns) ++ [v] ++ replicate (n-i-1) (genZero ns)
