@@ -129,13 +129,13 @@ genStdBasis (n : ns) = do
 
 genBasis = genStdBasis
 
-getMatrixRep :: LFun -> Shape -> Val
+getMatrixRep :: LFun -> [Int] -> Val
 getMatrixRep lfun shp =
-  let vss = genStdBasis [fst shp]
+  let vss = genStdBasis shp
       mapped = mapM (interpret lfun) vss
    in case mapped of
         Left _ -> undefined
         Right mtx -> Tensor mtx
 
 runMeRobert :: Val
-runMeRobert = getMatrixRep (Scale 42) (3,3)
+runMeRobert = getMatrixRep (Scale 42) [3,3]
