@@ -17,7 +17,6 @@ dependencies:
   - matplotlib
   - aeson
   - random
-    #  - raw-strings-qq
 
 ghc-options:
   - -Wall
