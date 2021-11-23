@@ -109,7 +109,7 @@ benchAndGenPlot bench = do
   cmp <- bench
   case cmp of
     Left _ -> return ""
-      Right (CommandResult log) -> return $ mjson log
+    Right (CommandResult log) -> return $ mjson log
 
 plotJson :: Json -> IO ()
 plotJson = putStrLn
