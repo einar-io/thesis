@@ -71,7 +71,7 @@ goodCaseStaged name params = testGroup name [goodCaseInterpretor params, goodCas
 runAllTests :: TestTree
 runAllTests = testGroup "All features" <| concat
   [
-    [genBasisTests]
+    [genStdBasisTests]
   {-
     map testFeature allFeatures
   , [matrixTests]
