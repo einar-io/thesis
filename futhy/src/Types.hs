@@ -44,6 +44,7 @@ instance Num Val where
  negate (SparseTensor pivs) = SparseTensor $ map (\(idx, v) -> (idx, negate v)) pivs
  negate Zero = Zero
  negate (Pair l r) = Pair (negate l) (negate r)
+ negate _ = undefined
  abs (Scalar n) = Scalar (abs n)
  abs _ = undefined
  signum (Scalar n) = Scalar (signum n)
@@ -66,6 +67,7 @@ instance Show Val where
     Zero -> show $ Scalar 0
     SparseTensor _ ->
       "[0.0f32, 0.0f32]"
+    _ -> undefined
 
 stdinShow :: Val -> String
 stdinShow v = case v of

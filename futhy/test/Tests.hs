@@ -51,7 +51,6 @@ genCodeGenrTestCase testname codeGenr (lf, vin, vout) =
                            when (codeGenResStr /= interpResStrn)
                              <| assertFailure
                              <|  "expected: " ++ show interpResStrn ++ "\n but got: " ++ show codeGenResStr
-
 caramelizeTestParams :: (LFun, Val, Val) -> (LFun, Val, Val)
 caramelizeTestParams (lf, vin, vout) = (caramelizeLFun lf, caramelizeVal vin, caramelizeVal vout)
 
@@ -70,13 +69,10 @@ goodCaseStaged name params = testGroup name [goodCaseInterpretor params, goodCas
 
 runAllTests :: TestTree
 runAllTests = testGroup "All features" <| concat
-  [
-    [genBasisTests]
-  {-
-    map testFeature allFeatures
+  [ [genBasisTests]
+  , map testFeature allFeatures
   , [matrixTests]
-  , [optimizerTests]
-  -}
+--  , [optimizerTests]
   ]
 
 testFeature :: (String, [(String, LFun, Val, Val)]) -> TestTree
