@@ -6,8 +6,22 @@ import Control.Monad
 import Utils
 import Data.AssocList.List.Eq as AList
 import Data.Maybe
+import Data.AssocList
 import Flow
-import Matrix
+
+denseVecFromSparseVecL :: Val -> Maybe Int -> Val
+denseVecFromSparseVecL (SparseTensor []) _ = undefined
+denseVecFromSparseVecL (SparseTensor alist) Nothing =
+  let len = maximum <| map fst alist
+   in Tensor <| buildVec alist (len + 1) 0
+denseVecFromSparseVecL (SparseTensor alist) (Just len) =
+   Tensor <| buildVec alist (len + 1) 0
+denseVecFromSparseVecL _ _ = undefined
+
+buildVec :: AssocList Int Val -> Int -> Int -> [Val]
+buildVec al len i
+  | i == len  = []
+  | otherwise = lookupDef 0 i al : buildVec al len (i+1)
 
 -- general implementation - outer product, no contraction
 outer :: Val -> Val -> Val

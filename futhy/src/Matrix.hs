@@ -6,10 +6,9 @@ module Matrix
   , lfun2mtcs
   , tnsr2mtx
   , compaction
-  -- , denseVecFromSparseVec
-  , denseVecFromSparseVecL
   , (@@) -- matmul
-  , genBasis
+  --, genBasis
+  , genStdBasis
   )
   where
 
@@ -17,7 +16,7 @@ import Prelude hiding ((<>))
 import Types
 import Numeric.LinearAlgebra hiding ((|>))
 import Flow
-import Data.AssocList
+import Interpreter (interpret)
 
 type Shape = (Int, Int)
 type LeftRightMultipliers = ([Matrix RealNumber], [Matrix RealNumber])
@@ -114,19 +113,7 @@ compaction (lfns, rfns) (m, _n) =
   let fmm = foldr (@@) (ident m)
    in ([fmm lfns], [fmm rfns])
 
-buildVec :: AssocList Int Val -> Int -> Int -> [Val]
-buildVec al len i
-  | i == len = []
-  | otherwise   = lookupDef 0 i al : buildVec al len (i+1)
 
-denseVecFromSparseVecL :: Val -> Maybe Int -> Val
-denseVecFromSparseVecL (SparseTensor []) _ = undefined
-denseVecFromSparseVecL (SparseTensor alist) Nothing =
-  let len = maximum <| map fst alist
-   in Tensor <| buildVec alist (len + 1) 0
-denseVecFromSparseVecL (SparseTensor alist) (Just len) =
-   Tensor <| buildVec alist (len + 1) 0
-denseVecFromSparseVecL _ _ = undefined
 
 
 {-
@@ -151,9 +138,19 @@ genZero (n:ns) = Tensor <| replicate n (genZero ns)
 s = Scalar
 t = Tensor
 
-genBasis :: [Int] -> [Val]
-genBasis [] = [s 1]
-genBasis (n : ns) = do
+genStdBasis :: [Int] -> [Val]
+genStdBasis [] = [s 1]
+genStdBasis (n : ns) = do
   i <- [0 .. n - 1]
-  v <- genBasis ns
+  v <- genStdBasis ns
   return $ t $ replicate i (genZero ns) ++ [v] ++ replicate (n-i-1) (genZero ns)
+
+genBasis = genStdBasis
+
+getMatrixRep :: LFun -> Shape -> Either InterpretorError Val
+getMatrixRep lfun shp =
+  let vss = genStdBasis [fst shp]
+      --map (\(Tensor vs) -> vs) vss
+   in Tensor <$> mapM (interpret lfun) vss
+
+
