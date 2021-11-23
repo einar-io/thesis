@@ -28,7 +28,7 @@ makeLog (_exitcode, _stdout, _stdin) json = Log
   { exitcode = _exitcode
   , stdout   = show _stdout
   , stdin    = show _stdin
-  , mjson    = json
+  , json     = json
   }
 
 -- |Compile the Futhark source code in env.
@@ -47,8 +47,8 @@ compile = do
   p $ "[Futhark] stdout:   " ++ show _stdout
   p $ "[Futhark] stdin :   " ++ show _stdin
   p   "[Futhark] Compilation COMPLETED"
-  let _log = makeLog output ""
-  return (CommandResult _log)
+  let compileLog = makeLog output ""
+  return (Result compileLog)
 
 -- |Execute the compiled Futhark executable 'futExec' containing the compiled linear program.
 makeTemp :: Command FutPgmFile
@@ -97,8 +97,8 @@ executeArg val = do
   p $ "[LinPgm] stdout:   " ++ show _stdout
   p $ "[LinPgm] stdin :   " ++ show _stdin
   p   "[LinPgm] Execution ENDED"
-  let _log = makeLog output ""
-  return (CommandResult _log)
+  let executeLog = makeLog output ""
+  return (Result executeLog)
 
 runFileArgM :: StdInArg -> Command Result
 runFileArgM val = compile >> executeArg val
@@ -185,5 +185,5 @@ runBenchmark = do
   p $ "[Benchmark] stdin :   " ++ _stdin
   p   "[Benchmark] Execution ENDED"
   p $ "[Benchmark] View results with: 'jq . " ++ jsonfile ++ "'"
-  let _log = makeLog output json
-  return (CommandResult _log)
+  let benchmarkLog = makeLog output json
+  return (Result benchmarkLog)

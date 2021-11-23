@@ -36,17 +36,17 @@ goodCaseInterpretor params = let (lf, vin, vout) = caramelizeTestParams params i
   testCase "Interpretor" $ interpret lf vin @?= return vout
 
 showCleanError :: Failure -> IO a
-showCleanError (CommandFailure _ (_, _, i)) = assertFailure $ remove "\ESC" i --TODO: IMPORTANT: Format the string in output!
+showCleanError (CommandFailure _ (_, _, i)) = assertFailure i -- remove "\ESC" i --TODO: IMPORTANT: Format the string in output!
 
 genCodeGenrTestCase :: String -> (LFun -> Arity -> Program) -> (LFun, Val, Val) -> TestTree
 genCodeGenrTestCase testname codeGenr (lf, vin, vout) =
     testCase testname $ do codeGenRes <- runStrArg (codeGenr lf (getArity vin)) C (stdinShow vin)
                            codeGenResStr <- case codeGenRes of
-                                              Right (CommandResult log2) -> return <| stdout log2
+                                              Right l -> return . stdout . getLog <| l
                                               Left e -> showCleanError e
                            intComp <- runStr ("entry main = " <> show vout) C
                            interpResStrn <- case intComp of
-                                              Right (CommandResult log2) -> return <| stdout log2
+                                              Right l -> return . stdout . getLog <| l
                                               Left e -> showCleanError e
                            when (codeGenResStr /= interpResStrn)
                              <| assertFailure

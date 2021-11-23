@@ -190,7 +190,7 @@ data Log = Log
   { exitcode :: ExitCode
   , stdout   :: Stdout
   , stdin    :: Stdin
-  , mjson    :: Json
+  , json     :: Json
   } deriving (Show, Eq, Generic, NFData)
 
 data FailedStep
@@ -201,7 +201,9 @@ data FailedStep
 data Failure = CommandFailure FailedStep CommandOutput
   deriving (Show, Eq, Generic, NFData)
 
-newtype Result = CommandResult Log
+
+--newtype Result = CommandResult Log
+newtype Result = Result { getLog :: Log }
   deriving stock    (Show, Eq, Generic)
   deriving anyclass (NFData)
 
@@ -229,3 +231,8 @@ type InterpretorOutput a = Either InterpretorError a
 type Program = String
 type Count = Int
 type CState = (Program, Arity, Count)
+
+
+type Bench = String -> Int -> IO (CommandExecution Result)
+type Series = [Double]
+

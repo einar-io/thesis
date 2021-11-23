@@ -19,10 +19,11 @@ import Tests hiding (main)
 --import Matrix
 import Random
 import Types hiding (runs)
+import Utils
 import Flow
 import Executer
-import Plot hiding (main)
-
+import Plot (savePlot)
+import Json (json2series)
 
 benchInterpretor :: String -> LFun -> Val -> Benchmark
 benchInterpretor name lf1 vin1 =
@@ -53,10 +54,6 @@ genZipBenchmark i = benchInterpretor (show i) (Zip [Scale 2.0]) (Tensor [rndVecV
 genReduceBenchmark :: Int -> Benchmark
 genReduceBenchmark i = benchInterpretor (show i) (Red <| rndRelCap i i (i `div` 4)) (rndVecVals i)
 
-powersof10 :: (Num a, Integral b) => b -> [a]
-powersof10 i = [10 ^ ii | ii <- [1..i]]
-
-
 {- Old-flavour benchmarks for testing GPU -}
 
 benchCompiler :: String -> LFun -> Val -> Benchmark
@@ -85,9 +82,6 @@ reduce1000 =
 
 {- New-flavour benchmarks for testing GPU -}
 
-type Bench = String -> Int -> IO (CommandExecution Result)
-type Series = [Double]
-
 reduce :: Bench
 reduce name i =
   let vecLen = i
@@ -102,26 +96,20 @@ reduce name i =
         C
         runs
 
-getJson :: Result -> Json
-getJson (CommandResult log) = mjson log
-
-powersof2 :: (Num a, Integral b) => b -> [a]
-powersof2 i = [2 ^ j | j <- [2..i]]
-
-genBenchmarks :: String -> Bench -> Int -> IO [Series]
+genBenchmarks :: String -> Bench -> Int -> IO (FilePath, [Series])
 genBenchmarks name f i = do
   cexs <- mapM (f $ name ++ ".i=" ++ show i) (powersof2 i)
-  let jsons = map getJson <| rights cexs
-  return (map jsons2seriess jsons)
+  let jsons = map (json . getLog) <| rights cexs
+  return (name, map Benchmarks.json2series jsons)
 
-jsons2seriess :: Json -> Series
-jsons2seriess _ = [1..10]
-
-drawPlot :: [[Double]] -> IO ()
-drawPlot jsons = undefined
+-- temporary implementation
+json2series :: Json -> Series
+json2series _ = [1..10]
 
 main :: IO ()
 main = do
-  seriess <- genBenchmarks "Reduce" reduce 10
-  drawPlot seriess
+  genBenchmarks "Reduce" reduce 10 >>= savePlot
+  -- genBenchmarks "Scale" scale 10 >>= savePlot
+  -- genBenchmarks "LMap"  lmap 10  >>= savePlot
+  return ()
 
