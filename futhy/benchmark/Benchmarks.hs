@@ -19,7 +19,7 @@ import Test.Tasty.Bench
 import Tests hiding (main)
 --import Matrix
 import Random
-import Types
+import Types hiding (runs)
 import Flow
 import Executer
 
@@ -53,6 +53,7 @@ genZipBenchmark i = benchInterpretor (show i) (Zip [Scale 2.0]) (Tensor [rndVecV
 genReduceBenchmark :: Int -> Benchmark
 genReduceBenchmark i = benchInterpretor (show i) (Red <| rndRelCap i i (i `div` 4)) (rndVecVals i)
 
+powersof10 :: (Num a, Integral b) => b -> [a]
 powersof10 i = [10 ^ ii | ii <- [1..i]]
 
 
