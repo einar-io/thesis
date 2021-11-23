@@ -113,25 +113,7 @@ compaction (lfns, rfns) (m, _n) =
   let fmm = foldr (@@) (ident m)
    in ([fmm lfns], [fmm rfns])
 
-
-
-
-{-
-Old
-oneHot :: Int -> Int -> [RealNumber]
-oneHot l n
-  | n < 1 = undefined
-  | l < n = undefined
-  | otherwise = before ++ [1] ++ after
-  where  before = repeat 0 |> take (n-1)
-         after  = repeat 0 |> take (l-n)
-
-genBasis :: [Int] -> [[Val]]
-genBasis [r] = [ oneHot r n | n <- [1..r] ]
-genBasis _ = undefined
--}
-
---genZero :: [Int] -> Val
+genZero :: [Int] -> Val
 genZero [] = Scalar 0
 genZero (n:ns) = Tensor <| replicate n (genZero ns)
 
@@ -147,10 +129,13 @@ genStdBasis (n : ns) = do
 
 genBasis = genStdBasis
 
-getMatrixRep :: LFun -> Shape -> Either InterpretorError Val
+getMatrixRep :: LFun -> Shape -> Val
 getMatrixRep lfun shp =
   let vss = genStdBasis [fst shp]
-      --map (\(Tensor vs) -> vs) vss
-   in Tensor <$> mapM (interpret lfun) vss
+      mapped = mapM (interpret lfun) vss
+   in case mapped of
+        Left _ -> undefined
+        Right mtx -> Tensor mtx
 
-
+runMeRobert :: Val
+runMeRobert = getMatrixRep (Scale 42) (3,3)
