@@ -23,12 +23,12 @@ p s =
   let debug = True
   in when debug (liftIO <| hPutStrLn stderr s)
 
-makeLog :: CommandOutput -> Maybe Json -> Log
-makeLog (exitcode, stdout, stdin) maybeJson = Log
+makeLog :: CommandOutput -> Json -> Log
+makeLog (exitcode, stdout, stdin) json = Log
   { exitcode = exitcode
   , stdout   = show stdout
   , stdin    = show stdin
-  , mjson    = maybeJson
+  , mjson    = json
   }
 
 -- |Compile the Futhark source code in env.
@@ -47,7 +47,7 @@ compile = do
   p $ "[Futhark] stdout:   " ++ show stdout
   p $ "[Futhark] stdin :   " ++ show stdin
   p   "[Futhark] Compilation COMPLETED"
-  let log = makeLog output Nothing
+  let log = makeLog output ""
   return (CommandResult log)
 
 -- |Execute the compiled Futhark executable 'futExec' containing the compiled linear program.
@@ -97,7 +97,7 @@ executeArg val = do
   p $ "[LinPgm] stdout:   " ++ show stdout
   p $ "[LinPgm] stdin :   " ++ show stdin
   p   "[LinPgm] Execution ENDED"
-  let log = makeLog output Nothing
+  let log = makeLog output ""
   return (CommandResult log)
 
 runFileArgM :: StdInArg -> Command Result
@@ -185,5 +185,5 @@ runBenchmark = do
   p $ "[Benchmark] stdin :   " ++ stdin
   p   "[Benchmark] Execution ENDED"
   p $ "[Benchmark] View results with: 'jq . " ++ jsonfile ++ "'"
-  let log = makeLog output (Just json)
+  let log = makeLog output json
   return (CommandResult log)

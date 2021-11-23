@@ -188,7 +188,7 @@ data Log = Log
   { exitcode :: ExitCode
   , stdout   :: Stdout
   , stdin    :: Stdin
-  , mjson    :: Maybe Json
+  , mjson    :: Json
   } deriving (Show, Eq, Generic, NFData)
 
 data FailedStep

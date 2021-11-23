@@ -98,17 +98,17 @@ reduce1000Cnew =
         C
         runs
 
-main :: IO (CommandExecution Result)
+main :: IO ()
 main = do
-  benchAndGenPlot reduce1000Cnew
+  json <- benchAndGenPlot reduce1000Cnew
+  return ()
 
-benchAndGenPlot :: IO (CommandExecution Result) -> IO (CommandExecution Result)
+benchAndGenPlot :: IO (CommandExecution Result) -> IO Json
 benchAndGenPlot bench = do
   cmp <- bench
   case cmp of
-    Left _ -> return ()
-    Right (CommandResult log) -> maybe (return ()) plotJson (mjson log)
-  return cmp
+    Left _ -> return ""
+      Right (CommandResult log) -> return $ mjson log
 
 plotJson :: Json -> IO ()
 plotJson = putStrLn
