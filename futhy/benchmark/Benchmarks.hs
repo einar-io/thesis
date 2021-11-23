@@ -14,7 +14,6 @@ import Control.Monad.Except
 import Control.Monad.Trans.Maybe
 import Data.Maybe
 import Data.Either
-import Data.Either
 import Test.Tasty.Bench
 import Tests hiding (main)
 --import Matrix
@@ -22,6 +21,7 @@ import Random
 import Types hiding (runs)
 import Flow
 import Executer
+import Plot hiding (main)
 
 
 benchInterpretor :: String -> LFun -> Val -> Benchmark
@@ -35,7 +35,7 @@ mainOld = defaultMain
   , genBs "Scale" genScaleBenchmark 5
   , genBs "LMap" genLmapBenchmark 5
   , genBs "Zip" genZipBenchmark 5
-  , reduce
+  --, reduce
   ]
 
 genBs :: String -> (Int -> Benchmark) -> Int ->  Benchmark
@@ -66,8 +66,8 @@ benchCompiler name lf1 vin1 =
       <| nfIO
       <| runStrArg (show lf) OPENCL (show vin)
 
-reduce :: Benchmark
-reduce = bgroup "Reduce"
+reduce1 :: Benchmark
+reduce1 = bgroup "Reduce"
   [ reduce1000
   ]
 
@@ -85,32 +85,43 @@ reduce1000 =
 
 {- New-flavour benchmarks for testing GPU -}
 
-reduce1000Cnew :: IO (CommandExecution Result)
-reduce1000Cnew =
-  let vecLen = 100000
-      relLen = 200
+type Bench = String -> Int -> IO (CommandExecution Result)
+type Series = [Double]
+
+reduce :: Bench
+reduce name i =
+  let vecLen = i
+      relLen = 20 * (floor . log $ fromIntegral vecLen) -- Integer log
       maxIdx = vecLen
       maxVal = 256
-      runs = 5
+      runs = 10
    in benchmark
-        "einartest"
+        name
         (Red <| rndRelCap relLen maxIdx maxVal)
         (rndVecVals vecLen)
         C
         runs
 
+getJson :: Result -> Json
+getJson (CommandResult log) = mjson log
+
+powersof2 :: (Num a, Integral b) => b -> [a]
+powersof2 i = [2 ^ j | j <- [2..i]]
+
+genBenchmarks :: String -> Bench -> Int -> IO [Series]
+genBenchmarks name f i = do
+  cexs <- mapM (f $ name ++ ".i=" ++ show i) (powersof2 i)
+  let jsons = map getJson <| rights cexs
+  return (map jsons2seriess jsons)
+
+jsons2seriess :: Json -> Series
+jsons2seriess _ = [1..10]
+
+drawPlot :: [[Double]] -> IO ()
+drawPlot jsons = undefined
+
 main :: IO ()
 main = do
-  json <- benchAndGenPlot reduce1000Cnew
-  return ()
+  seriess <- genBenchmarks "Reduce" reduce 10
+  drawPlot seriess
 
-benchAndGenPlot :: IO (CommandExecution Result) -> IO Json
-benchAndGenPlot bench = do
-  cmp <- bench
-  case cmp of
-    Left _ -> return ""
-    Right (CommandResult log) -> return $ mjson log
-
-plotJson :: Json -> IO ()
-plotJson = putStrLn
--- Do something with the json here, e.g. `matplotlib json`.
