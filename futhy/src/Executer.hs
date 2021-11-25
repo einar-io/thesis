@@ -24,11 +24,11 @@ p s =
   in when debug (liftIO <| hPutStrLn stderr s)
 
 makeLog :: CommandOutput -> Json -> Log
-makeLog (_exitcode, _stdout, _stdin) json = Log
+makeLog (_exitcode, _stdout, _stdin) jsobj = Log
   { exitcode = _exitcode
   , stdout   = show _stdout
   , stdin    = show _stdin
-  , json     = json
+  , json     = jsobj
   }
 
 -- |Compile the Futhark source code in env.
@@ -177,7 +177,7 @@ runBenchmark = do
   output@(_exitcode, _stdout, _stdin) <- liftIO <| readProcessWithExitCode executable params ""
   when (isExitFailure _exitcode)              <| throwError (CommandFailure ExecutionError output)
 
-  json <- liftIO <| readFile jsonfile
+  jsobj <- liftIO <| readFile jsonfile
 
   p   "[Benchmark] Execution results:"
   p $ "[Benchmark] ExitCode: " ++ show _exitcode
@@ -185,5 +185,5 @@ runBenchmark = do
   p $ "[Benchmark] stdin :   " ++ _stdin
   p   "[Benchmark] Execution ENDED"
   p $ "[Benchmark] View results with: 'jq . " ++ jsonfile ++ "'"
-  let benchmarkLog = makeLog output json
+  let benchmarkLog = makeLog output jsobj
   return (Result benchmarkLog)

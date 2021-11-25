@@ -17,12 +17,17 @@ dependencies:
   - matplotlib
   - aeson
   - random
+  - bytestring
+  - text
+  - unordered-containers
 
 ghc-options:
   - -Wall
   - -fforce-recomp
   - -fprof-auto
   - -fprof-cafs
+  - -fwarn-unused-imports
+  - -fwarn-unused-binds
 
 library:
   source-dirs: src

@@ -1,7 +1,7 @@
 .PHONY: default build bench test tags t e f b
 
 default:
-	stack build --force-dirty #--ghc-options="-fforce-recomp -fprof-auto -fprof-cafs"
+	stack build --force-dirty
 
 build:
 	stack build

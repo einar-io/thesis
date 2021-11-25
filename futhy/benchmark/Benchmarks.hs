@@ -9,10 +9,10 @@ module Benchmarks (main) where
 
 import Interpreter (interpret)
 --import ReduceTests
-import Control.Monad
-import Control.Monad.Except
-import Control.Monad.Trans.Maybe
-import Data.Maybe
+--import Control.Monad
+--import Control.Monad.Except
+--import Control.Monad.Trans.Maybe
+--import Data.Maybe
 import Data.Either
 import Test.Tasty.Bench
 import Tests hiding (main)
@@ -85,12 +85,12 @@ reduce1000 =
 reduce :: Bench
 reduce name i =
   let vecLen = i
-      relLen = 20 * (floor . log $ fromIntegral vecLen) -- Integer log
+      relLen = (20 *) . floor . log <| (fromIntegral vecLen :: Double)
       maxIdx = vecLen
       maxVal = 256
       runs = 10
    in benchmark
-        name
+        (name ++ ".i=" ++ show i)
         (Red <| rndRelCap relLen maxIdx maxVal)
         (rndVecVals vecLen)
         C
@@ -98,17 +98,21 @@ reduce name i =
 
 genBenchmarks :: String -> Bench -> Int -> IO (FilePath, [Series])
 genBenchmarks name f i = do
-  cexs <- mapM (f $ name ++ ".i=" ++ show i) (powersof2 i)
+  cexs <- mapM (f name) (powersof2 i)
   let jsons = map (json . getLog) <| rights cexs
-  return (name, map Benchmarks.json2series jsons)
+  print jsons
+  seriess <- mapM json2series jsons
+  return (name, seriess)
 
+{-
 -- temporary implementation
 json2series :: Json -> Series
 json2series _ = [1..10]
+-}
 
 main :: IO ()
 main = do
-  genBenchmarks "Reduce" reduce 10 >>= savePlot
+  genBenchmarks "Reduce" reduce 3 >>= savePlot
   -- genBenchmarks "Scale" scale 10 >>= savePlot
   -- genBenchmarks "LMap"  lmap 10  >>= savePlot
   return ()
