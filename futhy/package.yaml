@@ -20,6 +20,8 @@ dependencies:
   - bytestring
   - text
   - unordered-containers
+  - utf8-string
+#  - hstats
 
 ghc-options:
   - -Wall

@@ -90,30 +90,25 @@ reduce name i =
       maxVal = 256
       runs = 10
    in benchmark
-        (name ++ ".i=" ++ show i)
+        name
         (Red <| rndRelCap relLen maxIdx maxVal)
         (rndVecVals vecLen)
         C
         runs
 
-genBenchmarks :: String -> Bench -> Int -> IO (FilePath, [Series])
-genBenchmarks name f i = do
-  cexs <- mapM (f name) (powersof2 i)
-  let jsons = map (json . getLog) <| rights cexs
-  print jsons
-  seriess <- mapM json2series jsons
-  return (name, seriess)
 
-{-
--- temporary implementation
-json2series :: Json -> Series
-json2series _ = [1..10]
--}
+genBenchmarks :: String -> Bench -> Int -> IO PlotData
+genBenchmarks name bench n = do
+  let vecSizes = map (* 1) $ powersof2 n
+  cexs <- mapM (\i -> bench (sizename i) i) vecSizes
+  let jsons = map (json . getLog) (rights cexs)
+  seriess <- mapM json2series jsons
+  return (name, vecSizes, seriess)
+    where sizename i = name ++ ".i=" ++ show i
 
 main :: IO ()
 main = do
-  genBenchmarks "Reduce" reduce 3 >>= savePlot
+  genBenchmarks "Reduce" reduce 20 >>= savePlot
   -- genBenchmarks "Scale" scale 10 >>= savePlot
   -- genBenchmarks "LMap"  lmap 10  >>= savePlot
-  return ()
 

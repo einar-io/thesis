@@ -7,6 +7,7 @@ import Data.Aeson hiding (Series)
 import Data.Aeson.Types (Parser)
 import GHC.Generics
 import qualified Data.ByteString.Lazy as BS
+import qualified Data.ByteString.Lazy.UTF8 as BLU
 --import qualified Data.Text.Lazy.IO as T
 --import qualified Data.Text.Lazy.Encoding as T
 --import qualified Data.Text as T
@@ -56,10 +57,14 @@ getObj3 = decode obj3 :: Maybe Datasets
 getObj4 :: Maybe Filefut
 getObj4 = decode obj4 :: Maybe Filefut
 
-json2series :: FilePath -> IO Series
-json2series filename = do
+json2series :: Json -> IO Series
+json2series jsobj = do
+  {-
+  print $ "\n\nFILENAME IS: " ++ filename ++ "\n\n"
   jsobj <- BS.readFile <| "build/" ++ filename ++ ".json"
-  case eitherDecode jsobj of
+  -}
+  let jsobjLazy = BLU.fromString jsobj
+  case eitherDecode jsobjLazy of
     Left _ -> return []
     Right fut -> fut
               |> filefut

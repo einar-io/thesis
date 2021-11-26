@@ -235,3 +235,5 @@ type CState = (Program, Arity, Count)
 
 type Bench = String -> Int -> IO (CommandExecution Result)
 type Series = [Double]
+
+type PlotData = (FilePath, [Int], [Series])
