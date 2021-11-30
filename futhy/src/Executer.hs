@@ -146,8 +146,8 @@ makeHeader val = concat
   , "-- input { " ++ show val ++ " }\n\n"
   ]
 
-benchmark :: FilePath -> LFun -> Val -> Backend -> Runs -> IO (CommandExecution Result)
-benchmark filename futPgmStr val backend _runs =
+benchmark :: FilePath -> Backend -> Runs -> LFun -> Val -> IO (CommandExecution Result)
+benchmark filename backend _runs futPgmStr val =
   let path = "build/"
       fullname = path ++ filename ++ ".fut"
       futPgmCompiled = completeCodeGen futPgmStr val
@@ -161,7 +161,7 @@ benchmarkM futPgmStr val = do
 
 runBenchmark :: Command Result
 runBenchmark = do
-  Env filepath _ _runs <- ask
+  Env filepath _be _runs <- ask
   let executable = "futhark"
   let jsonfile = dropExtension filepath ++ ".json"
   -- Documentation: https://futhark.readthedocs.io/en/stable/man/futhark-bench.html#futhark-bench-1
@@ -175,7 +175,7 @@ runBenchmark = do
   p $ "[Benchmark] Command to be run: " ++ showCommandForUser executable params
 
   output@(_exitcode, _stdout, _stdin) <- liftIO <| readProcessWithExitCode executable params ""
-  when (isExitFailure _exitcode)              <| throwError (CommandFailure ExecutionError output)
+  when (isExitFailure _exitcode)                <| throwError (CommandFailure ExecutionError output)
 
   jsobj <- liftIO <| readFile jsonfile
 

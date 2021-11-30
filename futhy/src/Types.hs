@@ -233,7 +233,8 @@ type Count = Int
 type CState = (Program, Arity, Count)
 
 
-type Bench = String -> Int -> IO (CommandExecution Result)
+--type Bench = FilePath -> Backend -> Runs -> LFun -> Val -> IO (CommandExecution Result)
+type Bench = FilePath -> Backend -> Int -> Runs -> IO (CommandExecution Result)
 type Series = [Double]
 
 type PlotData = (FilePath, [Int], [Series])

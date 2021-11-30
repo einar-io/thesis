@@ -8,15 +8,9 @@ module Benchmarks (main) where
 -}
 
 import Interpreter (interpret)
---import ReduceTests
---import Control.Monad
---import Control.Monad.Except
---import Control.Monad.Trans.Maybe
---import Data.Maybe
 import Data.Either
 import Test.Tasty.Bench
 import Tests hiding (main)
---import Matrix
 import Random
 import Types hiding (runs)
 import Utils
@@ -25,6 +19,7 @@ import Executer
 import Plot (savePlot)
 import Json (json2series)
 
+{- 
 benchInterpretor :: String -> LFun -> Val -> Benchmark
 benchInterpretor name lf1 vin1 =
   let (lf, vin, _vout) = caramelizeTestParams (lf1, vin1, Zero)
@@ -63,52 +58,38 @@ benchCompiler name lf1 vin1 =
       <| nfIO
       <| runStrArg (show lf) OPENCL (show vin)
 
-reduce1 :: Benchmark
-reduce1 = bgroup "Reduce"
-  [ reduce1000
-  ]
 
-reduce1000 :: Benchmark
-reduce1000 =
-  let vecLen = 100000
-      relLen = 20
-      maxIdx = vecLen
-      maxVal = 256
-   in benchInterpretor
-        (show vecLen ++ " Interpretor")
-        (Red <| rndRelCap relLen maxIdx maxVal)
-        (rndVecVals vecLen)
-
+-}
 
 {- New-flavour benchmarks for testing GPU -}
+scaleB :: Bench
+scaleB name backend vecLen runs = benchmark name backend runs (Scale 7.0) (rndVecVals vecLen)
 
-reduce :: Bench
-reduce name i =
-  let vecLen = i
-      relLen = (20 *) . floor . log <| (fromIntegral vecLen :: Double)
+lmapB :: Bench
+lmapB name backend vecLen runs  = benchmark name backend runs (LMap (Scale 11.0)) (rndVecVals vecLen)
+
+zipB :: Bench
+zipB name backend vecLen runs   = benchmark name backend runs (Zip [Scale 17.0]) (Tensor [rndVecVals vecLen])
+
+reduceB :: Bench
+reduceB name backend vecLen runs =
+  let relLen = 100 -- (20 *) . floor . log <| (fromIntegral vecLen :: Double)
       maxIdx = vecLen
-      maxVal = 256
-      runs = 10
-   in benchmark
-        name
-        (Red <| rndRelCap relLen maxIdx maxVal)
-        (rndVecVals vecLen)
-        C
-        runs
+      maxVal = 100
+   in benchmark name backend runs (Red <| rndRelCap relLen maxIdx maxVal) (rndVecVals vecLen)
 
-
-genBenchmarks :: String -> Bench -> Int -> IO PlotData
-genBenchmarks name bench n = do
-  let vecSizes = map (* 1) $ powersof2 n
-  cexs <- mapM (\i -> bench (sizename i) i) vecSizes
+genBenchmarks :: String -> Bench -> Backend -> Int -> Runs -> IO PlotData
+genBenchmarks name bench backend oom runs = do
+  let vecLens = powersof2 oom
+  cexs <- mapM (\i -> bench (name ++ "_i=" ++ show i) backend i runs) vecLens
   let jsons = map (json . getLog) (rights cexs)
   seriess <- mapM json2series jsons
-  return (name, vecSizes, seriess)
-    where sizename i = name ++ ".i=" ++ show i
+  return (name, vecLens, seriess)
 
 main :: IO ()
 main = do
-  genBenchmarks "Reduce" reduce 20 >>= savePlot
-  -- genBenchmarks "Scale" scale 10 >>= savePlot
-  -- genBenchmarks "LMap"  lmap 10  >>= savePlot
+  genBenchmarks "Scale" scaleB C 16 3 >>= savePlot
+  genBenchmarks "LMap"  lmapB  C 16 3 >>= savePlot
+  genBenchmarks "Zip"   zipB   C 16 3 >>= savePlot
+  --genBenchmarks "Reduce" reduceB 16 >>= savePlot
 
