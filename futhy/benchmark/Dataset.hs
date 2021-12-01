@@ -5,10 +5,9 @@ module Dataset
   ) where
 
 import Types
-import Utils
 import System.IO (openTempFile, hClose, stderr, hPutStrLn)
 import System.Process (readCreateProcessWithExitCode, readProcessWithExitCode, showCommandForUser, shell)
-import System.Directory
+import System.Directory (doesFileExist, getFileSize)
 import Control.Monad
 import Control.Monad.Except (throwError)
 import Control.Monad.IO.Class
@@ -22,19 +21,17 @@ seed = 53241
 genVector :: Filepath -> Int -> IO Result
 genVector filepath len = do
 
-  {-
-  fileExists  <- liftIO <| doesFileExist filepath
-  fileBytes <- liftIO <| getFileSize filepath
-  guard <| exists && not (fileBytes == 0)
-  -}
-
+  -- Do not generate files if they exist and are non-zero.
+  fileExists <- liftIO <| doesFileExist filepath
+  fileBytes  <- liftIO <| getFileSize filepath
+  guard      <| fileExists && (fileBytes /= 0)
 
   let executable = "futhark"
   -- Relevant documentation
   -- https://futhark.readthedocs.io/en/latest/man/futhark-dataset.html
   let { params =
         [ "dataset"
-        --, "--binary"
+        , "--binary"
         , "--generate [" ++ show len ++ "]f32"
         , "-s " ++ show seed
         , "> "  ++ filepath
@@ -43,12 +40,12 @@ genVector filepath len = do
 
   let shellCmd = shell <| concat <| intersperse " " (executable:params)
 
-  print $ "[Dataset] Command to be run: " ++ show shellCmd
+  --print $ "[Dataset] Command to be run: " ++ show shellCmd
 
   output@(_exitcode, stdout, _stdin) <- liftIO <| readCreateProcessWithExitCode shellCmd ""
   --when (isExitFailure _exitcode)               <| throwError (CommandFailure ExecutionError output)
 
-  print   "[Dataset] Execution done."
+--  print   "[Dataset] Execution done."
 
   let benchLog = makeLog output ""
   return (Result benchLog)

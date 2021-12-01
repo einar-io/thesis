@@ -2,7 +2,7 @@
 
 module Json ( json2series ) where
 
-import Types
+import Types hiding (Dataset)
 import Data.Aeson hiding (Series)
 import Data.Aeson.Types (Parser)
 import GHC.Generics
@@ -15,7 +15,7 @@ import qualified Data.HashMap.Strict as HM
 import Flow
 
 data Runtimes = Runtimes { runtimes :: [Int] }    deriving (Show, Generic, ToJSON, FromJSON)
-data Dataset  = Dataset  { dataset  :: Runtimes } deriving (Show, Generic) -- , ToJSON, FromJSON)
+data Dataset  = Dataset  { dataset  :: Runtimes } deriving (Show, Generic)
 data Datasets = Datasets { datasets :: Dataset}   deriving (Show, Generic, FromJSON)
 data Filefut  = Filefut  { filefut  :: Datasets } deriving (Show, Generic)
 

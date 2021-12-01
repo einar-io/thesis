@@ -172,6 +172,7 @@ type Runs = Int
 
 data Env = Env
   { fp   :: FilePath
+  , ds   :: Dataset
   , be   :: Backend
   , runs :: Runs
   }
@@ -232,9 +233,10 @@ type Program = String
 type Count = Int
 type CState = (Program, Arity, Count)
 
+type Dataset = Int
 
 --type Bench = FilePath -> Backend -> Runs -> LFun -> Val -> IO (CommandExecution Result)
-type Bench = FilePath -> Backend -> Int -> Runs -> IO (CommandExecution Result)
+type Bench = FilePath -> Dataset -> Backend -> Int -> Runs -> IO (CommandExecution Result)
 type Series = [Double]
 
 type PlotData = (FilePath, [Int], [Series])
