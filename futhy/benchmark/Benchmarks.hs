@@ -18,6 +18,7 @@ import Flow
 import Executer
 import Plot (savePlot)
 import Json (json2series)
+import Dataset
 
 {- 
 benchInterpretor :: String -> LFun -> Val -> Benchmark
@@ -88,8 +89,12 @@ genBenchmarks name bench backend oom runs = do
 
 main :: IO ()
 main = do
+
+  let ordersOfMagnitude = 10
+  initDatasets ordersOfMagnitude
+
   genBenchmarks "Scale" scaleB C 16 3 >>= savePlot
-  genBenchmarks "LMap"  lmapB  C 16 3 >>= savePlot
-  genBenchmarks "Zip"   zipB   C 16 3 >>= savePlot
+--  genBenchmarks "LMap"  lmapB  C 16 3 >>= savePlot
+--  genBenchmarks "Zip"   zipB   C 16 3 >>= savePlot
   --genBenchmarks "Reduce" reduceB 16 >>= savePlot
 

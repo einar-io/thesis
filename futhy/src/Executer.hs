@@ -7,21 +7,18 @@ module Executer
   , runStr
   , runStrArg
   , benchmark
+  , makeLog
   ) where
 
 import Types
-import System.IO (openTempFile, hClose, stderr, hPutStrLn)
+import Utils
+import System.IO (openTempFile, hClose)
 import System.Process (readProcessWithExitCode, showCommandForUser)
 import System.FilePath (dropExtension)
 import Control.Monad.Reader
 import Control.Monad.Except (throwError)
 import Flow
 import CodeGen (completeCodeGen)
-
-p :: String -> Command ()
-p s =
-  let debug = True
-  in when debug (liftIO <| hPutStrLn stderr s)
 
 makeLog :: CommandOutput -> Json -> Log
 makeLog (_exitcode, _stdout, _stdin) jsobj = Log
