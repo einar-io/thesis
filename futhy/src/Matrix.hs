@@ -9,6 +9,7 @@ module Matrix
   , (@@) -- matmul
   --, genBasis
   , genStdBasis
+  , getMatrixRep
   )
   where
 
@@ -138,4 +139,4 @@ getMatrixRep lfun shp =
         Right mtx -> Tensor mtx
 
 runMeRobert :: Val
-runMeRobert = getMatrixRep (Scale 42) [3,3]
+runMeRobert = getMatrixRep (Zip [Scale 42, Scale 2]) [2,2]
