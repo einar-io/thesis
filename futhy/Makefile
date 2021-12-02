@@ -1,18 +1,18 @@
 .PHONY: default build bench test tags t e f b
 
 default:
-	stack build --force-dirty
+	time stack build --force-dirty
 
 build:
-	stack build
+	time stack build
 
 bench:
-	stack bench
+	time stack bench
 
 test:
 	rm -f build/lmaplib.fut
 	cp lib/lmaplib.fut build/lmaplib.fut
-	stack test
+	time stack test
 
 tags:
 	hasktags .

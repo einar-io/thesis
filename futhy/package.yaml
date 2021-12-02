@@ -21,6 +21,7 @@ dependencies:
   - text
   - unordered-containers
   - utf8-string
+  - directory
 #  - hstats
 
 ghc-options:

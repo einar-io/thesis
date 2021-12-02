@@ -9,7 +9,7 @@ module Benchmarks (main) where
 
 import Interpreter (interpret)
 import Data.Either
-import Test.Tasty.Bench
+--import Test.Tasty.Bench
 import Tests hiding (main)
 import Random
 import Types hiding (runs)
@@ -18,6 +18,7 @@ import Flow
 import Executer
 import Plot (savePlot)
 import Json (json2series)
+import Dataset
 
 {- 
 benchInterpretor :: String -> LFun -> Val -> Benchmark
@@ -63,33 +64,41 @@ benchCompiler name lf1 vin1 =
 
 {- New-flavour benchmarks for testing GPU -}
 scaleB :: Bench
-scaleB name backend vecLen runs = benchmark name backend runs (Scale 7.0) (rndVecVals vecLen)
+scaleB name dataset backend vecLen runs = benchmark name dataset backend runs (Scale 7.0) (rndVecVals vecLen)
 
 lmapB :: Bench
-lmapB name backend vecLen runs  = benchmark name backend runs (LMap (Scale 11.0)) (rndVecVals vecLen)
+lmapB name dataset backend vecLen runs  = benchmark name dataset backend runs (LMap (Scale 11.0)) (rndVecVals vecLen)
 
 zipB :: Bench
-zipB name backend vecLen runs   = benchmark name backend runs (Zip [Scale 17.0]) (Tensor [rndVecVals vecLen])
+zipB name dataset backend vecLen runs   = benchmark name dataset backend runs (Zip [Scale 17.0]) (Tensor [rndVecVals vecLen])
 
 reduceB :: Bench
-reduceB name backend vecLen runs =
+reduceB name dataset backend vecLen runs =
   let relLen = 100 -- (20 *) . floor . log <| (fromIntegral vecLen :: Double)
       maxIdx = vecLen
       maxVal = 100
-   in benchmark name backend runs (Red <| rndRelCap relLen maxIdx maxVal) (rndVecVals vecLen)
+   in benchmark name dataset backend runs (Red <| rndRelCap relLen maxIdx maxVal) (rndVecVals vecLen)
 
 genBenchmarks :: String -> Bench -> Backend -> Int -> Runs -> IO PlotData
 genBenchmarks name bench backend oom runs = do
   let vecLens = powersof2 oom
-  cexs <- mapM (\i -> bench (name ++ "_i=" ++ show i) backend i runs) vecLens
+  cexs <- mapM (\i -> bench name i backend i runs) vecLens
   let jsons = map (json . getLog) (rights cexs)
   seriess <- mapM json2series jsons
   return (name, vecLens, seriess)
 
 main :: IO ()
 main = do
-  genBenchmarks "Scale" scaleB C 16 3 >>= savePlot
-  genBenchmarks "LMap"  lmapB  C 16 3 >>= savePlot
-  genBenchmarks "Zip"   zipB   C 16 3 >>= savePlot
-  --genBenchmarks "Reduce" reduceB 16 >>= savePlot
+
+  let oom = 20 -- ordersOfMagnitude of 2 of the datasets.  Should be more than 10
+  let noRuns = 10
+
+  initDatasets oom
+  genBenchmarks "Scale" scaleB C oom noRuns >>= savePlot
+  genBenchmarks "LMap"  lmapB  C oom noRuns >>= savePlot
+  {-
+  genBenchmarks "Zip"   zipB   C oom noRuns >>= savePlot
+  genBenchmarks "Reduce" reduceB C oom noRuns >>= savePlot
+  -}
+  return ()
 
