@@ -5,10 +5,10 @@ module Plot
     savePlot
   ) where
 
-import Data.List
+--import Data.List
 import Types
 import Graphics.Matplotlib
-import Flow
+--import Flow
 --import Math.Statistics
 
 {-

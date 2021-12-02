@@ -39,6 +39,7 @@ parseFutfile =
 instance FromJSON Filefut where
   parseJSON = parseFutfile
 
+{-
 obj1 :: BS.ByteString
 obj1 = "{\"runtimes\":[2,3,4,5]}"
 obj2 :: BS.ByteString
@@ -56,6 +57,7 @@ getObj3 :: Maybe Datasets
 getObj3 = decode obj3 :: Maybe Datasets
 getObj4 :: Maybe Filefut
 getObj4 = decode obj4 :: Maybe Filefut
+-}
 
 json2series :: Json -> IO Series
 json2series jsobj = do

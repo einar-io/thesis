@@ -6,7 +6,7 @@ module Dataset
 
 import Types
 import System.IO (openTempFile, hClose, stderr, hPutStrLn)
-import System.Process (readCreateProcessWithExitCode, readProcessWithExitCode, showCommandForUser, shell)
+import System.Process (readCreateProcessWithExitCode, shell)
 import System.Directory (doesFileExist, getFileSize)
 import Control.Monad
 import Control.Monad.Except (throwError)
@@ -21,10 +21,15 @@ seed = 53241
 genVector :: Filepath -> Int -> IO Result
 genVector filepath len = do
 
+  {-
   -- Do not generate files if they exist and are non-zero.
+
   fileExists <- liftIO <| doesFileExist filepath
-  fileBytes  <- liftIO <| getFileSize filepath
-  guard      <| fileExists && (fileBytes /= 0)
+
+  fileSize <- if fileExists then getFileSize filepath else return 0
+
+  guard (fileSize == 0) -- only proceed to generate dataset when file is missing or 0
+  -}
 
   let executable = "futhark"
   -- Relevant documentation
@@ -42,7 +47,7 @@ genVector filepath len = do
 
   --print $ "[Dataset] Command to be run: " ++ show shellCmd
 
-  output@(_exitcode, stdout, _stdin) <- liftIO <| readCreateProcessWithExitCode shellCmd ""
+  output@(_exitcode, _stdout, _stdin) <- liftIO <| readCreateProcessWithExitCode shellCmd ""
   --when (isExitFailure _exitcode)               <| throwError (CommandFailure ExecutionError output)
 
 --  print   "[Dataset] Execution done."
