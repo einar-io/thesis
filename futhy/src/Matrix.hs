@@ -7,7 +7,6 @@ module Matrix
   , tnsr2mtx
   , compaction
   , (@@) -- matmul
-  --, genBasis
   , genStdBasis
   , getMatrixRep
   )

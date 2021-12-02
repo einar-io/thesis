@@ -44,6 +44,7 @@ instance Num Val where
  negate (SparseTensor pivs) = SparseTensor $ map (\(idx, v) -> (idx, negate v)) pivs
  negate Zero = Zero
  negate (Pair l r) = Pair (negate l) (negate r)
+ negate _ = undefined
  abs (Scalar n) = Scalar (abs n)
  abs _ = undefined
  signum (Scalar n) = Scalar (signum n)
@@ -66,6 +67,7 @@ instance Show Val where
     Zero -> show $ Scalar 0
     SparseTensor _ ->
       "[0.0f32, 0.0f32]"
+    _ -> undefined
 
 stdinShow :: Val -> String
 stdinShow v = case v of
@@ -188,7 +190,7 @@ data Log = Log
   { exitcode :: ExitCode
   , stdout   :: Stdout
   , stdin    :: Stdin
-  , mjson    :: Maybe Json
+  , json     :: Json
   } deriving (Show, Eq, Generic, NFData)
 
 data FailedStep
@@ -199,7 +201,9 @@ data FailedStep
 data Failure = CommandFailure FailedStep CommandOutput
   deriving (Show, Eq, Generic, NFData)
 
-newtype Result = CommandResult Log
+
+--newtype Result = CommandResult Log
+newtype Result = Result { getLog :: Log }
   deriving stock    (Show, Eq, Generic)
   deriving anyclass (NFData)
 
@@ -227,3 +231,10 @@ type InterpretorOutput a = Either InterpretorError a
 type Program = String
 type Count = Int
 type CState = (Program, Arity, Count)
+
+
+--type Bench = FilePath -> Backend -> Runs -> LFun -> Val -> IO (CommandExecution Result)
+type Bench = FilePath -> Backend -> Int -> Runs -> IO (CommandExecution Result)
+type Series = [Double]
+
+type PlotData = (FilePath, [Int], [Series])

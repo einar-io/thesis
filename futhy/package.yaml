@@ -14,14 +14,22 @@ dependencies:
   - hxt
   - time
   - deepseq
+  - matplotlib
+  - aeson
   - random
-    #  - raw-strings-qq
+  - bytestring
+  - text
+  - unordered-containers
+  - utf8-string
+#  - hstats
 
 ghc-options:
   - -Wall
   - -fforce-recomp
   - -fprof-auto
   - -fprof-cafs
+  - -fwarn-unused-imports
+  - -fwarn-unused-binds
 
 library:
   source-dirs: src

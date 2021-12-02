@@ -1,6 +1,6 @@
 module MatrixTests
   ( matrixTests
-  , genBasisTests
+  , genStdBasisTests
   ) where
 
 import Prelude hiding (not)
@@ -154,21 +154,21 @@ matrixTests =
           [(map (`tnsr2mtx` shp2x2) [b,b,c,b,c], map (`tnsr2mtx` shp2x2) [a,c,a,a])]
       ]
 
---goodBasisTests :: TestName ->  -> LFun -> TestTree
+goodBasisTests :: (Eq a, Show a) => [Char] -> a -> a -> TestTree
 goodBasisTests name vin vout = testCase (" " ++ name)
                             <| vin @?= vout
 
 {- Test cases handed out by Robert -}
-genBasisTests :: TestTree
-genBasisTests =
-  testGroup "genBasis"
-    [ goodBasisTests "genBasis [2]"
-      (genBasis [2])
+genStdBasisTests :: TestTree
+genStdBasisTests =
+  testGroup "genStdBasis"
+    [ goodBasisTests "genStdBasis [2]"
+      (genStdBasis [2])
       [ Tensor [Scalar 1.0, Scalar 0.0]
              , Tensor [Scalar 0.0, Scalar 1.0]
              ]
-    , goodBasisTests "genBasis [2,2]"
-      (genBasis [2,2])
+    , goodBasisTests "genStdBasis [2,2]"
+      (genStdBasis [2,2])
       [ Tensor [ Tensor [Scalar 1.0, Scalar 0.0]
                       , Tensor [Scalar 0.0, Scalar 0.0]
              ]
@@ -182,8 +182,8 @@ genBasisTests =
                       , Tensor [Scalar 0.0, Scalar 1.0]
              ]
       ]
-    , goodBasisTests "genBasis [3,2]"
-      (genBasis [3,2])
+    , goodBasisTests "genStdBasis [3,2]"
+      (genStdBasis [3,2])
        [Tensor [ Tensor [Scalar 1.0, Scalar 0.0]
               ,Tensor [Scalar 0.0, Scalar 0.0]
               ,Tensor [Scalar 0.0, Scalar 0.0]

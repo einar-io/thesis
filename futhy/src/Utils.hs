@@ -26,6 +26,7 @@ transpose               :: [[a]] -> [[a]]
 transpose []             = []
 transpose ([]   : xss)   = transpose xss
 transpose ((x:xs) : xss) = (x : [h | (h:_) <- xss]) : transpose (xs : [ t | (_:t) <- xss])
+
 -- Source https://hackage.haskell.org/package/tidal-1.7.8/docs/src/Sound.Tidal.Utils.html#nth
 {- | Safer version of !! --}
 nth :: Int -> [a] -> Maybe a
@@ -39,3 +40,11 @@ remove _ "" = ""
 remove w s@(c:cs)
   | w `isPrefixOf` s = remove w (drop (length w) s)
   | otherwise = c : remove w cs
+
+powersof2 :: (Num a, Integral b) => b -> [a]
+powersof2 i = [2 ^ j | j <- [2..i]]
+
+powersof10 :: (Num a, Integral b) => b -> [a]
+powersof10 i = [10 ^ ii | ii <- [1..i]]
+
+
