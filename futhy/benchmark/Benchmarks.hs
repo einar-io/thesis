@@ -62,6 +62,8 @@ benchCompiler name lf1 vin1 =
 
 -}
 
+
+
 {- New-flavour benchmarks for testing GPU -}
 scaleB :: Bench
 scaleB name dataset backend vecLen runs = benchmark name dataset backend runs (Scale 7.0) (rndVecVals vecLen)
@@ -86,6 +88,17 @@ genBenchmarks name bench backend oom runs = do
   let jsons = map (json . getLog) (rights cexs)
   seriess <- mapM json2series jsons
   return (name, vecLens, seriess)
+
+
+
+
+{- Compound benchmarks
+ - [POPL, p. 8]
+ - CNNs RNNs
+ - Run on GPU
+ -
+ - genNN layers  inputsize
+ -}
 
 main :: IO ()
 main = do
