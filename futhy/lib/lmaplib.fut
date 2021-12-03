@@ -68,7 +68,6 @@ let outer_2_3 = mapl outer_1_3
 -- no-transpose contraction (consider matmul as a composite operation of a transposition and a ntcont_2_2)
 let aptr f x y = f x y |> reduce (+) 0.0f32
 
-
 let ntcont_1_1 = aptr (map2 (*)) --dot prod
 
 let ntcont_1_2 = mapr ntcont_1_1
@@ -102,8 +101,12 @@ let cont_2_3 = cont_aux ntcont_2_3
 let cont_3_3 = cont_aux ntcont_3_3
 
 -- -- --simple versions
-let dotprod_1_1 = aptr (map2 (*))
+let dotprod_1_1 = ntcont_1_1
 let matrixmult_2_2 xss yss = map (\xs -> map (cont_1_1 xs) <| transpose yss) xss
+
+let matrixmult_2_1 = cont_2_1
+let matrixmult_1_2 = cont_1_2
+let matrixmult_1_1 = cont_1_1
 
 -- let cont_2_2 xss yss = map (\xs -> map (cont_1_1 xs) <| transpose yss) xss -- matmul
 

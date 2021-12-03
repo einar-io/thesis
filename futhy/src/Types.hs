@@ -16,12 +16,9 @@ type Index = Int
 data Val
   = Scalar RealNumber
   | Zero
-  | Tensor [Val]
+  | Tensor [Val] -- Vector [Val]
   | Pair Val Val
   | SparseTensor [(Index, Val)]
-  | FastTensor -- Data.Array
-  | Matrix -- hmatrix
-  -- |
   deriving
     ( Eq
     , Generic
