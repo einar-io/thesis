@@ -33,13 +33,6 @@ packages:
   original:
     hackage: json-0.10@sha256:d9fc6b07ce92b8894825a17d2cf14799856767eb30c8bf55962baa579207d799,3210
 - completed:
-    hackage: random-1.1@sha256:7b67624fd76ddf97c206de0801dc7e888097e9d572974be9b9ea6551d76965df,1777
-    pantry-tree:
-      size: 637
-      sha256: 14a1b01728c5584e87c9fa00746a66e28ffd89dd2c0eabd334c8463953496e1b
-  original:
-    hackage: random-1.1@sha256:7b67624fd76ddf97c206de0801dc7e888097e9d572974be9b9ea6551d76965df,1777
-- completed:
     hackage: assoc-list-0.1.0.1@sha256:12785f5117ef2392b6a04a4725f89363f1aafa13f398da3adadfde46b770ea6a,1529
     pantry-tree:
       size: 778
@@ -53,10 +46,23 @@ packages:
       sha256: edf7ecb1e7195bf2c1b595f462343b8a237351acf73e4d0e66e005fc5baa62f4
   original:
     hackage: deepseq-1.4.4.0
+- completed:
+    hackage: ieee-0.7@sha256:4f444419a7861f04fb64502d14688c80e8293a86a608f6d14c3010c9bd96b6d1,1327
+    pantry-tree:
+      size: 638
+      sha256: eefc5e89d3e348ce5e2bb078096e8e9c6288037dcd21317e291c550ab98ee294
+  original:
+    hackage: ieee-0.7@sha256:4f444419a7861f04fb64502d14688c80e8293a86a608f6d14c3010c9bd96b6d1,1327
+- completed:
+    hackage: random-1.2.1@sha256:8bee24dc0c985a90ee78d94c61f8aed21c49633686f0f1c14c5078d818ee43a2,6598
+    pantry-tree:
+      size: 1528
+      sha256: 8bdc994ce41f43624ab42302a881fe5a0f81d965f5d238841e24943664681a06
+  original:
+    hackage: random-1.2.1@sha256:8bee24dc0c985a90ee78d94c61f8aed21c49633686f0f1c14c5078d818ee43a2,6598
 snapshots:
 - completed:
-    size: 587113
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/6.yaml
-    sha256: f74c482d7c93739ecf3abfbc0f2dea1c20a2dfb2462c689846ed55a9653b66f7
-  original:
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/6.yaml
+    size: 586296
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/18.yaml
+    sha256: 63539429076b7ebbab6daa7656cfb079393bf644971156dc349d7c0453694ac2
+  original: lts-18.18
