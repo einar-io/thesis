@@ -14,6 +14,7 @@ import Control.Monad.IO.Class
 import Data.List
 import Flow
 import Executer (makeLog)
+import Utils
 
 seed :: Int
 seed = 53241
@@ -57,8 +58,7 @@ genVector filepath len = do
 
 genVectors :: Filepath -> Int -> IO [Result]
 genVectors name vecOrder =
-  let vecLens = do i <- [1..vecOrder]
-                   return (2^i)
+  let vecLens = powersof2 vecOrder
       filePaths = do l <- vecLens
                      return <| "build/" ++ name ++ "_" ++ show l ++ ".val"
       pathsAndLens = zip filePaths vecLens

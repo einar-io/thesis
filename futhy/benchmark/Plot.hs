@@ -41,7 +41,7 @@ savePlot (name, oom, seriess) =
             % grid True
             % mp # "ax.set_xscale('log', base=2)"
             % mp # "ax.set_yscale('log', base=2)"
-            % mp # "ax.set_xlim(left=512)" -- 2^9
+            -- % mp # "ax.set_xlim(left=512)" -- 2^9
             -- % mp # "ax.set_ylim(bottom=0)" -- does not work for logarithmic scales
         filepath = "build/" ++ name ++ ".svg"
      in do print "DEBUG"

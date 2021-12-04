@@ -46,7 +46,8 @@ remove w s@(c:cs)
   | otherwise = c : remove w cs
 
 powersof2 :: (Num a, Integral b) => b -> [a]
-powersof2 i = [2 ^ j | j <- [2..i]]
+powersof2 i = do j <- [1..i]
+                 return (2^j)
 
 powersof10 :: (Num a, Integral b) => b -> [a]
 powersof10 i = [10 ^ ii | ii <- [1..i]]

@@ -19,6 +19,8 @@ import Executer
 import Plot (savePlot)
 import Json (json2series)
 import Dataset
+import Matrix
+import Control.Monad
 
 {- 
 benchInterpretor :: String -> LFun -> Val -> Benchmark
@@ -65,8 +67,14 @@ benchCompiler name lf1 vin1 =
 
 
 {- New-flavour benchmarks for testing GPU -}
-scaleB :: Bench
-scaleB name dataset backend vecLen runs = benchmark name dataset backend runs (Scale 7.0) (rndVecVals vecLen)
+scaleSym :: Bench
+scaleSym name dataset backend vecLen runs = benchmark name dataset backend runs (Scale 7.0) (rndVecVals vecLen)
+
+scaleMtx :: Bench
+scaleMtx name dataset backend vecLen runs =
+  let mtx = getMatrixRep (Scale 59.0) [vecLen]
+      lfn = LSec mtx MatrixMult
+   in benchmark name dataset backend runs lfn (rndVecVals vecLen)
 
 lmapB :: Bench
 lmapB name dataset backend vecLen runs  = benchmark name dataset backend runs (LMap (Scale 11.0)) (rndVecVals vecLen)
@@ -85,6 +93,9 @@ genBenchmarks :: String -> Bench -> Backend -> Int -> Runs -> IO PlotData
 genBenchmarks name bench backend oom runs = do
   let vecLens = powersof2 oom
   cexs <- mapM (\i -> bench name i backend i runs) vecLens
+  print $ "LENGHT: " ++ (show $ length cexs)
+  print cexs
+  --guard (length (rights cexs) == length vecLens)
   let jsons = map (json . getLog) (rights cexs)
   seriess <- mapM json2series jsons
   return (name, vecLens, seriess)
@@ -103,13 +114,14 @@ genBenchmarks name bench backend oom runs = do
 main :: IO ()
 main = do
 
-  let oom = 20 -- ordersOfMagnitude of 2 of the datasets.  Should be more than 10
-  let noRuns = 10
+  let oom = 11 -- ordersOfMagnitude of 2 of the datasets.  Should be more than 10
+  let noRuns = 1
 
   initDatasets oom
-  genBenchmarks "Scale" scaleB C oom noRuns >>= savePlot
-  genBenchmarks "LMap"  lmapB  C oom noRuns >>= savePlot
+  genBenchmarks "ScaleMtx" scaleMtx C oom noRuns >>= savePlot
   {-
+  genBenchmarks "ScaleSym" scaleSym C oom noRuns >>= savePlot
+  genBenchmarks "LMap"  lmapB  C oom noRuns >>= savePlot
   genBenchmarks "Zip"   zipB   C oom noRuns >>= savePlot
   genBenchmarks "Reduce" reduceB C oom noRuns >>= savePlot
   -}
