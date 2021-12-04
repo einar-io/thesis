@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric, OverloadedStrings, DeriveAnyClass #-}
 
-module Json ( json2series ) where
+module JSON ( json2series ) where
 
 import Types hiding (Dataset)
 import Data.Aeson hiding (Series)
@@ -59,7 +59,7 @@ getObj4 :: Maybe Filefut
 getObj4 = decode obj4 :: Maybe Filefut
 -}
 
-json2series :: Json -> IO Series
+json2series :: JSON -> IO Series
 json2series jsobj = do
   {-
   print $ "\n\nFILENAME IS: " ++ filename ++ "\n\n"

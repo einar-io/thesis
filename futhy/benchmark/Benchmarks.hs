@@ -16,11 +16,12 @@ import Types hiding (runs)
 import Utils
 import Flow
 import Executer
-import Plot (savePlot)
-import Json (json2series)
+import Plot (plotMeasurements)
+import JSON (json2series)
 import Dataset
 import Matrix
 import Control.Monad
+
 
 {- 
 benchInterpretor :: String -> LFun -> Val -> Benchmark
@@ -64,18 +65,20 @@ benchCompiler name lf1 vin1 =
 
 -}
 
-
-
 {- New-flavour benchmarks for testing GPU -}
 scaleSym :: Bench
-scaleSym name dataset backend vecLen runs = benchmark name dataset backend runs (Scale 7.0) (rndVecVals vecLen)
+scaleSym backend runs inputLen =
+  let lfn = Scale 7.0
+   in benchmark "ScaleSym" inputLen backend runs lfn (rndVecVals inputLen)
 
 scaleMtx :: Bench
-scaleMtx name dataset backend vecLen runs =
-  let mtx = getMatrixRep (Scale 59.0) [vecLen]
+scaleMtx backend runs inputLen =
+  let mtx = getMatrixRep (Scale 59.0) [inputLen]
       lfn = LSec mtx MatrixMult
-   in benchmark name dataset backend runs lfn (rndVecVals vecLen)
+   in benchmark "ScaleMtx" inputLen backend runs lfn (rndVecVals inputLen)
 
+
+{-
 lmapB :: Bench
 lmapB name dataset backend vecLen runs  = benchmark name dataset backend runs (LMap (Scale 11.0)) (rndVecVals vecLen)
 
@@ -88,17 +91,58 @@ reduceB name dataset backend vecLen runs =
       maxIdx = vecLen
       maxVal = 100
    in benchmark name dataset backend runs (Red <| rndRelCap relLen maxIdx maxVal) (rndVecVals vecLen)
+-}
 
-genBenchmarks :: String -> Bench -> Backend -> Int -> Runs -> IO PlotData
-genBenchmarks name bench backend oom runs = do
-  let vecLens = powersof2 oom
-  cexs <- mapM (\i -> bench name i backend i runs) vecLens
-  print $ "LENGHT: " ++ (show $ length cexs)
+
+
+doBenchmarks :: Bench -> Backend -> Runs -> OOMs -> IO ([Int], [Double])
+doBenchmarks bench backend runs ooms = do
+  let inputLens = powersof2 ooms
+  cexs <- mapM (bench backend runs) inputLens
+  print ( "LENGHT: "  ++ (show . length $ cexs)
+    ++ "; noRights: " ++ (show . length . rights $ cexs)
+    ++ "; noLefts: "  ++ (show . length . lefts $ cexs ))
   print cexs
-  --guard (length (rights cexs) == length vecLens)
+  guard (length (rights cexs) == length inputLens)
+
   let jsons = map (json . getLog) (rights cexs)
-  seriess <- mapM json2series jsons
-  return (name, vecLens, seriess)
+  seriess <- mapM json2series jsons -- we don't need to do this in IO
+  let series = map minimum seriess -- this is important
+  return (inputLens, series)
+
+main :: IO ()
+main = do
+
+  let backend = C
+  let oom = (1, 21) -- ordersOfMagnitude of 2 of the datasets.  Should be more than 10
+  let noRuns = 1
+
+  initDatasets oom
+
+  measurementsScaleSym <- doBenchmarks scaleSym backend noRuns (9, 16)
+  measurementsScaleMtx <- doBenchmarks scaleMtx backend noRuns (5, 11)
+  _ <- plotMeasurements "Scale" [ ("Symbolic", "blue", measurementsScaleSym)
+                                , ("Matrix"  , "red" , measurementsScaleMtx)
+                                ]
+
+  {-
+  measurementsLMapSym <- doBenchmarks lmapSym backend noRuns (9, 16)
+  measurementsLMapMtx <- doBenchmarks lmapMtx backend noRuns (5, 11)
+  _ <- plotMeasurements "LMap" [ ("Symbolic", "blue", measurementsLMapSym)
+                               , ("Matrix"  , "red" , measurementsLMapMtx)
+                               ]
+
+  -}
+
+
+
+  {-
+  genBenchmarks "LMap"  lmapB  C oom noRuns >>= savePlot
+  genBenchmarks "Zip"   zipB   C oom noRuns >>= savePlot
+  genBenchmarks "Reduce" reduceB C oom noRuns >>= savePlot
+  -}
+  return ()
+
 
 
 
@@ -110,20 +154,4 @@ genBenchmarks name bench backend oom runs = do
  -
  - genNN layers  inputsize
  -}
-
-main :: IO ()
-main = do
-
-  let oom = 11 -- ordersOfMagnitude of 2 of the datasets.  Should be more than 10
-  let noRuns = 1
-
-  initDatasets oom
-  genBenchmarks "ScaleMtx" scaleMtx C oom noRuns >>= savePlot
-  {-
-  genBenchmarks "ScaleSym" scaleSym C oom noRuns >>= savePlot
-  genBenchmarks "LMap"  lmapB  C oom noRuns >>= savePlot
-  genBenchmarks "Zip"   zipB   C oom noRuns >>= savePlot
-  genBenchmarks "Reduce" reduceB C oom noRuns >>= savePlot
-  -}
-  return ()
 

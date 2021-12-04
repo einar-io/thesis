@@ -16,7 +16,7 @@ import Control.Monad.Except (throwError)
 import Flow
 import CodeGen (completeCodeGen)
 
-makeLog :: CommandOutput -> Json -> Log
+makeLog :: CommandOutput -> JSON -> Log
 makeLog (_exitcode, _stdout, _stdin) jsobj = Log
   { exitcode = _exitcode
   , stdout   = show _stdout

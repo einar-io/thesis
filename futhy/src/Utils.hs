@@ -45,12 +45,14 @@ remove w s@(c:cs)
   | w `isPrefixOf` s = remove w (drop (length w) s)
   | otherwise = c : remove w cs
 
-powersof2 :: (Num a, Integral b) => b -> [a]
-powersof2 i = do j <- [1..i]
-                 return (2^j)
+powersof2 :: OOMs -> [Int]
+powersof2 (lo, hi) = do j <- [lo..hi]
+                        return (2^j)
 
+{-
 powersof10 :: (Num a, Integral b) => b -> [a]
 powersof10 i = [10 ^ ii | ii <- [1..i]]
+-}
 
 p :: String -> Command ()
 p s =

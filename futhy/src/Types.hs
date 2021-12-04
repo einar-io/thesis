@@ -182,13 +182,13 @@ isExitFailure _               = False
 type Stdin  = String
 type Stdout = String
 type CommandOutput = (ExitCode, Stdout, Stdin)
-type Json = String
+type JSON = String
 
 data Log = Log
   { exitcode :: ExitCode
   , stdout   :: Stdout
   , stdin    :: Stdin
-  , json     :: Json
+  , json     :: JSON
   } deriving (Show, Eq, Generic, NFData)
 
 data FailedStep
@@ -230,10 +230,14 @@ type Program = String
 type Count = Int
 type CState = (Program, Arity, Count)
 
-type Dataset = Int
 
 --type Bench = FilePath -> Backend -> Runs -> LFun -> Val -> IO (CommandExecution Result)
-type Bench = FilePath -> Dataset -> Backend -> Int -> Runs -> IO (CommandExecution Result)
+type Bench = Backend -> Runs -> Int -> IO (CommandExecution Result)
 type Series = [Double]
 
-type PlotData = (FilePath, [Int], [Series])
+
+type OOMs = (Int, Int)
+
+type Dataset = Int
+--type PlotData = (FilePath, [Int], [Series])
+type PlotData = (String, String, ([Int], Series))

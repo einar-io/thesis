@@ -2,6 +2,7 @@ module Dataset
   ( genVector
   , genVectors
   , initDatasets
+  , initDatasetsM
   ) where
 
 import Types
@@ -56,16 +57,23 @@ genVector filepath len = do
   let benchLog = makeLog output ""
   return (Result benchLog)
 
-genVectors :: Filepath -> Int -> IO [Result]
-genVectors name vecOrder =
-  let vecLens = powersof2 vecOrder
+genVectors :: Filepath -> OOMs -> IO [Result]
+genVectors name ooms =
+  let vecLens = powersof2 ooms
       filePaths = do l <- vecLens
                      return <| "build/" ++ name ++ "_" ++ show l ++ ".val"
       pathsAndLens = zip filePaths vecLens
    in mapM (uncurry genVector) pathsAndLens
 
 -- consider seed parameter
-initDatasets :: Int -> IO ()
-initDatasets oom = do
-  _ <- genVectors "dataset" oom
+initDatasets :: OOMs -> IO ()
+initDatasets ooms = do
+  _ <- genVectors "dataset" ooms
   return ()
+
+
+initDatasetsM :: OOMs -> IO ()
+initDatasetsM ooms = do
+  _ <- genVectors "dataset" ooms
+  return ()
+
