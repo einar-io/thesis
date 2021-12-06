@@ -97,7 +97,7 @@ interpret (Lplus lfn rfn) v = do vl <- interpret lfn v
                                  vr <- interpret rfn v
                                  Right $ vl `vectorspacePlus` vr
 
-interpret (Red (List [])) _ = return Zero
+interpret (Red (List [])) _ = Left "Reduction relations can not be empty"
 interpret (Red (List r )) v = let l = map snd r |> maximum |> Just in
                                     Right
                                     <| flip denseVecFromSparseVecL l
