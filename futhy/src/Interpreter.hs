@@ -113,14 +113,14 @@ interpret Neg v = return (negate v)
 interpret (LMap fn) (Tensor vs) = do vals <- mapM (interpret fn) vs
                                      return (Tensor vals)
 
-interpret (LMap _) _ = error "Must LMap over a Tensor (Vector)"
+interpret (LMap _) _ = Left "Must LMap over a Tensor (Vector)"
 
 interpret (Zip fs) (Tensor vs) = if length fs == length vs
                                  then do vals <- zipWithM interpret fs vs
                                          return (Tensor vals)
                                  else Left "Invalid argument pair to Zip.  Lists of LFUNS and VLIST must have same length."
 
-interpret (Zip _) _ = error "Wrong use of zip!"
+interpret (Zip _) _ = Left "Wrong use of zip!"
 
 interpret Add (Pair Zero vr) = return vr
 interpret Add (Pair vl Zero) = return vl
