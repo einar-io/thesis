@@ -11,26 +11,24 @@ import Matrix
 
 -- general implementation - outer product, no contraction
 outer :: Val -> Val -> Val
-outer x y = case (x,y) of
-  (Scalar xs, Scalar ys) -> Scalar $ xs * ys
-  (Scalar  _, Tensor ys) -> Tensor $ map (outer x) ys
-  (Tensor xs, Scalar  _) -> Tensor $ map (outer y) xs
-  (Tensor xs, Tensor  _) -> Tensor $ map (outer y) xs
-  _ -> error "outer case undefined"
+outer   (Scalar xs)   (Scalar ys) = Scalar $ xs * ys
+outer x@(Scalar  _)   (Tensor ys) = Tensor $ map (outer x) ys
+outer   (Tensor xs) y@(Scalar  _) = Tensor $ map (outer y) xs
+outer   (Tensor xs) y@(Tensor  _) = Tensor $ map (outer y) xs
+outer _ _                         = error "outer case undefined"
 
 dotprod :: Val -> Val -> Val
-dotprod x y = case (mkR1 x, mkR1 y) of
-  (a, b) -> Scalar $ sum $ zipWith (*) a b
+dotprod x y = let (a, b) = (mkR1 x, mkR1 y)
+              in Scalar $ sum $ zipWith (*) a b
 
 matmul :: Val -> Val -> Val
-matmul x y = case (mkR2 x, mkR2 y) of
-  (a, b) -> mkT2 [[sum $ zipWith (*) ai bi | bi <- transpose b] | ai <- a]
+matmul x y = let (a, b) = (mkR2 x, mkR2 y)
+             in mkT2 [[sum $ zipWith (*) ai bi | bi <- transpose b] | ai <- a]
 
 applyOp :: BilOp -> Val -> Val -> Val
-applyOp op a b = case op of
-  Outer -> outer a b
-  DotProd -> dotprod a b
-  MatrixMult -> matmul a b
+applyOp Outer = outer
+applyOp DotProd = dotprod
+applyOp MatrixMult = matmul
 
 proj1 :: Val -> Val
 proj1 (Pair l _) = l
@@ -41,13 +39,12 @@ proj2 (Pair _ r) = r
 proj2 _ = error "proj2 case undefined"
 
 vectorspacePlus :: Val -> Val -> Val
-vectorspacePlus left right = case (left, right) of
-   (Zero, r@(Scalar _))       -> r
-   (l@(Scalar _), Zero)       -> l
-   (Scalar l, Scalar r)       -> Scalar $ l + r
-   (Tensor ls, Tensor rs)     -> Tensor $ zipWith vectorspacePlus ls rs
-   (Pair ll lr, Pair rl rr)   -> Pair (ll `vectorspacePlus` rl) (lr `vectorspacePlus` rr)
-   _ -> error "vectorspacePlus case undefined"
+vectorspacePlus Zero r@(Scalar _)         = r
+vectorspacePlus l@(Scalar _) Zero         = l
+vectorspacePlus (Scalar l) (Scalar r)     = Scalar $ l + r
+vectorspacePlus (Tensor ls) (Tensor rs)   = Tensor $ zipWith vectorspacePlus ls rs
+vectorspacePlus (Pair ll lr) (Pair rl rr) = Pair (ll `vectorspacePlus` rl) (lr `vectorspacePlus` rr)
+vectorspacePlus _ _                       = error "vectorspacePlus case undefined"
 
 
 {- vecLookup, flipLookup, keepValues, compact, reduce are all helper functions to the reduce operator -}
@@ -83,57 +80,57 @@ reduce r v = map (`flipLookup` v) r
 
 
 interpret :: LFun -> Val -> InterpretorOutput Val
-interpret f v = case (f, v) of
-  (Id,  _) -> Right v
-  (Dup, _) -> Right $ Pair v v
-  (Comp lfn rfn, _) -> do vr <- interpret rfn v
-                          interpret lfn vr
-  (Para lfn rfn, _) -> do vl <- interpret lfn $ proj1 v
-                          vr <- interpret rfn $ proj2 v
-                          Right $ Pair vl vr
-  (LSec l op, _) -> Right $ applyOp op l v
-  (RSec op r, _) -> Right $ applyOp op v r
-  (Scale s, _)   -> Right $ outer (Scalar s) v
-  (KZero, _)     -> Right Zero
-  (Fst, _)       -> Right $ proj1 v
-  (Snd, _)       -> Right $ proj2 v
-  (Lplus lfn rfn, _) -> do vl <- interpret lfn v
-                           vr <- interpret rfn v
-                           Right $ vl `vectorspacePlus` vr
+interpret Id v  = Right v
+interpret Dup v = Right $ Pair v v
+interpret (Comp lfn rfn) v = do vr <- interpret rfn v
+                                interpret lfn vr
+interpret (Para lfn rfn) v = do vl <- interpret lfn $ proj1 v
+                                vr <- interpret rfn $ proj2 v
+                                Right $ Pair vl vr
+interpret (LSec l op) v = Right $ applyOp op l v
+interpret (RSec op r) v = Right $ applyOp op v r
+interpret (Scale s) v   = Right $ outer (Scalar s) v
+interpret KZero _       = Right Zero
+interpret Fst v         = Right $ proj1 v
+interpret Snd v         = Right $ proj2 v
+interpret (Lplus lfn rfn) v = do vl <- interpret lfn v
+                                 vr <- interpret rfn v
+                                 Right $ vl `vectorspacePlus` vr
 
-  (Red (List []), _) -> return Zero
-  (Red (List r ), _) -> let l = map snd r |> maximum |> Just in
-                        Right
-                        <| flip denseVecFromSparseVecL l
-                        <| SparseTensor
-                        <| reduce r v
-  (Red r, _)         -> Left <| "Invalid argument to Red.  rel: "
-                             ++ show r
-                             ++ " v: "
-                             ++ show v
+interpret (Red (List [])) _ = return Zero
+interpret (Red (List r )) v = let l = map snd r |> maximum |> Just in
+                                    Right
+                                    <| flip denseVecFromSparseVecL l
+                                    <| SparseTensor
+                                    <| reduce r v
+interpret (Red r) v = Left <| "Invalid argument to Red.  rel: "
+                      ++ show r
+                      ++ " v: "
+                      ++ show v
 
-  (Neg   , _) -> return (negate v)
+interpret Neg v = return (negate v)
 
-  (LMap fn, Tensor vs) -> do vals <- mapM (interpret fn) vs
-                             return (Tensor vals)
-  (LMap _, _) -> error "Wrong use of LMap"
+interpret (LMap fn) (Tensor vs) = do vals <- mapM (interpret fn) vs
+                                     return (Tensor vals)
 
-  (Zip fs, Tensor vs) -> if length fs == length vs
-                        then do vals <- zipWithM interpret fs vs
-                                return (Tensor vals)
-                        else Left "Invalid argument pair to Zip.  Lists of LFUNS and VLIST must have same length."
+interpret (LMap _) _ = error "Must LMap over a Tensor (Vector)"
 
-  (Zip _, _) -> error "Wrong use of zip!"
+interpret (Zip fs) (Tensor vs) = if length fs == length vs
+                                 then do vals <- zipWithM interpret fs vs
+                                         return (Tensor vals)
+                                 else Left "Invalid argument pair to Zip.  Lists of LFUNS and VLIST must have same length."
 
-  (Add, Pair Zero vr) -> return vr
-  (Add, Pair vl Zero) -> return vl
-  (Add, Pair (Scalar l) (Scalar r)) -> return $ Scalar (l+r)
-  (Add, Pair (Tensor l) (Tensor r)) -> if length l == length r
+interpret (Zip _) _ = error "Wrong use of zip!"
+
+interpret Add (Pair Zero vr) = return vr
+interpret Add (Pair vl Zero) = return vl
+interpret Add (Pair (Scalar l) (Scalar r)) = return $ Scalar (l+r)
+interpret Add (Pair (Tensor l) (Tensor r)) = if length l == length r
                                        then do vs <- zipWithM (\x y -> interpret Add (Pair x y)) l r
                                                return (Tensor vs)
                                        else Left "Invalid pair of tensors. Lists values do not have same length."
-  (Add, _) ->  Left "Invalid argument to Add"
-  (Prj _ _, _) -> Left "Projection should have been desugared"
+interpret Add _       = Left "Invalid argument to Add"
+interpret (Prj _ _) _ = Left "Projection should have been desugared"
 
 eval :: LFun -> Val -> String
 eval f v = show (interpret f v)
