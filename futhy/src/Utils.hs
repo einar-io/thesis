@@ -27,6 +27,11 @@ transpose []             = []
 transpose ([]   : xss)   = transpose xss
 transpose ((x:xs) : xss) = (x : [h | (h:_) <- xss]) : transpose (xs : [ t | (_:t) <- xss])
 
+transposeVal :: Val -> Val
+transposeVal x@(Tensor (Scalar _: _))          = x
+transposeVal x@(Tensor (Tensor (Scalar _: _) : _)) = mkT2 $ transpose $ mkR2 x
+transposeVal _ = error "undefined transposeVal case"
+
 -- Source https://hackage.haskell.org/package/tidal-1.7.8/docs/src/Sound.Tidal.Utils.html#nth
 {- | Safer version of !! --}
 nth :: Int -> [a] -> Maybe a

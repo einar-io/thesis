@@ -89,10 +89,13 @@ genBenchmarks name bench backend oom runs = do
   seriess <- mapM json2series jsons
   return (name, vecLens, seriess)
 
+
+------------------ Neural Network Examples
 nnB :: Int -> Bench
 nnB numLayers name backend vecLen runs =
   benchmark name backend runs (makeLayersAndErrorFunction numLayers vecLen) (makeNNInput vecLen)
 
+repeatToList :: (Num a, Enum a) => b -> a -> [b]
 repeatToList f n = map (\_ -> f) [1..n]
 
 getDoubleFromInt :: Int -> Double
@@ -112,13 +115,10 @@ makeNNInput :: Int -> Val
 makeNNInput i = let dw = genSqrMtx i
                     dx = genVector i
                     db = genVector i
-                in Pair db (Pair dx dw)
+                 in Pair db (Pair dx dw)
 
 makeLayersAndErrorFunction :: Int -> Int -> LFun
-makeLayersAndErrorFunction numLayers i = (makeErrorFunction i) `Comp` (makeLayers numLayers i)
-
-makeErrorFunction :: Int -> LFun
-makeErrorFunction i = LSec (genVector i) ErrorFunction
+makeLayersAndErrorFunction numLayers i = (LSec (genVector i) ErrorFunction) `Comp` (makeLayers numLayers i)
 
 makeLayers :: Int -> Int -> LFun
 makeLayers 1 i = makeLayer i
@@ -133,9 +133,6 @@ makeLayer i = let w = genSqrMtx i
                  `Comp`
                   Add `Comp` (Para Id (Add `Comp` ((LSec w VecMatProd) `Para` (RSec MatVecProd x))))
 
-transposeVal :: Val -> Val
-transposeVal x = error "transposeVal"
-
 transposeLFun :: LFun -> LFun
 transposeLFun (f `Comp` g)        = (transposeLFun g) `Comp` (transposeLFun f)
 transposeLFun (LSec x MatrixMult) = LSec (transposeVal x) MatrixMult
@@ -149,6 +146,9 @@ transposeLFun Neg                 = Neg
 transposeLFun (Scale x)           = Scale x
 transposeLFun (Zip ls)            = Zip $ map transposeLFun ls
 transposeLFun _ = error "cant transpose this"
+
+------------------
+
 
 main :: IO ()
 main = do
