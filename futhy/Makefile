@@ -7,6 +7,8 @@ build:
 	stack build
 
 bench:
+	rm -f build/lmaplib.fut
+	cp lib/lmaplib.fut build/lmaplib.fut
 	stack bench
 
 test:
