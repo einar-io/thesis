@@ -56,17 +56,13 @@ instance Show Val where
   show v = case v of
     Scalar sc -> if sc >= 0.0 then show sc <> "f32" else "(" <> show sc <> "f32" <> ")"
     Pair v1 v2 -> "(" <> show v1 <> ", " <> show v2 <> ")"
-    Tensor ls ->
-      --"DenseTensor ["
-      "["
-      <> ( ls
-           |> map show
-           |> intercalate ", "
-         )
-      <> "]"
+    Tensor ls -> "["
+                  <> ( ls
+                       |> map show
+                       |> intercalate ", "
+                     )
+                  <> "]"
     Zero -> show $ Scalar 0
-    SparseTensor _ ->
-      "[0.0f32, 0.0f32]"
     _ -> undefined
 
 stdinShow :: Val -> String
