@@ -9,17 +9,21 @@ module Benchmarks (main) where
 
 import Interpreter (interpret)
 import Data.Either
-import Test.Tasty.Bench
+--import Test.Tasty.Bench
 import Tests hiding (main)
 import Random
 import Types hiding (runs)
 import Utils
 import Flow
 import Executer
-import Plot (savePlot)
-import Json (json2series)
+import Plot (plotMeasurements)
+import JSON (json2series)
+import Dataset
+import Matrix
+import Control.Monad
 
-{- 
+
+{-
 benchInterpretor :: String -> LFun -> Val -> Benchmark
 benchInterpretor name lf1 vin1 =
   let (lf, vin, _vout) = caramelizeTestParams (lf1, vin1, Zero)
@@ -62,34 +66,142 @@ benchCompiler name lf1 vin1 =
 -}
 
 {- New-flavour benchmarks for testing GPU -}
-scaleB :: Bench
-scaleB name backend vecLen runs = benchmark name backend runs (Scale 7.0) (rndVecVals vecLen)
+scaleSym :: Bench
+scaleSym backend runs inputLen =
+  let lfn = Scale 7.0
+   in benchmark "ScaleSym" inputLen backend runs lfn (rndVecVals inputLen)
 
-lmapB :: Bench
-lmapB name backend vecLen runs  = benchmark name backend runs (LMap (Scale 11.0)) (rndVecVals vecLen)
+scaleMtx :: Bench
+scaleMtx backend runs inputLen =
+  let lfn = Scale 59.0
+      mtx = getMatrixRep lfn [inputLen]
+      mlfn = LSec mtx MatrixMult
+   in benchmark "ScaleMtx" inputLen backend runs mlfn (rndVecVals inputLen)
 
-zipB :: Bench
-zipB name backend vecLen runs   = benchmark name backend runs (Zip [Scale 17.0]) (Tensor [rndVecVals vecLen])
 
-reduceB :: Bench
-reduceB name backend vecLen runs =
-  let relLen = 100 -- (20 *) . floor . log <| (fromIntegral vecLen :: Double)
-      maxIdx = vecLen
+lmapSym :: Bench
+lmapSym backend runs inputLen =
+  let lfn = LMap (Scale 11.0)
+   in benchmark "LmapSym" inputLen backend runs lfn (rndVecVals inputLen)
+
+lmapMtx :: Bench
+lmapMtx backend runs inputLen =
+  let lfn = Scale 59.0
+      mtx = getMatrixRep lfn [inputLen]
+      mlfn = LSec mtx MatrixMult
+   in benchmark "LmapMtx" inputLen backend runs mlfn (rndVecVals inputLen)
+
+
+zipSym :: Bench
+zipSym backend runs inputLen =
+  let lfn = Zip (replicate inputLen (Scale 17.0))
+   in benchmark "ZipSym" inputLen backend runs lfn (rndVecVals inputLen)
+
+{-
+zipMtx :: Bench
+zipMtx backend runs inputLen =
+  let lfn = Zip (replicate inputLen (Scale 17.0))
+      mtx = getMatrixRep lfn [inputLen]
+      mlfn = LSec mtx MatrixMult
+   in benchmark "zipMtx" inputLen backend runs mlfn (rndVecVals inputLen)
+-}
+
+zipMtx :: Bench
+zipMtx backend runs inputLen =
+  let lfn = Zip (replicate inputLen (Scale 17.0))
+            |> flip getMatrixRep [inputLen]
+            |> flip LSec MatrixMult
+   in benchmark "zipMtx" inputLen backend runs lfn (rndVecVals inputLen)
+
+{-
+<zfnmxt> That coupled with the fact that your relation length is logarithmic with the size of your input means that the amount of work to do is nearly constant regardless of the input size
+<zfnmxt> As a rule, I'd make my input, output, and relation size all about the same (up]
+ to a few smallish constant factors). Then you should see runtimes scale better.
+-}
+redSym :: Bench
+redSym backend runs inputLen =
+  let relLen = inputLen
+      maxIdx = inputLen
       maxVal = 100
-   in benchmark name backend runs (Red <| rndRelCap relLen maxIdx maxVal) (rndVecVals vecLen)
+      lfn = Red <| rndRelCap relLen maxIdx maxVal
+   in benchmark "redSym" inputLen backend runs lfn (rndVecVals inputLen)
 
-genBenchmarks :: String -> Bench -> Backend -> Int -> Runs -> IO PlotData
-genBenchmarks name bench backend oom runs = do
-  let vecLens = powersof2 oom
-  cexs <- mapM (\i -> bench (name ++ "_i=" ++ show i) backend i runs) vecLens
+redMtx :: Bench
+redMtx backend runs inputLen =
+  let relLen = inputLen
+      maxIdx = inputLen
+      maxVal = 100
+      lfn = Red <| rndRelCap relLen maxIdx maxVal
+      mtx = getMatrixRep lfn [inputLen]
+      mlfn = LSec mtx MatrixMult
+   in benchmark "redMtx" inputLen backend runs mlfn (rndVecVals inputLen)
+
+doBenchmarks :: Bench -> Backend -> Runs -> OOMs -> IO ([Int], [Double])
+doBenchmarks bench backend runs ooms = do
+  let inputLens = powersof2 ooms
+  cexs <- mapM (bench backend runs) inputLens
+  print ( "LENGHT: "  ++ (show . length $ cexs)
+    ++ "; noRights: " ++ (show . length . rights $ cexs)
+    ++ "; noLefts: "  ++ (show . length . lefts $ cexs ))
+  print cexs
+  guard (length (rights cexs) == length inputLens)
+
   let jsons = map (json . getLog) (rights cexs)
-  seriess <- mapM json2series jsons
-  return (name, vecLens, seriess)
+  seriess <- mapM json2series jsons -- we don't need to do this in IO
+  let series = map minimum seriess -- this is important
+  return (inputLens, series)
 
 main :: IO ()
 main = do
-  genBenchmarks "Scale" scaleB C 16 3 >>= savePlot
-  genBenchmarks "LMap"  lmapB  C 16 3 >>= savePlot
-  genBenchmarks "Zip"   zipB   C 16 3 >>= savePlot
-  --genBenchmarks "Reduce" reduceB 16 >>= savePlot
+
+  let backend = C
+  let oom = (1, 21) -- ordersOfMagnitude of 2 of the datasets.  Should be more than 10
+  let noRuns = 1
+
+  initDatasets oom
+
+  scaleSymMeas <- doBenchmarks scaleSym backend noRuns (9, 16)
+  scaleMtxMeas <- doBenchmarks scaleMtx backend noRuns (5, 11)
+  _ <- plotMeasurements "Scale" [ ("Symbolic", "blue", scaleSymMeas)
+                                , ("Matrix"  , "red" , scaleMtxMeas)
+                                ]
+
+  lMapSymMeas <- doBenchmarks lmapSym backend noRuns (9, 16)
+  lMapMtxMeas <- doBenchmarks lmapMtx backend noRuns (5, 11)
+  _ <- plotMeasurements "LMap" [ ("Symbolic", "blue", lMapSymMeas)
+                               , ("Matrix"  , "red" , lMapMtxMeas)
+                               ]
+
+
+  zipSymMeas <- doBenchmarks zipSym backend noRuns (8, 14)
+  zipMtxMeas <- doBenchmarks zipMtx backend noRuns (5, 10)
+  _ <- plotMeasurements "Zip" [ ("Symbolic", "blue", zipSymMeas)
+                              , ("Matrix"  , "red" , zipMtxMeas)
+                              ]
+
+
+  redSymMeas <- doBenchmarks redSym backend noRuns (8, 14)
+  --redMtxMeas <- doBenchmarks redMtx backend noRuns (5, 5)
+  _ <- plotMeasurements "Red" [ ("Symbolic", "blue", redSymMeas)
+                              --, ("Matrix"  , "red" , redMtxMeas)
+                              ]
+
+  {-
+  genBenchmarks "Reduce" reduceB C oom noRuns >>= savePlot
+
+  genBenchmarks "NN" reduceB C oom noRuns >>= savePlot
+  -}
+  return ()
+
+
+
+
+
+{- Compound benchmarks
+ - [POPL, p. 8]
+ - CNNs RNNs
+ - Run on GPU
+ -
+ - genNN layers  inputsize
+ -}
 

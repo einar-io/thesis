@@ -16,12 +16,9 @@ type Index = Int
 data Val
   = Scalar RealNumber
   | Zero
-  | Tensor [Val]
+  | Tensor [Val] -- Vector [Val]
   | Pair Val Val
   | SparseTensor [(Index, Val)]
-  | FastTensor -- Data.Array
-  | Matrix -- hmatrix
-  -- |
   deriving
     ( Eq
     , Generic
@@ -172,6 +169,7 @@ type Runs = Int
 
 data Env = Env
   { fp   :: FilePath
+  , ds   :: Dataset
   , be   :: Backend
   , runs :: Runs
   }
@@ -184,13 +182,13 @@ isExitFailure _               = False
 type Stdin  = String
 type Stdout = String
 type CommandOutput = (ExitCode, Stdout, Stdin)
-type Json = String
+type JSON = String
 
 data Log = Log
   { exitcode :: ExitCode
   , stdout   :: Stdout
   , stdin    :: Stdin
-  , json     :: Json
+  , json     :: JSON
   } deriving (Show, Eq, Generic, NFData)
 
 data FailedStep
@@ -234,7 +232,12 @@ type CState = (Program, Arity, Count)
 
 
 --type Bench = FilePath -> Backend -> Runs -> LFun -> Val -> IO (CommandExecution Result)
-type Bench = FilePath -> Backend -> Int -> Runs -> IO (CommandExecution Result)
+type Bench = Backend -> Runs -> Int -> IO (CommandExecution Result)
 type Series = [Double]
 
-type PlotData = (FilePath, [Int], [Series])
+
+type OOMs = (Int, Int)
+
+type Dataset = Int
+--type PlotData = (FilePath, [Int], [Series])
+type PlotData = (String, String, ([Int], Series))

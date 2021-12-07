@@ -6,10 +6,9 @@ module Matrix
   , lfun2mtcs
   , tnsr2mtx
   , compaction
-  -- , denseVecFromSparseVec
-  , denseVecFromSparseVecL
   , (@@) -- matmul
   , genStdBasis
+  , getMatrixRep
   )
   where
 
@@ -17,7 +16,7 @@ import Prelude hiding ((<>))
 import Types
 import Numeric.LinearAlgebra hiding ((|>))
 import Flow
-import Data.AssocList
+import Interpreter (interpret)
 
 type Shape = (Int, Int)
 type LeftRightMultipliers = ([Matrix RealNumber], [Matrix RealNumber])
@@ -114,43 +113,29 @@ compaction (lfns, rfns) (m, _n) =
   let fmm = foldr (@@) (ident m)
    in ([fmm lfns], [fmm rfns])
 
-buildVec :: AssocList Int Val -> Int -> Int -> [Val]
-buildVec al len i
-  | i == len = []
-  | otherwise   = lookupDef 0 i al : buildVec al len (i+1)
-
-denseVecFromSparseVecL :: Val -> Maybe Int -> Val
-denseVecFromSparseVecL (SparseTensor []) _ = undefined
-denseVecFromSparseVecL (SparseTensor alist) Nothing =
-  let len = maximum <| map fst alist
-   in Tensor <| buildVec alist (len + 1) 0
-denseVecFromSparseVecL (SparseTensor alist) (Just len) =
-   Tensor <| buildVec alist (len + 1) 0
-denseVecFromSparseVecL _ _ = undefined
-
-
-{-
-Old
-oneHot :: Int -> Int -> [RealNumber]
-oneHot l n
-  | n < 1 = undefined
-  | l < n = undefined
-  | otherwise = before ++ [1] ++ after
-  where  before = repeat 0 |> take (n-1)
-         after  = repeat 0 |> take (l-n)
-
-genBasis :: [Int] -> [[Val]]
-genBasis [r] = [ oneHot r n | n <- [1..r] ]
-genBasis _ = undefined
--}
-
 genZero :: [Int] -> Val
 genZero [] = Scalar 0
 genZero (n:ns) = Tensor <| replicate n (genZero ns)
 
+s = Scalar
+t = Tensor
+
 genStdBasis :: [Int] -> [Val]
-genStdBasis [] = [Scalar 1]
+genStdBasis [] = [s 1]
 genStdBasis (n : ns) = do
   i <- [0 .. n - 1]
   v <- genStdBasis ns
-  return $ Tensor $ replicate i (genZero ns) ++ [v] ++ replicate (n-i-1) (genZero ns)
+  return $ t $ replicate i (genZero ns) ++ [v] ++ replicate (n-i-1) (genZero ns)
+
+genBasis = genStdBasis
+
+getMatrixRep :: LFun -> [Int] -> Val
+getMatrixRep lfun shp =
+  let vss = genStdBasis shp
+      mapped = mapM (interpret lfun) vss
+   in case mapped of
+        Left _ -> undefined
+        Right mtx -> Tensor mtx
+
+runMeRobert :: Val
+runMeRobert = getMatrixRep (Zip [Scale 42, Scale 2]) [2,2]

@@ -1,5 +1,9 @@
 module Utils where
 import Types
+import Control.Monad
+import Control.Monad.IO.Class
+import System.IO (stderr, hPutStrLn)
+import Flow
 
 import Data.List (isPrefixOf)
 
@@ -41,10 +45,16 @@ remove w s@(c:cs)
   | w `isPrefixOf` s = remove w (drop (length w) s)
   | otherwise = c : remove w cs
 
-powersof2 :: (Num a, Integral b) => b -> [a]
-powersof2 i = [2 ^ j | j <- [2..i]]
+powersof2 :: OOMs -> [Int]
+powersof2 (lo, hi) = do j <- [lo..hi]
+                        return (2^j)
 
+{-
 powersof10 :: (Num a, Integral b) => b -> [a]
 powersof10 i = [10 ^ ii | ii <- [1..i]]
+-}
 
-
+p :: String -> Command ()
+p s =
+  let debug = True
+  in when debug (liftIO <| hPutStrLn stderr s)
