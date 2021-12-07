@@ -23,7 +23,7 @@ import Matrix
 import Control.Monad
 
 
-{- 
+{-
 benchInterpretor :: String -> LFun -> Val -> Benchmark
 benchInterpretor name lf1 vin1 =
   let (lf, vin, _vout) = caramelizeTestParams (lf1, vin1, Zero)
@@ -73,27 +73,68 @@ scaleSym backend runs inputLen =
 
 scaleMtx :: Bench
 scaleMtx backend runs inputLen =
-  let mtx = getMatrixRep (Scale 59.0) [inputLen]
-      lfn = LSec mtx MatrixMult
-   in benchmark "ScaleMtx" inputLen backend runs lfn (rndVecVals inputLen)
+  let lfn = Scale 59.0
+      mtx = getMatrixRep lfn [inputLen]
+      mlfn = LSec mtx MatrixMult
+   in benchmark "ScaleMtx" inputLen backend runs mlfn (rndVecVals inputLen)
 
+
+lmapSym :: Bench
+lmapSym backend runs inputLen =
+  let lfn = LMap (Scale 11.0)
+   in benchmark "LmapSym" inputLen backend runs lfn (rndVecVals inputLen)
+
+lmapMtx :: Bench
+lmapMtx backend runs inputLen =
+  let lfn = Scale 59.0
+      mtx = getMatrixRep lfn [inputLen]
+      mlfn = LSec mtx MatrixMult
+   in benchmark "LmapMtx" inputLen backend runs mlfn (rndVecVals inputLen)
+
+
+zipSym :: Bench
+zipSym backend runs inputLen =
+  let lfn = Zip (replicate inputLen (Scale 17.0))
+   in benchmark "ZipSym" inputLen backend runs lfn (rndVecVals inputLen)
 
 {-
-lmapB :: Bench
-lmapB name dataset backend vecLen runs  = benchmark name dataset backend runs (LMap (Scale 11.0)) (rndVecVals vecLen)
-
-zipB :: Bench
-zipB name dataset backend vecLen runs   = benchmark name dataset backend runs (Zip [Scale 17.0]) (Tensor [rndVecVals vecLen])
-
-reduceB :: Bench
-reduceB name dataset backend vecLen runs =
-  let relLen = 100 -- (20 *) . floor . log <| (fromIntegral vecLen :: Double)
-      maxIdx = vecLen
-      maxVal = 100
-   in benchmark name dataset backend runs (Red <| rndRelCap relLen maxIdx maxVal) (rndVecVals vecLen)
+zipMtx :: Bench
+zipMtx backend runs inputLen =
+  let lfn = Zip (replicate inputLen (Scale 17.0))
+      mtx = getMatrixRep lfn [inputLen]
+      mlfn = LSec mtx MatrixMult
+   in benchmark "zipMtx" inputLen backend runs mlfn (rndVecVals inputLen)
 -}
 
+zipMtx :: Bench
+zipMtx backend runs inputLen =
+  let lfn = Zip (replicate inputLen (Scale 17.0))
+            |> flip getMatrixRep [inputLen]
+            |> flip LSec MatrixMult
+   in benchmark "zipMtx" inputLen backend runs lfn (rndVecVals inputLen)
 
+{-
+<zfnmxt> That coupled with the fact that your relation length is logarithmic with the size of your input means that the amount of work to do is nearly constant regardless of the input size
+<zfnmxt> As a rule, I'd make my input, output, and relation size all about the same (up]
+ to a few smallish constant factors). Then you should see runtimes scale better.
+-}
+redSym :: Bench
+redSym backend runs inputLen =
+  let relLen = inputLen
+      maxIdx = inputLen
+      maxVal = 100
+      lfn = Red <| rndRelCap relLen maxIdx maxVal
+   in benchmark "redSym" inputLen backend runs lfn (rndVecVals inputLen)
+
+redMtx :: Bench
+redMtx backend runs inputLen =
+  let relLen = inputLen
+      maxIdx = inputLen
+      maxVal = 100
+      lfn = Red <| rndRelCap relLen maxIdx maxVal
+      mtx = getMatrixRep lfn [inputLen]
+      mlfn = LSec mtx MatrixMult
+   in benchmark "redMtx" inputLen backend runs mlfn (rndVecVals inputLen)
 
 doBenchmarks :: Bench -> Backend -> Runs -> OOMs -> IO ([Int], [Double])
 doBenchmarks bench backend runs ooms = do
@@ -119,27 +160,36 @@ main = do
 
   initDatasets oom
 
-  measurementsScaleSym <- doBenchmarks scaleSym backend noRuns (9, 16)
-  measurementsScaleMtx <- doBenchmarks scaleMtx backend noRuns (5, 11)
-  _ <- plotMeasurements "Scale" [ ("Symbolic", "blue", measurementsScaleSym)
-                                , ("Matrix"  , "red" , measurementsScaleMtx)
+  scaleSymMeas <- doBenchmarks scaleSym backend noRuns (9, 16)
+  scaleMtxMeas <- doBenchmarks scaleMtx backend noRuns (5, 11)
+  _ <- plotMeasurements "Scale" [ ("Symbolic", "blue", scaleSymMeas)
+                                , ("Matrix"  , "red" , scaleMtxMeas)
                                 ]
 
-  {-
-  measurementsLMapSym <- doBenchmarks lmapSym backend noRuns (9, 16)
-  measurementsLMapMtx <- doBenchmarks lmapMtx backend noRuns (5, 11)
-  _ <- plotMeasurements "LMap" [ ("Symbolic", "blue", measurementsLMapSym)
-                               , ("Matrix"  , "red" , measurementsLMapMtx)
+  lMapSymMeas <- doBenchmarks lmapSym backend noRuns (9, 16)
+  lMapMtxMeas <- doBenchmarks lmapMtx backend noRuns (5, 11)
+  _ <- plotMeasurements "LMap" [ ("Symbolic", "blue", lMapSymMeas)
+                               , ("Matrix"  , "red" , lMapMtxMeas)
                                ]
 
-  -}
+
+  zipSymMeas <- doBenchmarks zipSym backend noRuns (8, 14)
+  zipMtxMeas <- doBenchmarks zipMtx backend noRuns (5, 10)
+  _ <- plotMeasurements "Zip" [ ("Symbolic", "blue", zipSymMeas)
+                              , ("Matrix"  , "red" , zipMtxMeas)
+                              ]
 
 
+  redSymMeas <- doBenchmarks redSym backend noRuns (8, 14)
+  --redMtxMeas <- doBenchmarks redMtx backend noRuns (5, 5)
+  _ <- plotMeasurements "Red" [ ("Symbolic", "blue", redSymMeas)
+                              --, ("Matrix"  , "red" , redMtxMeas)
+                              ]
 
   {-
-  genBenchmarks "LMap"  lmapB  C oom noRuns >>= savePlot
-  genBenchmarks "Zip"   zipB   C oom noRuns >>= savePlot
   genBenchmarks "Reduce" reduceB C oom noRuns >>= savePlot
+
+  genBenchmarks "NN" reduceB C oom noRuns >>= savePlot
   -}
   return ()
 

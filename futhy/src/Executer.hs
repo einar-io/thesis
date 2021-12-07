@@ -135,12 +135,13 @@ benchmarkM futPgmStr dsn = do
 
 runBenchmark :: Command Result
 runBenchmark = do
-  Env filepath dataset _be noRuns <- ask
+  Env filepath dataset backend noRuns <- ask
   let executable = "futhark"
   let jsonfile = dropExtension filepath ++ ".json"
   -- Documentation: https://futhark.readthedocs.io/en/stable/man/futhark-bench.html#futhark-bench-1
   let { params =
         [ "bench"
+        --, "--backend=" ++ backend
         , "--json=" ++ jsonfile
         , "--runs=" ++ show noRuns
         , filepath
@@ -158,6 +159,8 @@ runBenchmark = do
   p $ "[Benchmark] stdout:   " ++ _stdout
   p $ "[Benchmark] stdin :   " ++ _stdin
   p   "[Benchmark] Execution ENDED"
-  p $ "[Benchmark] View results with: 'jq . " ++ jsonfile ++ "'"
+  p $ "[Benchmark] Inspect results with: 'jq . " ++ jsonfile ++ "'"
+  p $ "[Benchmark] Inspect program with: 'vim " ++ filepath ++ "'"
+  p $ "[Benchmark] Inspect dataset with: 'vim build/dataset_" ++ show dataset ++ ".val'"
   let benchmarkLog = makeLog output jsobj
   return (Result benchmarkLog)
