@@ -1,7 +1,8 @@
 module Dataset
-  ( genVector
+  ({- genVector
   , genVectors
-  , initDatasets
+  -}
+  initDatasets
   , initDatasetsM
   ) where
 

@@ -19,8 +19,11 @@ instance Monad CodeGen where
 
 biop :: BilOp -> Arity -> Arity -> String
 biop b a1 a2 =  let base = case b of
-                            MatrixMult -> "cont"
-                            DotProd -> "cont"
+                            MatrixMult -> "inner"
+                            DotProd    -> "inner"
+                            VecMatProd -> "inner"
+                            MatVecProd -> "inner"
+                            LossFunction-> "lossfunction"
                             Outer -> "outer"
                 in base <> arityAnnotation a1 a2
 
@@ -57,7 +60,7 @@ codeGenLFun linfun a1 = case (linfun, a1) of
   (Red (List ls), Atom n) -> genLineOfCode a1 ("reduce_" <> show n <> " " <> show ls <> " " <> show (getReduceResultDim ls))
 
   (LSec v b, _)        -> genLineOfCode a1 (biop b (getArity v) a1 <> " " <> show v)
-  (RSec b v, _)        -> genLineOfCode a1 ("flip " <> biop b (getArity v) a1 <> " " <> show v)
+  (RSec b v, _)        -> genLineOfCode (getArity v) ("flip " <> biop b a1 (getArity v) <> " " <> show v)
   (Comp lf3 lf2, _) -> do codeGenLFun lf2 a1
                           (id2, a2) <- getLastFunIdAndArity
                           codeGenLFun lf3 a2
@@ -117,7 +120,7 @@ codeGenLFunP lfp1 v1 a1 = case (lfp1, a1, v1) of
 
 
   (LSecP op, _, v) -> genLineOfCode a1 $ "uncurry " <> (biop op (getArity v) a1)  -- <> " " <> show v)
-  (RSecP op, _, v) -> genLineOfCode a1 $ "uncurry " <> ("(flip " <> biop op (getArity v) a1) <> ")" -- <> " " <> show v)
+  (RSecP op, _, v) -> genLineOfCode (getArity v) $ "uncurry " <> ("(flip " <> biop op a1 (getArity v)) <> ")" -- <> " " <> show v)
 
   (CompP lfp3 lfp2, _, Pair v3 v2) -> do codeGenLFunP lfp2 v2 a1
                                          (id2, a2) <- getLastFunIdAndArity

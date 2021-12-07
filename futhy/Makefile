@@ -7,6 +7,8 @@ build:
 	time stack build
 
 bench:
+	rm -f build/lmaplib.fut
+	cp lib/lmaplib.fut build/lmaplib.fut
 	time stack bench
 
 test:

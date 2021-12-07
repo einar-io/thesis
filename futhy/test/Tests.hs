@@ -1,4 +1,4 @@
-module Tests (main, runAllTests, caramelizeTestParams) where
+module Tests (main, runAllTests, caramelizeTestParams, showCleanError) where
 
 --import qualified Prelude
 import Prelude hiding (not)
@@ -55,7 +55,7 @@ caramelizeTestParams :: (LFun, Val, Val) -> (LFun, Val, Val)
 caramelizeTestParams (lf, vin, vout) = (caramelizeLFun lf, caramelizeVal vin, caramelizeVal vout)
 
 goodCaseExecution :: (LFun, Val, Val) -> TestTree
-goodCaseExecution params = genCodeGenrTestCase "CodeGener" codeGenProgram $ caramelizeTestParams params
+goodCaseExecution params = genCodeGenrTestCase "CodeGen" codeGenProgram $ caramelizeTestParams params
 
 goodCaseConstExtracted :: (LFun, Val, Val) -> TestTree
 goodCaseConstExtracted params =
@@ -69,20 +69,17 @@ goodCaseStaged name params = testGroup name [goodCaseInterpretor params, goodCas
 
 runAllTests :: TestTree
 runAllTests = testGroup "All features" <| concat
-  [
-    [genStdBasisTests]
-  {-
-  , map testFeature allFeatures
+  [ [genStdBasisTests]
+  , (map testFeature allFeatures)
   , [matrixTests]
-  , [optimizerTests]
-  -}
+  --, [optimizerTests]
   ]
 
 testFeature :: (String, [(String, LFun, Val, Val)]) -> TestTree
 testFeature (n,l) = testGroup n $ map (\(name, lf, vin, vout) -> goodCaseStaged name (lf, vin, vout)) l
 
 allFeatures :: [(String, [(String, LFun, Val, Val)])]
-allFeatures = wipFeatures <> doneFeatures
+allFeatures = {-wipFeatures <>-} doneFeatures
 
 wipFeatures :: [(String, [(String, LFun, Val, Val)])]
 wipFeatures = [ ("reduceTests", reduceTests)
@@ -91,11 +88,13 @@ wipFeatures = [ ("reduceTests", reduceTests)
               ]
 
 doneFeatures :: [(String, [(String, LFun, Val, Val)])]
-doneFeatures = [ ("basic", basicTests)
-               , ("addTests", addTests)
-               , ("tupleTests", tupleTests)
-               , ("miscTests", miscTests)
-               , ("dotprod", dotprodTests)
+doneFeatures = [ --("basic", basicTests)
+               --, ("addTests", addTests)
+               --, ("tupleTests", tupleTests)
+               --, ("miscTests", miscTests)
+                ("dotprod", dotprodTests)
+               , ("vecmatmul", vecmatTests)
+               , ("matvecmul", matvecTests)
                , ("matmul", matmulTests)
                , ("outer products", outerTests)
                , ("scaleTests", scaleTests)
@@ -207,16 +206,46 @@ dotprodTests =
         , Scalar 32.0)
   ]
 
+vecmatTests :: [([Char], LFun, Val, Val)]
+vecmatTests =
+  [ ("LSec 3 * 2x3 -> 2"
+          , LSec (Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]) VecMatProd
+          , Tensor [ Tensor [Scalar 5.0, Scalar 6.0, Scalar 7.0]
+                   , Tensor [Scalar 7.0, Scalar 8.0, Scalar 8.0]]
+          , Tensor [Scalar 38.0, Scalar 47.0])
+  , ("RSec 3 * 2x3 -> 2"
+          , RSec VecMatProd (Tensor [ Tensor [Scalar 5.0, Scalar 6.0, Scalar 7.0]
+                                    , Tensor [Scalar 7.0, Scalar 8.0, Scalar 7.0]])
+          , Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]
+          , Tensor [Scalar 38.0, Scalar 44.0])
+  ]
+
+matvecTests :: [([Char], LFun, Val, Val)]
+matvecTests =
+  [ ("LSec 3x2 * 3 -> 2"
+          , LSec (Tensor [ Tensor [Scalar 5.0, Scalar 6.0]
+                         , Tensor [Scalar 5.0, Scalar 6.0]
+                         , Tensor [Scalar 7.0, Scalar 8.0]]) MatVecProd
+          , Tensor [ Scalar 1.0, Scalar 2.0, Scalar 2.0]
+          , Tensor [ Scalar 29.0, Scalar 34.0])
+  , ("RSec 3x2 * 3 -> 2"
+          , RSec MatVecProd (Tensor [Scalar 1.0, Scalar 2.0, Scalar 2.0])
+          ,  Tensor [ Tensor [Scalar 5.0, Scalar 6.0]
+                    , Tensor [Scalar 7.0, Scalar 8.0]
+                    , Tensor [Scalar 7.0, Scalar 8.0]]
+          , Tensor [Scalar 33.0, Scalar 38.0])
+  ]
+
 matmulTests :: [([Char], LFun, Val, Val)]
 matmulTests =
-  [ ("2x2 * 2x2 -> 2x2"
-        , LSec (Tensor [ Tensor [Scalar 1.0, Scalar 2.0]
-                       , Tensor [Scalar 3.0, Scalar 4.0]]) MatrixMult
-        , Tensor [ Tensor [Scalar 5.0, Scalar 6.0]
-                 , Tensor [Scalar 7.0, Scalar 8.0]]
-        , Tensor [ Tensor [Scalar 19.0, Scalar 22.0]
-                 , Tensor [Scalar 43.0, Scalar 50.0]])
-  , ("2x3 * 3x2 -> 2x2"
+  [ ("LSec 2x2 * 2x2 -> 2x2"
+          , LSec (Tensor [ Tensor [Scalar 1.0, Scalar 2.0]
+                         , Tensor [Scalar 3.0, Scalar 4.0]]) MatrixMult
+          , Tensor [ Tensor [Scalar 5.0, Scalar 6.0]
+                   , Tensor [Scalar 7.0, Scalar 8.0]]
+          , Tensor [ Tensor [Scalar 19.0, Scalar 22.0]
+                   , Tensor [Scalar 43.0, Scalar 50.0]])
+  , ("LSec 2x3 * 3x2 -> 2x2"
           , LSec (Tensor [ Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]
                          , Tensor [Scalar 4.0, Scalar 5.0, Scalar 6.0]]) MatrixMult
           , Tensor [ Tensor [Scalar 7.0, Scalar 8.0]
@@ -224,7 +253,7 @@ matmulTests =
                    , Tensor [Scalar 11.0, Scalar 12.0]]
           , Tensor [ Tensor [Scalar 58.0, Scalar 64.0]
                    , Tensor [Scalar 139.0, Scalar 154.0]])
-  , ("3x2 * 2x3 -> 3x3"
+  , ("LSec 3x2 * 2x3 -> 3x3"
           , LSec (Tensor [ Tensor [Scalar 7.0, Scalar 8.0]
                          , Tensor [Scalar 9.0, Scalar 10.0]
                          , Tensor [Scalar 11.0, Scalar 12.0]]) MatrixMult
@@ -233,6 +262,32 @@ matmulTests =
           , Tensor [ Tensor [Scalar 39.0, Scalar 54.0, Scalar 69.0]
                    , Tensor [Scalar 49.0, Scalar 68.0, Scalar 87.0]
                    , Tensor [Scalar 59.0, Scalar 82.0, Scalar 105.0]])
+
+
+  , ("RSec 2x2 * 2x2 -> 2x2"
+          , RSec MatrixMult (Tensor [ Tensor [Scalar 1.0, Scalar 2.0]
+                         , Tensor [Scalar 3.0, Scalar 4.0]])
+          , Tensor [ Tensor [Scalar 5.0, Scalar 6.0]
+                   , Tensor [Scalar 7.0, Scalar 8.0]]
+          , Tensor [ Tensor [Scalar 23.0, Scalar 34.0]
+                   , Tensor [Scalar 31.0, Scalar 46.0]])
+  , ("RSec 2x3 * 3x2 -> 2x2"
+          , RSec MatrixMult (Tensor [ Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]
+                         , Tensor [Scalar 4.0, Scalar 5.0, Scalar 6.0]])
+          , Tensor [ Tensor [Scalar 7.0, Scalar 8.0]
+                   , Tensor [Scalar 9.0, Scalar 10.0]
+                   , Tensor [Scalar 11.0, Scalar 12.0]]
+          , Tensor [ Tensor [Scalar 39.0, Scalar 54.0, Scalar 69.0]
+                   , Tensor [Scalar 49.0, Scalar 68.0, Scalar 87.0]
+                   , Tensor [Scalar 59.0, Scalar 82.0, Scalar 105.0]])
+  , ("RSec 3x2 * 2x3 -> 3x3"
+          , RSec MatrixMult (Tensor [ Tensor [Scalar 7.0, Scalar 8.0]
+                         , Tensor [Scalar 9.0, Scalar 10.0]
+                         , Tensor [Scalar 11.0, Scalar 12.0]])
+          , Tensor [ Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]
+                   , Tensor [Scalar 4.0, Scalar 5.0, Scalar 6.0]]
+          , Tensor [ Tensor [Scalar 58.0, Scalar 64.0]
+                   , Tensor [Scalar 139.0, Scalar 154.0]])
   ]
 
 

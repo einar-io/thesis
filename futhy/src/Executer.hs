@@ -114,10 +114,7 @@ makeHeader dsn = concat
   , "--\n"
   , "-- ==\n"
   , "-- input @ " ++ dsn ++ "\n\n"
-  --, "-- input { " ++ show val ++ " }\n\n"
-  --, "--spec-file=" ++ "build/" ++ "dataset_" ++ show dataset ++ ".val"
   ]
-
 
 benchmark :: FilePath -> Dataset -> Backend -> Runs -> LFun -> Val -> IO (CommandExecution Result)
 benchmark filename dataset backend noRuns futPgmStr val =
@@ -150,7 +147,7 @@ runBenchmark = do
   --p $ "[Benchmark] Command to be run: " ++ showCommandForUser executable params
 
   output@(_exitcode, _stdout, _stdin) <- liftIO <| readProcessWithExitCode executable params ""
-  when (isExitFailure _exitcode)                <| throwError (CommandFailure ExecutionError output)
+  when (isExitFailure _exitcode)                <| throwError (CommandFailure BenchmarkError output)
 
   jsobj <- liftIO <| readFile jsonfile
 
