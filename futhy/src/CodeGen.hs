@@ -19,8 +19,11 @@ instance Monad CodeGen where
 
 biop :: BilOp -> Arity -> Arity -> String
 biop b a1 a2 =  let base = case b of
-                            MatrixMult -> "cont"
-                            DotProd -> "cont"
+                            MatrixMult -> "inner"
+                            DotProd    -> "inner"
+                            VecMatProd -> "inner"
+                            MatVecProd -> "inner"
+                            ErrorFunction -> "errorfunction"
                             Outer -> "outer"
                 in base <> arityAnnotation a1 a2
 

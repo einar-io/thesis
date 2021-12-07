@@ -17,18 +17,41 @@ outer   (Tensor xs) y@(Scalar  _) = Tensor $ map (outer y) xs
 outer   (Tensor xs) y@(Tensor  _) = Tensor $ map (outer y) xs
 outer _ _                         = error "outer case undefined"
 
+failableZipWith :: (Show a, Show b) => (a -> b -> c) -> [a] -> [b] -> [c]
+failableZipWith op as bs = if (length as == length bs)
+                           then zipWith op as bs
+                           else error $ "ZIPWITHFAILED: Different lengths of\n" <> show as <> "\nand\n" <> show bs
+
 dotprod :: Val -> Val -> Val
 dotprod x y = let (a, b) = (mkR1 x, mkR1 y)
-              in Scalar $ sum $ zipWith (*) a b
+              in Scalar $ sum $ failableZipWith (*) a b
+
+vecmatmul :: Val -> Val -> Val
+vecmatmul v m = let (u, mm) = (mkR1 v, mkR2 m)
+                in mkT1 [sum $ failableZipWith (*) u mi | mi <- mm]
+
+matvecmul :: Val -> Val -> Val
+matvecmul x y = let (a, b) = (mkR2 x, mkR1 y)
+                in mkT1 [sum $ failableZipWith (*) ai b | ai <- transpose a]
 
 matmul :: Val -> Val -> Val
 matmul x y = let (a, b) = (mkR2 x, mkR2 y)
-             in mkT2 [[sum $ zipWith (*) ai bi | bi <- transpose b] | ai <- a]
+             in mkT2 [[sum $ failableZipWith (*) ai bi | bi <- transpose b] | ai <- a]
+
+
+errorfunction :: Val -> Val -> Val
+errorfunction x y = let (a, b) = (mkR1 x, mkR1 y)
+                        yminusout = Tensor $ failableZipWith (\ai bi -> Scalar $ ai - bi) a b
+                    in dotprod yminusout yminusout
 
 applyOp :: BilOp -> Val -> Val -> Val
 applyOp Outer = outer
 applyOp DotProd = dotprod
+applyOp VecMatProd = vecmatmul
+applyOp MatVecProd = matvecmul
 applyOp MatrixMult = matmul
+applyOp ErrorFunction = errorfunction
+
 
 proj1 :: Val -> Val
 proj1 (Pair l _) = l

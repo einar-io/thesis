@@ -117,6 +117,8 @@ data LFun -- expr
   | Prj Int Int
   | Fst
   | Snd
+  | InjFst
+  | InjSnd
   | Add
   | Lplus LFun LFun -- lifted addition
   | Red Rel
@@ -136,7 +138,10 @@ newtype RelFun
 data BilOp
   = MatrixMult
   | DotProd
+  | MatVecProd
+  | VecMatProd
   | Outer
+  | ErrorFunction
   deriving (Show, Eq)
 
 type Derivative = Val
