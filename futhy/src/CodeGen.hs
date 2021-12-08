@@ -17,6 +17,9 @@ instance Monad CodeGen where
   m >>= f = Co (\cs0 -> let (a,cs1) = runCo m cs0
                         in runCo (f a) cs1)
 
+arityAnnotation :: Arity -> Arity -> String
+arityAnnotation a1 a2 = "_" <> show a1 <> "_" <> show a2
+
 biop :: BilOp -> Arity -> Arity -> String
 biop b a1 a2 =  let base = case b of
                             MatrixMult -> "inner"
@@ -27,9 +30,6 @@ biop b a1 a2 =  let base = case b of
                             Outer -> "outer"
                 in base <> arityAnnotation a1 a2
 
-arityAnnotation :: Arity -> Arity -> String
-arityAnnotation a1 a2 = "_" <> show a1 <> "_" <> show a2
-
 getLastFunIdAndArity :: CodeGen (String, Arity)
 getLastFunIdAndArity = Co (\cs@(_, arit, cnt) -> ((" fun" <> show (cnt-1), arit), cs))
 
@@ -39,68 +39,57 @@ genLineOfCode r fun =
       let new_loc = "let" <> " fun" <> show c <> " = (" <> fun <> ")" <> "\n"
       in ((), (p <> new_loc, r, c+1)))
 
-
 getReduceResultDim :: [(Int, Int)] -> Int
 getReduceResultDim ls = let (_, dst) = unzip ls in 1 + maximum dst
 
-
-verifyZipToMap2Legality :: [LFunP] -> Bool
-verifyZipToMap2Legality _ = True
-
-
 codeGenLFun :: LFun -> Arity -> CodeGen ()
-codeGenLFun linfun a1 = case (linfun, a1) of
-  (Id, _)              -> genLineOfCode a1 "id"
-  (Dup, _)             -> genLineOfCode (APair a1 a1) "dupe"
-  (Fst, APair a3 _)    -> genLineOfCode a3 "fst"
-  (Snd, APair _ a2)    -> genLineOfCode a2 "snd"
-  (Add, APair a3 a2)   -> genLineOfCode a2 ("add_" <> show a3 <> "_" <> show a2)
-  (Neg, _)             -> genLineOfCode a1 ("neg_" <> show a1)
-  (Red (List _), Atom 0)  -> error "Red not meaningful for an Atom 0 argument"
-  (Red (List ls), Atom n) -> genLineOfCode a1 ("reduce_" <> show n <> " " <> show ls <> " " <> show (getReduceResultDim ls))
+codeGenLFun Id a1 = genLineOfCode a1 "id"
+codeGenLFun Dup a1 = genLineOfCode (APair a1 a1) "dupe"
+codeGenLFun Fst (APair a3 _) = genLineOfCode a3 "fst"
+codeGenLFun Snd (APair _ a2) = genLineOfCode a2 "snd"
+codeGenLFun Add (APair a3 a2) = genLineOfCode a2 ("add_" <> show a3 <> "_" <> show a2)
+codeGenLFun Neg a1 = genLineOfCode a1 ("neg_" <> show a1)
+codeGenLFun (Red (List _) (Atom 0) = error "Red not meaningful for an Atom 0 argument"
+codeGenLFun (Red (List ls)) (Atom n) = genLineOfCode a1 ("reduce_" <> show n <> " " <> show ls <> " " <> show (getReduceResultDim ls))
 
-  (LSec v b, _)        -> genLineOfCode a1 (biop b (getArity v) a1 <> " " <> show v)
-  (RSec b v, _)        -> genLineOfCode (getArity v) ("flip " <> biop b a1 (getArity v) <> " " <> show v)
-  (Comp lf3 lf2, _) -> do codeGenLFun lf2 a1
-                          (id2, a2) <- getLastFunIdAndArity
-                          codeGenLFun lf3 a2
-                          (id3, a3) <- getLastFunIdAndArity
-                          genLineOfCode a3 ("comp" <> id3 <> id2)
-  (Para lf3 lf2, APair a3 a2) -> do codeGenLFun lf2 a2
-                                    (id4, a4) <- getLastFunIdAndArity
-                                    codeGenLFun lf3 a3
-                                    (id5, a5) <- getLastFunIdAndArity
-                                    genLineOfCode (APair a5 a4) ("para" <> id5 <> id4)
-  (LMap _, Atom 0) -> error "LMap not meaningful for an Atom 0 argument"
-  (LMap lf, Atom n) -> do codeGenLFun lf $ Atom $ n-1
-                          (id2, _) <- getLastFunIdAndArity
-                          genLineOfCode a1 ("map" <> id2)
-  (Zip _, Atom 0)   -> error "zip not meaningful for an Atom 0 argument"
-  (Zip lfs, Atom n) -> do let ((hf:_), vs@(hv:_)) = unzip $ map extractLFunConsts lfs
-                          codeGenLFunP hf hv (Atom $ n-1)
-                          (id2, _) <- getLastFunIdAndArity
-                          -- TODO CALL verifyZipToMap2Legality
-                          -- TODO CALL verifyZipToMap2Legality
-                          -- TODO CALL verifyZipToMap2Legality
-                          -- TODO CALL verifyZipToMap2Legality
-                          genLineOfCode a1 ("unzipmap2" <> id2 <> " " <> show vs)
+codeGenLFun (LSec v b) a1 = genLineOfCode a1 (biop b (getArity v) a1 <> " " <> show v)
+codeGenLFun (RSec b v) a1 = genLineOfCode (getArity v) ("flip " <> biop b a1 (getArity v) <> " " <> show v)
+codeGenLFun (Comp lf3 lf2) a1 = do codeGenLFun lf2 a1
+                                        (id2, a2) <- getLastFunIdAndArity
+                                        codeGenLFun lf3 a2
+                                        (id3, a3) <- getLastFunIdAndArity
+                                        genLineOfCode a3 ("comp" <> id3 <> id2)
+codeGenLFun (Para lf3 lf2) (APair a3 a2) = do codeGenLFun lf2 a2
+                                                  (id4, a4) <- getLastFunIdAndArity
+                                                  codeGenLFun lf3 a3
+                                                  (id5, a5) <- getLastFunIdAndArity
+                                                  genLineOfCode (APair a5 a4) ("para" <> id5 <> id4)
+codeGenLFun (LMap  _) (Atom 0) = error "LMap not meaningful for an Atom 0 argument"
+codeGenLFun (LMap lf) (Atom n) = do codeGenLFun lf $ Atom $ n-1
+                                        (id2, _) <- getLastFunIdAndArity
+                                        genLineOfCode a1 ("map" <> id2)
+codeGenLFun (Zip   _) (Atom 0) = error "zip not meaningful for an Atom 0 argument"
+codeGenLFun (Zip lfs) (Atom n) = do let ((hf:_), vs@(hv:_)) = unzip $ map extractLFunConsts lfs
+                                        codeGenLFunP hf hv (Atom $ n-1)
+                                        (id2, _) <- getLastFunIdAndArity
+                                        genLineOfCode a1 ("unzipmap2" <> id2 <> " " <> show vs)
 
-  (Zip _, _) -> error "illegal zip"
+codeGenLFun (Zip _) _         = error "illegal zip"
 
---- error section
-  (Red (List _), _)  -> error "Meaningless arity given to Red."
-  (Para _ _, _)      -> error "Meaningless arity given to Para."
-  (Fst , _)          -> error "Meaningless arity given to Fst."
-  (Snd , _)          -> error "Meaningless arity given to Snd."
-  (Add , _)          -> error "Meaningless arity given to Add."
-  (LMap _, _)        -> error "Meaningless arity given to LMap."
-  -- desugared
-  (KZero, _)         -> error "KZero should have been desugared!"
-  (Scale _, _)       -> error "Scale should have been desugared!"
-  (Prj _ _, _)       -> error "Prj should have been desugared!"
-  (Lplus _ _, _)     -> error "Lplus should have been desugared!"
--- missing impl
-  (Red _, _)         -> error "This relation not implemented in CodeGen"
+              --- error section
+codeGenLFun (Red (List _)) _  = error "Meaningless arity given to Red."
+codeGenLFun (Para _ _) _      = error "Meaningless arity given to Para."
+codeGenLFun Fst _             = error "Meaningless arity given to Fst."
+codeGenLFun Snd _)            = error "Meaningless arity given to Snd."
+codeGenLFun Add _             = error "Meaningless arity given to Add."
+codeGenLFun (LMap _) _        = error "Meaningless arity given to LMap."
+                -- desugared
+codeGenLFun KZero _           = error "KZero should have been desugared!"
+codeGenLFun (Scale _) _       = error "Scale should have been desugared!"
+codeGenLFun (Prj _ _) _       = error "Prj should have been desugared!"
+codeGenLFun (Lplus _ _) _     = error "Lplus should have been desugared!"
+              -- missing impl
+codeGenLFun (Red _) _         = error "This relation not implemented in CodeGen"
 
 -- the Val is the constant(s) needed to partially apply the LFunP and turn it into a unary LFun.
 -- those that are already unary are given Zero as a dummy value, to be ignored.
