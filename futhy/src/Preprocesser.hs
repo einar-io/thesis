@@ -13,7 +13,6 @@ optimizeRun lf = case lf of
   Comp Id x -> optimizeRun x
   Para Id Id -> Id
 
-
   -- restructuring comps
     -- make comp-trees flat and weighed to the right
     -- have as few Para as possible by combining them
@@ -136,18 +135,15 @@ data LFunP -- expr
   | RedP Rel
   deriving (Show, Eq)
 
-dummyValue :: Val
-dummyValue = Scalar 9999999999
-
 extractLFunConsts :: LFun -> (LFunP, Val)
 extractLFunConsts lf = case lf of
-  Id            -> (IdP, dummyValue)
-  Dup           -> (DupP, dummyValue)
-  Fst           -> (FstP, dummyValue)
-  Snd           -> (SndP, dummyValue)
-  Add           -> (AddP, dummyValue)
-  Neg           -> (NegP, dummyValue)
-  Red r         -> (RedP r, dummyValue)
+  Id            -> (IdP, Dummy)
+  Dup           -> (DupP, Dummy)
+  Fst           -> (FstP, Dummy)
+  Snd           -> (SndP, Dummy)
+  Add           -> (AddP, Dummy)
+  Neg           -> (NegP, Dummy)
+  Red r         -> (RedP r, Dummy)
   LSec v op     -> (LSecP op, v)
   RSec op v     -> (RSecP op, v)
   LMap lf2      -> let (lf2i, v) = extractLFunConsts lf2 in (LMapP lf2i, v)
