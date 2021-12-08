@@ -16,6 +16,7 @@ type Index = Int
 data Val
   = Scalar RealNumber
   | Zero
+  | Dummy
   | Tensor [Val] -- Vector [Val]
   | Pair Val Val
   | SparseTensor [(Index, Val)]
@@ -60,11 +61,13 @@ instance Show Val where
                      )
                   <> "]"
     Zero -> show $ Scalar 0
+    Dummy -> "f32.nan"
     _ -> undefined
 
 stdinShow :: Val -> String
 stdinShow v = case v of
   Scalar sc  -> " " <> show sc <> "f32 "
+  Dummy -> "f32.nan"
   Pair v2 v1 -> stdinShow v2 <> " " <> stdinShow v1
   Tensor ls  -> "[" <> ( ls
                          |> map stdinShow
@@ -87,6 +90,7 @@ getArity :: Val -> Arity
 getArity v = case v of
   Scalar _ -> Atom 0
   Zero -> Atom 0
+  Dummy -> Atom 0
   Tensor (Pair _ _: _) -> error "illegal tensor of pairs!"
   Tensor (h:_) -> let (Atom i) = getArity h
                   in Atom (i+1)
