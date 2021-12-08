@@ -62,7 +62,7 @@ store :: FutPgmStr -> Command FutPgmFile
 store futPgmStr = do
   filepath <- makeTemp
   backend  <- asks be
-  let envNew = Env { fp = filepath, ds = 0, be = backend, runs = 0 }
+  let envNew = Env { fp = filepath, ds = "", be = backend, runs = 0 }
   local (const envNew) (writeToFile futPgmStr)
   return filepath
 
@@ -71,7 +71,7 @@ runStr futPgmStr backend = runStrArg futPgmStr backend "\n"
 
 runFile :: FutPgmFile -> Backend -> IO (CommandExecution Result)
 runFile futPgmFile backend =
-  let envInit = Env { fp = futPgmFile, ds = 0, be = backend, runs = 0 }
+  let envInit = Env { fp = futPgmFile, ds = "", be = backend, runs = 0 }
   in execCmd (runFileArgM "\n") envInit
 
 --- but with std'ins
@@ -100,12 +100,12 @@ runStrArgM :: FutPgmStr -> StdInArg -> Command Result
 runStrArgM futPgmStr val = do
   filepath <- store futPgmStr
   backend  <- asks be
-  let envNew = Env { fp = filepath, ds = 0, be = backend, runs = 0 }
+  let envNew = Env { fp = filepath, ds = "", be = backend, runs = 0 }
   local (const envNew) (runFileArgM val)
 
 runStrArg :: FutPgmStr -> Backend -> StdInArg -> IO (CommandExecution Result)
 runStrArg futPgmStr backend val =
-  let envInit = Env { fp = "", ds = 0, be = backend, runs = 0 }
+  let envInit = Env { fp = "", ds = "", be = backend, runs = 0 }
   in execCmd (runStrArgM futPgmStr val) envInit
 
 makeHeader :: FilePath -> FutPgmStr
@@ -119,13 +119,12 @@ makeHeader dsn = concat
 benchmark :: FilePath -> Dataset -> Backend -> Runs -> LFun -> Val -> IO (CommandExecution Result)
 benchmark filename dataset backend noRuns futPgmStr val =
   let path = "build/"
-      fullname = path ++ filename ++ "_" ++ show dataset ++ ".fut"
-      datasetname = "dataset_" ++ show dataset ++ ".val"
+      fullname = path ++ filename
       futPgmCompiled = completeCodeGen futPgmStr val
-   in execCmd (benchmarkM futPgmCompiled datasetname)
+   in execCmd (benchmarkM futPgmCompiled dataset)
       <| Env { fp=fullname, ds=dataset, be=backend, runs=noRuns }
 
-benchmarkM :: FutPgmStr -> FilePath -> Command Result
+benchmarkM :: FutPgmStr -> Dataset -> Command Result
 benchmarkM futPgmStr dsn = do
   writeToFile <| makeHeader dsn ++ futPgmStr
   runBenchmark
@@ -158,6 +157,6 @@ runBenchmark = do
   p   "[Benchmark] Execution ENDED"
   p $ "[Benchmark] Inspect results with: 'jq . " ++ jsonfile ++ "'"
   p $ "[Benchmark] Inspect program with: 'vim " ++ filepath ++ "'"
-  p $ "[Benchmark] Inspect dataset with: 'vim build/dataset_" ++ show dataset ++ ".val'"
+  p $ "[Benchmark] Inspect dataset with: 'vim build/" ++ dataset ++ "'"
   let benchmarkLog = makeLog output jsobj
   return (Result benchmarkLog)

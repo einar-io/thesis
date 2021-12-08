@@ -68,6 +68,7 @@ benchCompiler name lf1 vin1 =
 -}
 
 {- New-flavour benchmarks for testing GPU -}
+{-
 scaleSym :: Bench
 scaleSym backend runs inputLen =
   let lfn = Scale 7.0
@@ -98,6 +99,7 @@ zipSym :: Bench
 zipSym backend runs inputLen =
   let lfn = Zip (replicate inputLen (Scale 17.0))
    in benchmark "ZipSym" inputLen backend runs lfn (rndVecVals inputLen)
+-}
 
 {- This is not working due to the variation in output length of red.
 zipMtx :: Bench
@@ -124,7 +126,6 @@ constant regardless of the input size
 <zfnmxt> As a rule, I'd make my input, output, and relation size all about the
 same (up] to a few smallish constant factors). Then you should see runtimes
 scale better.
--}
 redSym :: Bench
 redSym backend runs inputLen =
   let relLen = inputLen
@@ -142,6 +143,8 @@ redMtx backend runs inputLen =
       mtx = getMatrixRep lfn [inputLen]
       mlfn = LSec mtx MatrixMult
    in benchmark "redMtx" inputLen backend runs mlfn (rndVecVals inputLen)
+
+-}
 
 doBenchmarks :: Bench -> Backend -> Runs -> OOMs -> IO ([Int], [Double])
 doBenchmarks bench backend runs ooms = do
@@ -164,7 +167,9 @@ doBenchmarks bench backend runs ooms = do
 nn :: Int -> Bench
 nn numLayers backend runs inputLen =
   let lfn = makeLayersAndLossFunction numLayers inputLen
-   in benchmark (show numLayers ++ "L_NN") inputLen backend runs lfn (makeNNInput inputLen)
+      dataset = "dataset_nn_" ++ show inputLen ++ ".val"
+      pgmfile = "nn_" ++ show numLayers ++ "l_" ++ show inputLen ++ ".fut"
+   in benchmark pgmfile dataset backend runs lfn (makeNNInput inputLen)
 
 
 {-
@@ -231,7 +236,7 @@ main :: IO ()
 main = do
 
   let backend = C
-  let oom = (1, 21) -- ordersOfMagnitude of 2 of the datasets.  Should be more than 10
+  let oom = (1, 10) -- ordersOfMagnitude of 2 of the datasets.  Should be more than 10
   let noRuns = 1
 
   initDatasets oom
@@ -262,10 +267,10 @@ main = do
   _ <- plotMeasurements "Red" [ ("Symbolic", "blue", redSymMeas)
                               --, ("Matrix"  , "red" , redMtxMeas)
                               ]
+  -}
 
--}
 
-  nn1LayerMeas <- doBenchmarks (nn 1) backend noRuns (8, 8)
+  nn1LayerMeas <- doBenchmarks (nn 1) backend noRuns (1, 11)
   {-
   nn2LayerMeas <- doBenchmarks "2 NNLayer" (nnB 2) backend noRuns (2, 8)
   nn4LayerMeas <- doBenchmarks "4 NNLayer" (nnB 4) backend noRuns (2, 8)

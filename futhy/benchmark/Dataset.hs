@@ -1,9 +1,5 @@
 module Dataset
-  ({- genVector
-  , genVectors
-  -}
-  initDatasets
-  , initDatasetsM
+  ( initDatasets
   ) where
 
 import Types
@@ -51,7 +47,7 @@ genVector filepath len = do
   --print $ "[Dataset] Command to be run: " ++ show shellCmd
 
   output@(_exitcode, _stdout, _stdin) <- liftIO <| readCreateProcessWithExitCode shellCmd ""
-  --when (isExitFailure _exitcode)               <| throwError (CommandFailure ExecutionError output)
+  --when (isExitFailure _exitcode)                <| throwError (CommandFailure DatagenError output)
 
 --  print   "[Dataset] Execution done."
 
@@ -70,11 +66,42 @@ genVectors name ooms =
 initDatasets :: OOMs -> IO ()
 initDatasets ooms = do
   _ <- genVectors "dataset" ooms
+  _ <- genVectorsNN "dataset_nn" (1, 14) -- this is already 1.1G
   return ()
 
+genVectorsNN :: Filepath -> OOMs -> IO [Result]
+genVectorsNN name ooms =
+  let vecLens = powersof2 ooms
+      filePaths = do l <- vecLens
+                     return <| "build/" ++ name ++ "_" ++ show l ++ ".val"
+      pathsAndLens = zip filePaths vecLens
+   in mapM (uncurry genVectorNN) pathsAndLens
 
-initDatasetsM :: OOMs -> IO ()
-initDatasetsM ooms = do
-  _ <- genVectors "dataset" ooms
-  return ()
+genVectorNN :: Filepath -> Int -> IO Result
+genVectorNN filepath len = do
 
+  let executable = "futhark"
+  -- Relevant documentation
+  -- https://futhark.readthedocs.io/en/latest/man/futhark-dataset.html
+  let { params =
+        [ "dataset"
+        , "--binary"
+        , "--generate [" ++ show len ++ "]f32"  -- b
+        , "--generate [" ++ show len ++ "]f32"  -- x
+        , "--generate [" ++ show len ++ "][" ++ show len ++ "]f32" -- w
+        , "-s " ++ show seed
+        , "> "  ++ filepath
+        ]
+      }
+
+  let shellCmd = shell <| concat <| intersperse " " (executable:params)
+
+  --print $ "[Dataset] Command to be run: " ++ show shellCmd
+
+  output@(_exitcode, _stdout, _stdin) <- liftIO <| readCreateProcessWithExitCode shellCmd ""
+  --when (isExitFailure _exitcode)                <| throwError (CommandFailure DatagenError output)
+
+--  print   "[Dataset] Execution done."
+
+  let datagenLog = makeLog output ""
+  return (Result datagenLog)

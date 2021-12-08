@@ -196,6 +196,7 @@ data FailedStep
   = CompilationError
   | ExecutionError
   | BenchmarkError
+  | DatagenError
   deriving (Show, Eq, Generic, NFData)
 
 data Failure = CommandFailure FailedStep CommandOutput
@@ -240,6 +241,6 @@ type Series = [Double]
 
 type OOMs = (Int, Int)
 
-type Dataset = Int
+type Dataset = FilePath
 --type PlotData = (FilePath, [Int], [Series])
 type PlotData = (String, String, ([Int], Series))
