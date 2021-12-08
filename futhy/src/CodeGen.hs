@@ -49,30 +49,30 @@ codeGenLFun Fst (APair a3 _) = genLineOfCode a3 "fst"
 codeGenLFun Snd (APair _ a2) = genLineOfCode a2 "snd"
 codeGenLFun Add (APair a3 a2) = genLineOfCode a2 ("add_" <> show a3 <> "_" <> show a2)
 codeGenLFun Neg a1 = genLineOfCode a1 ("neg_" <> show a1)
-codeGenLFun (Red (List _) (Atom 0) = error "Red not meaningful for an Atom 0 argument"
-codeGenLFun (Red (List ls)) (Atom n) = genLineOfCode a1 ("reduce_" <> show n <> " " <> show ls <> " " <> show (getReduceResultDim ls))
+codeGenLFun (Red (List _)) (Atom 0) = error "Red not meaningful for an Atom 0 argument"
+codeGenLFun (Red (List ls)) a1@(Atom n) = genLineOfCode a1 ("reduce_" <> show n <> " " <> show ls <> " " <> show (getReduceResultDim ls))
 
 codeGenLFun (LSec v b) a1 = genLineOfCode a1 (biop b (getArity v) a1 <> " " <> show v)
 codeGenLFun (RSec b v) a1 = genLineOfCode (getArity v) ("flip " <> biop b a1 (getArity v) <> " " <> show v)
 codeGenLFun (Comp lf3 lf2) a1 = do codeGenLFun lf2 a1
-                                        (id2, a2) <- getLastFunIdAndArity
-                                        codeGenLFun lf3 a2
-                                        (id3, a3) <- getLastFunIdAndArity
-                                        genLineOfCode a3 ("comp" <> id3 <> id2)
+                                   (id2, a2) <- getLastFunIdAndArity
+                                   codeGenLFun lf3 a2
+                                   (id3, a3) <- getLastFunIdAndArity
+                                   genLineOfCode a3 ("comp" <> id3 <> id2)
 codeGenLFun (Para lf3 lf2) (APair a3 a2) = do codeGenLFun lf2 a2
-                                                  (id4, a4) <- getLastFunIdAndArity
-                                                  codeGenLFun lf3 a3
-                                                  (id5, a5) <- getLastFunIdAndArity
-                                                  genLineOfCode (APair a5 a4) ("para" <> id5 <> id4)
+                                              (id4, a4) <- getLastFunIdAndArity
+                                              codeGenLFun lf3 a3
+                                              (id5, a5) <- getLastFunIdAndArity
+                                              genLineOfCode (APair a5 a4) ("para" <> id5 <> id4)
 codeGenLFun (LMap  _) (Atom 0) = error "LMap not meaningful for an Atom 0 argument"
-codeGenLFun (LMap lf) (Atom n) = do codeGenLFun lf $ Atom $ n-1
-                                        (id2, _) <- getLastFunIdAndArity
-                                        genLineOfCode a1 ("map" <> id2)
+codeGenLFun (LMap lf) a1@(Atom n) = do codeGenLFun lf $ Atom $ n-1
+                                       (id2, _) <- getLastFunIdAndArity
+                                       genLineOfCode a1 ("map" <> id2)
 codeGenLFun (Zip   _) (Atom 0) = error "zip not meaningful for an Atom 0 argument"
-codeGenLFun (Zip lfs) (Atom n) = do let ((hf:_), vs@(hv:_)) = unzip $ map extractLFunConsts lfs
-                                        codeGenLFunP hf hv (Atom $ n-1)
-                                        (id2, _) <- getLastFunIdAndArity
-                                        genLineOfCode a1 ("unzipmap2" <> id2 <> " " <> show vs)
+codeGenLFun (Zip lfs) a1@(Atom n) = do let ((hf:_), vs@(hv:_)) = unzip $ map extractLFunConsts lfs
+                                       codeGenLFunP hf hv (Atom $ n-1)
+                                       (id2, _) <- getLastFunIdAndArity
+                                       genLineOfCode a1 ("unzipmap2" <> id2 <> " " <> show vs)
 
 codeGenLFun (Zip _) _         = error "illegal zip"
 
@@ -80,7 +80,7 @@ codeGenLFun (Zip _) _         = error "illegal zip"
 codeGenLFun (Red (List _)) _  = error "Meaningless arity given to Red."
 codeGenLFun (Para _ _) _      = error "Meaningless arity given to Para."
 codeGenLFun Fst _             = error "Meaningless arity given to Fst."
-codeGenLFun Snd _)            = error "Meaningless arity given to Snd."
+codeGenLFun Snd _             = error "Meaningless arity given to Snd."
 codeGenLFun Add _             = error "Meaningless arity given to Add."
 codeGenLFun (LMap _) _        = error "Meaningless arity given to LMap."
                 -- desugared
