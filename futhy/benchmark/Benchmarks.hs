@@ -169,7 +169,7 @@ nn numLayers backend runs inputLen =
   let lfn = makeLayersAndLossFunction numLayers inputLen
       dataset = "dataset_nn_" ++ show inputLen ++ ".val"
       pgmfile = "nn_" ++ show numLayers ++ "l_" ++ show inputLen ++ ".fut"
-   in benchmark pgmfile dataset backend runs lfn (makeNNInput inputLen)
+   in benchmark pgmfile dataset backend runs lfn (makeNNForwardModeInput inputLen)
 
 
 {-
@@ -194,11 +194,12 @@ genVector n = Tensor $ repeatToList genRandomUnsafeScalar n
 genSqrMtx :: Int -> Val
 genSqrMtx n = Tensor $ repeatToList (genVector n) n
 
-makeNNInput :: Int -> Val
-makeNNInput i = let dw = genSqrMtx i
-                    dx = genVector i
-                    db = genVector i
-                 in Pair db (Pair dx dw)
+makeNNForwardModeInput :: Int -> Val
+makeNNForwardModeInput i =
+  let dw = genSqrMtx i
+      dx = genVector i
+      db = genVector i
+   in Pair db (Pair dx dw)
 
 makeLayersAndLossFunction :: Int -> Int -> LFun
 makeLayersAndLossFunction numLayers i = (LSec (genVector i) LossFunction) `Comp` (makeLayers numLayers i)
@@ -216,8 +217,11 @@ makeLayer i = let w = genSqrMtx i
                  `Comp`
                   Add `Comp` (Para Id (Add `Comp` ((LSec w VecMatProd) `Para` (RSec MatVecProd x))))
 
+{- [t3, p. 6, Adjunction rules] -}
 transposeLFun :: LFun -> LFun
 transposeLFun (f `Comp` g)        = (transposeLFun g) `Comp` (transposeLFun f)
+transposeLFun Id                  = Id
+transposeLFun KZero               = KZero
 transposeLFun (LSec x MatrixMult) = LSec (transposeVal x) MatrixMult
 transposeLFun (RSec MatrixMult x) = RSec MatrixMult (transposeVal x)
 transposeLFun Fst                 = InjFst
@@ -228,9 +232,8 @@ transposeLFun (RSec DotProd x)    = RSec DotProd x
 transposeLFun Neg                 = Neg
 transposeLFun (Scale x)           = Scale x
 transposeLFun (Zip ls)            = Zip $ map transposeLFun ls
-transposeLFun _ = error "cant transpose this"
-
-
+transposeLFun (LMap f)            = LMap (transposeLFun f)
+transposeLFun other               = error <| "Transposition of `" ++ show other ++ "` not implemented."
 
 main :: IO ()
 main = do
