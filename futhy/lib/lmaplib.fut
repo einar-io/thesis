@@ -1,94 +1,89 @@
 type r = f32
 type int = i64
 let add : r->r->r = (+)
-let mul : r->r->r = (*)
 
 ------------LIBRARY
 ---- tuple operations
-let dupe a    = (a,a)
-let fst (a,_) = a
-let snd (_,b) = b
-let flip f x = (\y -> f y x)
+let dupe 't (a: t) : (t,t) = (a,a)
+let fst 't1 't2 ((a,_): (t1,t2)) : t1 = a
+let snd 't1 't2 ((_,b): (t1,t2)) : t2 = b
 
-let comp f g x = f (g x) --sequential application of two funs
-let para f g (a,b) = (f a, g b) --apply two funs to tuple of vals
+let comp 't1 't2 't3 (f: t2 -> t3) (g: t1 -> t2) (x: t1) : t3 = f (g x) --sequential application of two funs
+let para 't1 't2 't3 't4 (f: t1 -> t2) (g: t3 -> t4) ((a,b): (t1, t3)) : (t2, t4) = (f a, g b) --apply two funs to tuple of vals
 
-let toss_dummy_const f (_,a) = f a
+let zipAndMap 't1 't2 't3 [n] (f: (t1, t2) -> t3) (xs: [n]t1) (ys: [n]t2) : *[n]t3 = map f (zip xs ys)
 
-let pass_consts_comp f g ((x,y),z) = f (x,(g (y,z)))
-let pass_consts_para f g ((x,y),(a,b)) = (f (x,a), g (y,b))
+--- const-extraction specific functions
 
-let constPassingMap f (x,y) = map (\yi -> f (x,yi)) y
+let ignoreDummyVal 't1 't2 't3 (f: t2 -> t3)( (_,a): (t1, t2)) : t3 = f a
 
-let constPassingMap2 f (x,y) = map f (zip x y)
+let constPassingComp 't1 't2 't3 't4 't5 (f: (t1, t4) -> t5) (g: (t2, t3) -> t4) (((x,y),z): ((t1, t2), t3)) : t5 = f (x,(g (y,z)))
+let constPassingPara 't1 't2 't3 't4 't5 't6 (f: (t1, t3) -> t5)  (g: (t2, t4) -> t6) (((x,y),(a,b)): ((t1, t2), (t3, t4))) :  (t5, t6) = (f (x,a), g (y,b))
+let constPassingMap  't1 't2 't3 [n] (f: (t1, t2) -> t3) ((x,y): (t1, [n]t2))    : *[n]t3 = map (\yi -> f (x,yi)) y
+let constPassingMap2 't1 't2 't3 [n] (f: (t1, t2) -> t3) ((x,y): ([n]t1, [n]t2)) : *[n]t3 = map2 (\xi yi -> f (xi,yi)) x y
 
-let unzipmap2 f = map2 (\x y -> f (x,y))
-
-let mktuple x y = (x,y )-- for partial application
-
--- this is almost like monads
--- derive the pattern and make it a higher order function
--- the rest becomes trivial
-
------ near sperg perfection:
 -- add
-let add_0_0 (x,y) = (add) x y
-let add_1_1 (x,y) = (map2 add) x y
-let add_2_2 (x,y) = (map2 (map2 add)) x y
-let add_3_3 (x,y) = (map2 (map2 (map2 add))) x y
+let add_0_0 ((x,y): (r,r)) : r = (add) x y
+let add_1_1 [n] 	  ((x,y): ([n]r,      [n]r)) 	   : [n]r       = (map2 add) x y
+let add_2_2 [n][m]    ((x,y): ([n][m]r,   [n][m]r))    : [n][m]r    = (map2 (map2 add)) x y
+let add_3_3 [n][m][p] ((x,y): ([n][m][p]r,[n][m][p]r)) : [n][m][p]r = (map2 (map2 (map2 add))) x y
 
 -- lplus
-let lplus_h h f g v = h (f v) (g v)
-let lplus_0 = lplus_h (add)
-let lplus_1 = lplus_h (map2 add)
-let lplus_2 = lplus_h (map2 (map2 add))
-let lplus_3 = lplus_h (map2 (map2 (map2 add)))
+let lplus_h 't1 't2 't3 't4 (plus: t2 -> t3 -> t4) (f1: t1 -> t2) (f2: t1 -> t3) (v: t1) : t4 = plus (f1 v) (f2 v)
+let lplus_0 't 			 (f1: t -> r)          (f2: t -> r)          (v: t) : r          = lplus_h (add) f1 f2 v
+let lplus_1 't [n] 		 (f1: t -> [n]r)       (f2: t -> [n]r)       (v: t) : [n]r       = lplus_h (map2 add) f1 f2 v
+let lplus_2 't [n][m]    (f1: t -> [n][m]r)    (f2: t -> [n][m]r)    (v: t) : [n][m]r    = lplus_h (map2 (map2 add)) f1 f2 v
+let lplus_3 't [n][m][p] (f1: t -> [n][m][p]r) (f2: t -> [n][m][p]r) (v: t) : [n][m][p]r = lplus_h (map2 (map2 (map2 add))) f1 f2 v
 
 -- outer
-let mapr f x y = map (f x) y
-let mapl f x y = map (flip f y) x
+let mapr 't1 't2 't3 [n] (f : t1 -> t2 -> t3) (x: t1) (y: [n]t2) : *[n]t3 = map (f x) y
+let mapl 't1 't2 't3 [n] (f : t1 -> t2 -> t3) (x: [n]t1) (y: t2) : *[n]t3 = map (flip f y) x
 
-let outer_0_0 = mul
-let outer_0_1 = mapr outer_0_0
-let outer_0_2 = mapr outer_0_1
-let outer_0_3 = mapr outer_0_2
+let outer_0_0 (x: r) (y: r) 				 = x * y
 
-let outer_1_0 = mapl outer_0_0
-let outer_2_0 = mapl outer_1_0
-let outer_3_0 = mapl outer_2_0
+let outer_0_1 (x: r) (y: []r)     : *[]r     = mapr outer_0_0 x y
+let outer_0_2 (x: r) (y: [][]r)   : *[][]r   = mapr outer_0_1 x y
+let outer_0_3 (x: r) (y: [][][]r) : *[][][]r = mapr outer_0_2 x y
 
-let outer_1_1 = mapl outer_0_1
-let outer_1_2 = mapl outer_0_2
-let outer_1_3 = mapl outer_0_3
+let outer_1_0 (x: []r)     (y: r) : *[]r     = mapl outer_0_0 x y
+let outer_2_0 (x: [][]r)   (y: r) : *[][]r   = mapl outer_1_0 x y
+let outer_3_0 (x: [][][]r) (y: r) : *[][][]r = mapl outer_2_0 x y
 
-let outer_2_1 = mapl outer_1_1
-let outer_2_2 = mapl outer_1_2
-let outer_2_3 = mapl outer_1_3
+let outer_1_1 (x: []r) (y: []r)		: *[][]r = mapl outer_0_1 x y
+let outer_1_2 (x: []r) (y: [][]r)   : *[][][]r = mapl outer_0_2 x y
+let outer_1_3 (x: []r) (y: [][][]r) : *[][][][]r = mapl outer_0_3 x y
+
+let outer_2_1 (x: [][]r) (y: []r) 	  : *[][][]r = mapl outer_1_1 x y
+let outer_2_2 (x: [][]r) (y: [][]r)   : *[][][][]r = mapl outer_1_2 x y
+let outer_2_3 (x: [][]r) (y: [][][]r) : *[][][][][]r = mapl outer_1_3 x y
 
 
--- no-transpose contraction (consider matmul as a composite operation of a transposition and a ntcont_2_2)
+-- dot product
+let inner_1_1 (v : []r) (u : []r) : r = reduce (+) 0.0f32 (map2 (*) v u)
+-- vector matrix product
+let inner_1_2 (v : []r) (m : [][]r) : []r = map (\u -> inner_1_1 v u) m
+-- matrix vector product
+let inner_2_1 (m : [][]r) (u : []r) : []r = map (\v -> inner_1_1 v u) <| transpose m
+-- matrix matrix product (matmul)
+let inner_2_2 (a : [][]r) (b : [][]r) : [][]r = map (\v -> map (\u -> inner_1_1 v u)  <| transpose b) a
 
-let inner_1_1 v u = reduce (+) 0.0f32 (map2 (*) v u)
-let inner_1_2 v m = map (\u -> inner_1_1 v u) m
-let inner_2_1 m u = map (\v -> inner_1_1 v u) <| transpose m
-let inner_2_2 m1 m2 = map (\v -> map (\u -> inner_1_1 v u)  <| transpose m2) m1
-
-let lossfunction_1_1 v u = let a = map2 (-) v u in inner_1_1 a a
+-- used to calculate the neural network example
+let lossfunction_1_1 [n] (v : [n]r) (u : [n]r) = let a = map2 (-) v u in inner_1_1 a a
 
 -- -- -- neg
-let neg_0 : r->r = (\x -> -x)
-let neg_1 = map neg_0
-let neg_2 = map neg_1
-let neg_3 = map neg_2
+let neg_0 (x :r)       : r        = (-x)
+let neg_1 (x :[]r)     : *[]r     = map neg_0 x
+let neg_2 (x :[][]r)   : *[][]r   = map neg_1 x
+let neg_3 (x :[][][]r) : *[][][]r = map neg_2 x
 
 -- -- --reduce
-let applyAsTuple f x y = f (x,y)
+let applyAsTuple 't1 't2 't3 (f: (t1, t2) -> t3) (x: t1) (y: t2) : t3 = f (x,y)
 
-let rep1 n ne = replicate n ne
-let rep2 n m ne = rep1 n (rep1 m ne)
-let rep3 n m p ne = rep2 n m (rep1 p ne)
+let rep1 't (n: int) 				   (ne: t) : *[n]t       = replicate n ne
+let rep2 't (n: int) (m: int) 		   (ne: t) : *[n][m]t    = rep1 n (rep1 m ne)
+let rep3 't (n: int) (m: int) (p: int) (ne: t) : *[n][m][p]t = rep2 n m (rep1 p ne)
 
-let reduce_h 't (rel : [](int, int)) vals ne (k : int) f : [k]t =
+let reduce_h 't (rel : [](int, int)) (vals: []t) (ne: t) (k : int) f : [k]t =
 	let (srcs, is) = unzip rel
 	let output = replicate k ne
 	let as = map (\i -> if i < length vals then vals[i] else ne) srcs

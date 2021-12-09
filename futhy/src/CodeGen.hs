@@ -30,6 +30,9 @@ biop b a1 a2 =  let base = case b of
                             Outer -> "outer"
                 in base <> arityAnnotation a1 a2
 
+getReduceResultDim :: [(Int, Int)] -> Int
+getReduceResultDim ls = let (_, dst) = unzip ls in 1 + maximum dst
+
 getLastFunIdAndArity :: CodeGen (String, Arity)
 getLastFunIdAndArity = Co (\cs@(_, arit, cnt) -> ((" fun" <> show (cnt-1), arit), cs))
 
@@ -38,9 +41,6 @@ genLineOfCode r fun =
   Co (\(p, _, c) ->
       let new_loc = "let" <> " fun" <> show c <> " = (" <> fun <> ")" <> "\n"
       in ((), (p <> new_loc, r, c+1)))
-
-getReduceResultDim :: [(Int, Int)] -> Int
-getReduceResultDim ls = let (_, dst) = unzip ls in 1 + maximum dst
 
 codeGenLFun :: LFun -> Arity -> CodeGen ()
 codeGenLFun Id a1 = genLineOfCode a1 "id"
@@ -72,7 +72,7 @@ codeGenLFun (Zip   _) (Atom 0) = error "zip not meaningful for an Atom 0 argumen
 codeGenLFun (Zip lfs) a1@(Atom n) = do let ((hf:_), vs@(hv:_)) = unzip $ map extractLFunConsts lfs
                                        codeGenLFunP hf hv (Atom $ n-1)
                                        (id2, _) <- getLastFunIdAndArity
-                                       genLineOfCode a1 ("unzipmap2" <> id2 <> " " <> show vs)
+                                       genLineOfCode a1 ("zipAndMap" <> id2 <> " " <> show vs)
 
 codeGenLFun (Zip _) _         = error "illegal zip"
 
@@ -97,14 +97,14 @@ codeGenLFun (Red _) _         = error "This relation not implemented in CodeGen"
 
 -- TODO: If flag set, visualize constant to right of function to effect partial application, somehow?
 codeGenLFunP :: LFunP -> Val -> Arity -> CodeGen ()
-codeGenLFunP IdP _ a = genLineOfCode a "toss_dummy_const id"
-codeGenLFunP DupP _ a = genLineOfCode (APair a a) "toss_dummy_const dupe"
-codeGenLFunP FstP _ (APair a3 _) = genLineOfCode a3 "toss_dummy_const fst"
-codeGenLFunP SndP _ (APair _ a2) = genLineOfCode a2 "toss_dummy_const snd"
-codeGenLFunP AddP _ (APair a3 a2) = genLineOfCode a2 ("toss_dummy_const add_" <> show a3 <> "_" <> show a2)
-codeGenLFunP NegP _  a = genLineOfCode a ("toss_dummy_const neg_" <> show a)
+codeGenLFunP IdP _ a = genLineOfCode a "ignoreDummyVal id"
+codeGenLFunP DupP _ a = genLineOfCode (APair a a) "ignoreDummyVal dupe"
+codeGenLFunP FstP _ (APair a3 _) = genLineOfCode a3 "ignoreDummyVal fst"
+codeGenLFunP SndP _ (APair _ a2) = genLineOfCode a2 "ignoreDummyVal snd"
+codeGenLFunP AddP _ (APair a3 a2) = genLineOfCode a2 ("ignoreDummyVal add_" <> show a3 <> "_" <> show a2)
+codeGenLFunP NegP _  a = genLineOfCode a ("ignoreDummyVal neg_" <> show a)
 codeGenLFunP (RedP (List _)) _ (Atom 0) = error "Red not meaningful for an Atom 0 argument"
-codeGenLFunP (RedP (List ls)) _ a1@(Atom n) = genLineOfCode a1 ("toss_dummy_const (reduce_" <> show n <> " " <> show ls <> " " <> show (getReduceResultDim ls) <> ")")
+codeGenLFunP (RedP (List ls)) _ a1@(Atom n) = genLineOfCode a1 ("ignoreDummyVal (reduce_" <> show n <> " " <> show ls <> " " <> show (getReduceResultDim ls) <> ")")
 
 codeGenLFunP (LSecP op) v a = genLineOfCode a $ "uncurry " <> (biop op (getArity v) a)  -- <> " " <> show v)
 codeGenLFunP (RSecP op) v a = genLineOfCode (getArity v) $ "uncurry " <> ("(flip " <> biop op a (getArity v)) <> ")" -- <> " " <> show v)
@@ -113,12 +113,12 @@ codeGenLFunP (CompP lfp3 lfp2) (Pair v3 v2) a1 = do codeGenLFunP lfp2 v2 a1
                                                     (id2, a2) <- getLastFunIdAndArity
                                                     codeGenLFunP lfp3 v3 a2
                                                     (id3, a3) <- getLastFunIdAndArity
-                                                    genLineOfCode a3 ("pass_consts_comp" <> id3 <> id2)
+                                                    genLineOfCode a3 ("constPassingComp" <> id3 <> id2)
 codeGenLFunP (ParaP lfp3 lfp2) (Pair v3 v2) (APair a3 a2) = do codeGenLFunP lfp2 v2 a2
                                                                (id4, a4) <- getLastFunIdAndArity
                                                                codeGenLFunP lfp3 v3 a3
                                                                (id5, a5) <- getLastFunIdAndArity
-                                                               genLineOfCode (APair a5 a4) ("pass_consts_para" <> id5 <> id4)
+                                                               genLineOfCode (APair a5 a4) ("constPassingPara" <> id5 <> id4)
 
 codeGenLFunP (LMapP _) _ (Atom 0) = error "LMapP not meaningful for an Atom 0 argument"
 codeGenLFunP (LMapP lfp2) v a1@(Atom n) = do codeGenLFunP lfp2 v $ Atom $ n-1
@@ -142,18 +142,16 @@ codeGenLFunP (ZipP _) _ _         = error "Wrong arguments given to ZipP"
 -- missing impl
 codeGenLFunP (RedP _) _ _         = error "This relation not implemented in CodeGen"
 
-
-
 inputArgDeclaration :: Arity -> Int -> (String, String, Int)
-inputArgDeclaration a1@(Atom _) c1 = ("(i" <> show c1 <> ": " <> typeDeclared a1 <> ")", "i" <> show c1, c1+1)
+inputArgDeclaration a1@(Atom _) c1 = ("(i" <> show c1 <> ": " <> genTypeDeclaration a1 <> ")", "i" <> show c1, c1+1)
 inputArgDeclaration (APair a2 a3) c1 = let (params2, args2, c2) = inputArgDeclaration a2 c1
                                            (params3, args3, c3) = inputArgDeclaration a3 c2
                                         in (params2 <> " " <> params3, "(" <> args2 <> ", " <> args3 <> ")", c3)
 
-typeDeclared :: Arity -> String
-typeDeclared (Atom 0) = "f32"
-typeDeclared (Atom n) = "[]" <> typeDeclared (Atom $ n-1)
-typeDeclared (APair a1 a2) = "(" <> typeDeclared a1 <> ", " <> typeDeclared a2 <> ")"
+genTypeDeclaration :: Arity -> String
+genTypeDeclaration (Atom 0) = "f32"
+genTypeDeclaration (Atom n) = "[]" <> genTypeDeclaration (Atom $ n-1)
+genTypeDeclaration (APair a1 a2) = "(" <> genTypeDeclaration a1 <> ", " <> genTypeDeclaration a2 <> ")"
 
 put :: CState -> CodeGen ()
 put cs = Co (\_ -> ((), cs))
