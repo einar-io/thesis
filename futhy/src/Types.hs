@@ -75,7 +75,6 @@ stdinShow v = case v of
                         ) <> "]"
   _ -> show v
 
-
 data Arity
   = Atom Int
   | APair Arity Arity

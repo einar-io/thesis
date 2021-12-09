@@ -58,17 +58,13 @@ let outer_2_2 (x: [][]r) (y: [][]r)   : *[][][][]r = mapl outer_1_2 x y
 let outer_2_3 (x: [][]r) (y: [][][]r) : *[][][][][]r = mapl outer_1_3 x y
 
 
--- dot product
-let inner_1_1 (v : []r) (u : []r) : r = reduce (+) 0.0f32 (map2 (*) v u)
--- vector matrix product
-let inner_1_2 (v : []r) (m : [][]r) : []r = map (\u -> inner_1_1 v u) m
--- matrix vector product
-let inner_2_1 (m : [][]r) (u : []r) : []r = map (\v -> inner_1_1 v u) <| transpose m
--- matrix matrix product (matmul)
-let inner_2_2 (a : [][]r) (b : [][]r) : [][]r = map (\v -> map (\u -> inner_1_1 v u)  <| transpose b) a
+let dotprod_1_1 (v : []r) (u : []r) : r = reduce (+) 0.0f32 (map2 (*) v u)
+let vecMatProd_1_2 (v : []r) (m : [][]r) : []r = map (\u -> dotprod_1_1 v u) m
+let matVecProd_2_1 (m : [][]r) (u : []r) : []r = map (\v -> dotprod_1_1 v u) <| transpose m
+let matrixMult_2_2 (a : [][]r) (b : [][]r) : [][]r = map (\v -> map (\u -> dotprod_1_1 v u)  <| transpose b) a
 
 -- used to calculate the neural network example
-let lossfunction_1_1 [n] (v : [n]r) (u : [n]r) = let a = map2 (-) v u in inner_1_1 a a
+let lossfunction_1_1 [n] (v : [n]r) (u : [n]r) = let a = map2 (-) v u in dotprod_1_1 a a
 
 -- -- -- neg
 let neg_0 (x :r)       : r        = (-x)

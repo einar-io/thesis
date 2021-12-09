@@ -17,30 +17,36 @@ instance Monad CodeGen where
   m >>= f = Co (\cs0 -> let (a,cs1) = runCo m cs0
                         in runCo (f a) cs1)
 
-arityAnnotation :: Arity -> Arity -> String
-arityAnnotation a1 a2 = "_" <> show a1 <> "_" <> show a2
+put :: CState -> CodeGen ()
+put cs = Co (\_ -> ((), cs))
 
-biop :: BilOp -> Arity -> Arity -> String
-biop b a1 a2 =  let base = case b of
-                            MatrixMult -> "inner"
-                            DotProd    -> "inner"
-                            VecMatProd -> "inner"
-                            MatVecProd -> "inner"
-                            LossFunction-> "lossfunction"
-                            Outer -> "outer"
-                in base <> arityAnnotation a1 a2
-
-getReduceResultDim :: [(Int, Int)] -> Int
-getReduceResultDim ls = let (_, dst) = unzip ls in 1 + maximum dst
+getProgr :: CodeGen Program
+getProgr = Co (\cs@(prog, _, _) -> (prog, cs))
 
 getLastFunIdAndArity :: CodeGen (String, Arity)
 getLastFunIdAndArity = Co (\cs@(_, arit, cnt) -> ((" fun" <> show (cnt-1), arit), cs))
 
 genLineOfCode :: Arity -> Program -> CodeGen ()
-genLineOfCode r fun =
-  Co (\(p, _, c) ->
-      let new_loc = "let" <> " fun" <> show c <> " = (" <> fun <> ")" <> "\n"
-      in ((), (p <> new_loc, r, c+1)))
+genLineOfCode arity fun =
+  Co (\(program, _, counter) ->
+      let newLineOfCode = "let" <> " fun" <> show counter <> " = (" <> fun <> ")" <> "\n"
+      in ((), (program <> newLineOfCode, arity, counter+1)))
+
+
+
+arityAnnotation :: Arity -> Arity -> String
+arityAnnotation a1 a2 = "_" <> show a1 <> "_" <> show a2
+
+biop :: BilOp -> Arity -> Arity -> String
+biop LossFunction a1 a2 = "lossFunction" <> arityAnnotation a1 a2
+biop Outer      a1 a2 = "outer" <> arityAnnotation a1 a2
+biop DotProd    a1 a2 = "dotProd" <> arityAnnotation a1 a2
+biop MatrixMult a1 a2 = "matrixMult" <> arityAnnotation a1 a2
+biop VecMatProd a1 a2 = "vecMatProd" <> arityAnnotation a1 a2
+biop MatVecProd a1 a2 = "matVecProd" <> arityAnnotation a1 a2
+
+getReduceResultDim :: [(Int, Int)] -> Int
+getReduceResultDim ls = let (_, dst) = unzip ls in 1 + maximum dst
 
 codeGenLFun :: LFun -> Arity -> CodeGen ()
 codeGenLFun Id a1 = genLineOfCode a1 "id"
@@ -51,7 +57,6 @@ codeGenLFun Add (APair a3 a2) = genLineOfCode a2 ("add_" <> show a3 <> "_" <> sh
 codeGenLFun Neg a1 = genLineOfCode a1 ("neg_" <> show a1)
 codeGenLFun (Red (List _)) (Atom 0) = error "Red not meaningful for an Atom 0 argument"
 codeGenLFun (Red (List ls)) a1@(Atom n) = genLineOfCode a1 ("reduce_" <> show n <> " " <> show ls <> " " <> show (getReduceResultDim ls))
-
 codeGenLFun (LSec v b) a1 = genLineOfCode a1 (biop b (getArity v) a1 <> " " <> show v)
 codeGenLFun (RSec b v) a1 = genLineOfCode (getArity v) ("flip " <> biop b a1 (getArity v) <> " " <> show v)
 codeGenLFun (Comp lf3 lf2) a1 = do codeGenLFun lf2 a1
@@ -73,9 +78,7 @@ codeGenLFun (Zip lfs) a1@(Atom n) = do let ((hf:_), vs@(hv:_)) = unzip $ map ext
                                        codeGenLFunP hf hv (Atom $ n-1)
                                        (id2, _) <- getLastFunIdAndArity
                                        genLineOfCode a1 ("zipAndMap" <> id2 <> " " <> show vs)
-
 codeGenLFun (Zip _) _         = error "illegal zip"
-
               --- error section
 codeGenLFun (Red (List _)) _  = error "Meaningless arity given to Red."
 codeGenLFun (Para _ _) _      = error "Meaningless arity given to Para."
@@ -90,6 +93,46 @@ codeGenLFun (Prj _ _) _       = error "Prj should have been desugared!"
 codeGenLFun (Lplus _ _) _     = error "Lplus should have been desugared!"
               -- missing impl
 codeGenLFun (Red _) _         = error "This relation not implemented in CodeGen"
+
+
+
+genTypeDeclaration :: Arity -> String
+genTypeDeclaration (Atom 0) = "f32"
+genTypeDeclaration (Atom n) = "[]" <> genTypeDeclaration (Atom $ n-1)
+genTypeDeclaration (APair a1 a2) = "(" <> genTypeDeclaration a1 <> ", " <> genTypeDeclaration a2 <> ")"
+
+inputArgDeclaration :: Arity -> Int -> (String, String, Int)
+inputArgDeclaration a1@(Atom _) c1 = ("(i" <> show c1 <> ": " <> genTypeDeclaration a1 <> ")", "i" <> show c1, c1+1)
+inputArgDeclaration (APair a2 a3) c1 = let (params2, args2, c2) = inputArgDeclaration a2 c1
+                                           (params3, args3, c3) = inputArgDeclaration a3 c2
+                                        in (params2 <> " " <> params3, "(" <> args2 <> ", " <> args3 <> ")", c3)
+
+finishProg :: Arity -> CodeGen ()
+finishProg a =
+  Co (\(p, r, c) ->
+    let (params, args, _) = inputArgDeclaration a 0 in
+    let new_loc = "entry main " <> params <>  " =" <> " fun" <> show (c-1) <> " " <> args <>"\n"
+    in ((), (p <> new_loc, r, c)))
+
+codeGenProgram :: LFun -> Arity -> Program
+codeGenProgram lf arit =
+  let initial = ("open import \"lmaplib\"\n\n", arit, 1) in
+  let act = do put initial
+               codeGenLFun lf arit
+               finishProg arit
+               getProgr
+  in (fst . runCo act) initial
+
+--- please use this function to codegen
+--- takes a sugary (if you want) lfun
+--- and a val used as input to the lfun
+--- (necessary for arity-type disambiguation)
+completeCodeGen :: LFun -> Val -> Program
+completeCodeGen lfun v = codeGenProgram (optimize (caramelizeLFun lfun)) (getArity v)
+
+---------------------------------------- const extracted compiler below
+---------------------------------------- const extracted compiler below
+---------------------------------------- const extracted compiler below
 
 -- the Val is the constant(s) needed to partially apply the LFunP and turn it into a unary LFun.
 -- those that are already unary are given Zero as a dummy value, to be ignored.
@@ -133,47 +176,15 @@ codeGenLFunP (ZipP lfp2) (Tensor (hv:_)) a1@(Atom n) = do codeGenLFunP lfp2 hv $
 --- error section
 codeGenLFunP (RedP (List _)) _ _  = error "Meaningless arity given to RedP."
 codeGenLFunP (ParaP _ _) _ _      = error "Meaningless arity given to ParaP."
-codeGenLFunP FstP _ _          = error "Meaningless arity given to FstP."
-codeGenLFunP SndP _ _          = error "Meaningless arity given to SndP."
-codeGenLFunP AddP _ _          = error "Meaningless arity given to AddP."
+codeGenLFunP FstP _ _             = error "Meaningless arity given to FstP."
+codeGenLFunP SndP _ _             = error "Meaningless arity given to SndP."
+codeGenLFunP AddP _ _             = error "Meaningless arity given to AddP."
 codeGenLFunP (LMapP _) _ _        = error "Meaningless arity given to LMapP."
 codeGenLFunP (CompP _ _) _ _      = error "Wrong constants given to CompP"
 codeGenLFunP (ZipP _) _ _         = error "Wrong arguments given to ZipP"
 -- missing impl
 codeGenLFunP (RedP _) _ _         = error "This relation not implemented in CodeGen"
 
-inputArgDeclaration :: Arity -> Int -> (String, String, Int)
-inputArgDeclaration a1@(Atom _) c1 = ("(i" <> show c1 <> ": " <> genTypeDeclaration a1 <> ")", "i" <> show c1, c1+1)
-inputArgDeclaration (APair a2 a3) c1 = let (params2, args2, c2) = inputArgDeclaration a2 c1
-                                           (params3, args3, c3) = inputArgDeclaration a3 c2
-                                        in (params2 <> " " <> params3, "(" <> args2 <> ", " <> args3 <> ")", c3)
-
-genTypeDeclaration :: Arity -> String
-genTypeDeclaration (Atom 0) = "f32"
-genTypeDeclaration (Atom n) = "[]" <> genTypeDeclaration (Atom $ n-1)
-genTypeDeclaration (APair a1 a2) = "(" <> genTypeDeclaration a1 <> ", " <> genTypeDeclaration a2 <> ")"
-
-put :: CState -> CodeGen ()
-put cs = Co (\_ -> ((), cs))
-
-getProgr :: CodeGen Program
-getProgr = Co (\cs@(prog, _, _) -> (prog, cs))
-
-finishProg :: Arity -> CodeGen ()
-finishProg a =
-  Co (\(p, r, c) ->
-    let (params, args, _) = inputArgDeclaration a 0 in
-    let new_loc = "entry main " <> params <>  " =" <> " fun" <> show (c-1) <> " " <> args <>"\n"
-    in ((), (p <> new_loc, r, c)))
-
-codeGenProgram :: LFun -> Arity -> Program
-codeGenProgram lf arit =
-  let initial = ("open import \"lmaplib\"\n\n", arit, 1) in
-  let act = do put initial
-               codeGenLFun lf arit
-               finishProg arit
-               getProgr
-  in (fst . runCo act) initial
 
 finishProgWithConsts :: Val -> Arity -> CodeGen ()
 finishProgWithConsts consts a =
@@ -191,13 +202,3 @@ codeGenProgramConstExtracted lf arit =
                finishProgWithConsts consts arit
                getProgr
   in (fst . runCo act) initial
-
---- please use this function to codegen
---- takes a sugary (if you want) lfun
---- and a val used as input to the lfun
- --- (necessary for arity-type disambiguation)
-completeCodeGen :: LFun -> Val -> Program
-completeCodeGen inlf vin =
-          let lf = optimize (caramelizeLFun inlf) in
-          let arit = getArity vin
-          in  codeGenProgram lf arit
