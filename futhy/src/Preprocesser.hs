@@ -84,7 +84,7 @@ caramelizeValbak v1 = case v1 of
   Zero     -> v1
 -}
 
-data LFunP -- expr
+data LFunP
   = IdP
   | DupP
   | FstP

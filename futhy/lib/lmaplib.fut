@@ -11,7 +11,7 @@ let snd 't1 't2 ((_,b): (t1,t2)) : t2 = b
 let comp 't1 't2 't3 (f: t2 -> t3) (g: t1 -> t2) (x: t1) : t3 = f (g x)
 let para 't1 't2 't3 't4 (f: t1 -> t2) (g: t3 -> t4) ((a,b): (t1, t3)) : (t2, t4) = (f a, g b)
 
-let zipAndMap 't1 't2 't3 [n] (f: (t1, t2) -> t3) (xs: [n]t1) (ys: [n]t2) : *[n]t3 = map f (zip xs ys)
+let specMap2 't1 't2 't3 [n] (f: (t1, t2) -> t3) (xs: [n]t1) (ys: [n]t2) : *[n]t3 = map2 (\x y -> f (x,y)) xs ys
 
 --- const-extraction specific functions
 
@@ -19,8 +19,8 @@ let ignoreDummyVal 't1 't2 't3 (f: t2 -> t3)( (_,a): (t1, t2)) : t3 = f a
 
 let constPassingComp 't1 't2 't3 't4 't5 (f: (t1, t4) -> t5) (g: (t2, t3) -> t4) (((x,y),z): ((t1, t2), t3)) : t5 = f (x,(g (y,z)))
 let constPassingPara 't1 't2 't3 't4 't5 't6 (f: (t1, t3) -> t5)  (g: (t2, t4) -> t6) (((x,y),(a,b)): ((t1, t2), (t3, t4))) :  (t5, t6) = (f (x,a), g (y,b))
-let constPassingMap  't1 't2 't3 [n] (f: (t1, t2) -> t3) ((x,y): (t1, [n]t2))    : *[n]t3 = map (\yi -> f (x,yi)) y
-let constPassingMap2 't1 't2 't3 [n] (f: (t1, t2) -> t3) ((x,y): ([n]t1, [n]t2)) : *[n]t3 = map2 (\xi yi -> f (xi,yi)) x y
+let constPassingMap  't1 't2 't3 [n] (f: (t1, t2) -> t3) ((x,ys): (t1, [n]t2))    : *[n]t3 = map (curry f x) ys
+let constPassingMap2 't1 't2 't3 [n] (f: (t1, t2) -> t3) ((xs,ys): ([n]t1, [n]t2)) : *[n]t3 = map2 (curry f) xs ys
 
 -- add
 let add_0_0 ((x,y): (r,r)) : r = (add) x y
@@ -73,8 +73,6 @@ let neg_2 (x :[][]r)   : *[][]r   = map neg_1 x
 let neg_3 (x :[][][]r) : *[][][]r = map neg_2 x
 
 -- -- --reduce
-let applyAsPair 't1 't2 't3 (f: (t1, t2) -> t3) (x: t1) (y: t2) : t3 = f (x,y)
-
 let rep_1 't (n: int) (ne: t) : *[n]t = replicate n ne
 let rep_2 't (n: int) (m: int) (ne: t) : *[n][m]t = rep_1 n (rep_1 m ne)
 let rep_3 't (n: int) (m: int) (p: int) (ne: t) : *[n][m][p]t = rep_2 n m (rep_1 p ne)
@@ -83,7 +81,7 @@ let reduce_h 't (rel : [](int, int)) (vals: []t) (ne: t) (k : int) f : [k]t =
     let (srcs, is) = unzip rel
     let output = replicate k ne
     let as = map (\i -> if i < length vals then vals[i] else ne) srcs
-    in reduce_by_index output (applyAsPair f) ne is as
+    in reduce_by_index output (curry f) ne is as
 
 let reduce_1 (rel : [](int, int)) (k : int) (vals : []r) : [k]r =
     reduce_h rel vals 0.0 k add_0_0

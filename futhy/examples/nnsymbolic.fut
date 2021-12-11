@@ -1,0 +1,17 @@
+open import "lmaplib"
+
+let fun1 = (flip inner_2_1 [2.0f32, 2.0f32])
+let fun2 = (inner_2_1 [[2.0f32, 2.0f32], [2.0f32, 2.0f32]])
+let fun3 = (para fun2 fun1)
+let fun4 = (add_1_1)
+let fun5 = (comp fun4 fun3)
+let fun6 = (id)
+let fun7 = (para fun6 fun5)
+let fun8 = (add_1_1)
+let fun9 = (comp fun8 fun7)
+let fun10 = (uncurry outer_0_0)
+let fun11 = (specMap2 fun10 [0.41997434161402614f32,7.065082485316443e-2f32])
+let fun12 = (comp fun11 fun9)
+let fun13 = (lossFunction_1_1 [2.0f32, 2.0f32])
+let fun14 = (comp fun13 fun12)
+entry main (arg1: []f32) (arg2: []f32) (arg3: [][]f32) = fun14 (arg1, (arg2, arg3))

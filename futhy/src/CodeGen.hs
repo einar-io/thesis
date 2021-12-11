@@ -68,25 +68,29 @@ codeGenLFun (Red (List _)) (Atom 0) = error "Red not meaningful for an Atom 0 ar
 codeGenLFun (Red (List ls)) a@(Atom n) = genLineOfCode a ("reduce_" <> show n <> " " <> show ls <> " " <> show (getReduceResultDim ls))
 codeGenLFun (LSec v op) a = genLineOfCode (biopOutputArity op a (getArity v)) (biop op (getArity v) a <> " " <> show v)
 codeGenLFun (RSec op v) a = genLineOfCode (biopOutputArity op (getArity v) a) ("flip " <> biop op a (getArity v) <> " " <> show v)
-codeGenLFun (Comp lf3 lf2) a1 = do codeGenLFun lf2 a1
-                                   (id2, a2) <- getLastFunIdAndArity
-                                   codeGenLFun lf3 a2
-                                   (id3, a3) <- getLastFunIdAndArity
-                                   genLineOfCode a3 ("comp" <> id3 <> id2)
-codeGenLFun (Para lf3 lf2) (APair a3 a2) = do codeGenLFun lf2 a2
-                                              (id4, a4) <- getLastFunIdAndArity
-                                              codeGenLFun lf3 a3
-                                              (id5, a5) <- getLastFunIdAndArity
-                                              genLineOfCode (APair a5 a4) ("para" <> id5 <> id4)
+codeGenLFun (Comp lf3 lf2) a1 =
+    do codeGenLFun lf2 a1
+       (id2, a2) <- getLastFunIdAndArity
+       codeGenLFun lf3 a2
+       (id3, a3) <- getLastFunIdAndArity
+       genLineOfCode a3 ("comp" <> id3 <> id2)
+codeGenLFun (Para lf3 lf2) (APair a3 a2) =
+    do codeGenLFun lf2 a2
+       (id4, a4) <- getLastFunIdAndArity
+       codeGenLFun lf3 a3
+       (id5, a5) <- getLastFunIdAndArity
+       genLineOfCode (APair a5 a4) ("para" <> id5 <> id4)
 codeGenLFun (LMap  _) (Atom 0) = error "LMap not meaningful for an Atom 0 argument"
-codeGenLFun (LMap lf) a@(Atom n) = do codeGenLFun lf $ Atom $ n-1
-                                      (id2, _) <- getLastFunIdAndArity
-                                      genLineOfCode a ("map" <> id2)
+codeGenLFun (LMap lf) a@(Atom n) =
+    do codeGenLFun lf $ Atom $ n-1
+       (id2, _) <- getLastFunIdAndArity
+       genLineOfCode a ("map" <> id2)
 codeGenLFun (Zip   _) (Atom 0) = error "zip not meaningful for an Atom 0 argument"
-codeGenLFun (Zip lfs) a@(Atom n) = do let ((hf:_), vs@(hv:_)) = unzip $ map extractLFunConsts lfs
-                                      codeGenLFunP hf hv (Atom $ n-1)
-                                      (id2, _) <- getLastFunIdAndArity
-                                      genLineOfCode a ("zipAndMap" <> id2 <> " " <> show vs)
+codeGenLFun (Zip lfs) a@(Atom n) =
+    do let ((hf:_), vs@(hv:_)) = unzip $ map extractLFunConsts lfs
+       codeGenLFunP hf hv (Atom $ n-1)
+       (id2, _) <- getLastFunIdAndArity
+       genLineOfCode a ("specMap2" <> id2 <> " " <> show vs)
 codeGenLFun (Zip _) _         = error "illegal zip"
               --- error section
 codeGenLFun (Red (List _)) _  = error "Meaningless arity given to Red."
@@ -132,6 +136,9 @@ finishProg inputArity =
 
 ---------------------------------------- const extracted compiler below
 ---------------------------------------- const extracted compiler below
+
+completeCodeGenConstExtracted :: LFun -> Val -> Program
+completeCodeGenConstExtracted lfun val = codeGenProgramConstExtracted (optimize (caramelizeLFun lfun)) (getArity val)
 
 codeGenProgramConstExtracted :: LFun -> Arity -> Program
 codeGenProgramConstExtracted lf arit =

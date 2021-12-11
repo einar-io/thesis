@@ -100,7 +100,7 @@ getArity v = case v of
 -- These are listed as linear map expressions
 -- https://github.com/diku-dk/caddie/blob/master/src/lin.sig
 -- [POPL, p. 21]
-data LFun -- expr
+data LFun
   -- Arity preserving
   = Id
   | KZero
