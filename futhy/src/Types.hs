@@ -51,29 +51,29 @@ instance Num Val where
  fromInteger i = Scalar (fromInteger i)
 
 instance Show Val where
-  show v = case v of
-    Scalar sc -> if sc >= 0.0 then show sc <> "f32" else "(" <> show sc <> "f32" <> ")"
-    Pair v1 v2 -> "(" <> show v1 <> ", " <> show v2 <> ")"
-    Tensor ls -> "["
-                  <> ( ls
-                       |> map show
-                       |> intercalate ", "
-                     )
-                  <> "]"
-    Zero -> show $ Scalar 0
-    Dummy -> "f32.nan"
-    _ -> undefined
+  show (Scalar sc)  = if sc >= 0.0
+                      then show sc <> "f32"
+                      else "(" <> show sc <> "f32" <> ")"
+  show (Pair v1 v2) = "(" <> show v1 <> ", " <> show v2 <> ")"
+  show (Tensor ls)  = "["
+                        <> ( ls
+                             |> map show
+                             |> intercalate ", "
+                           )
+                        <> "]"
+  show Zero  = show $ Scalar 0
+  show Dummy = "f32.nan"
+  show _ = undefined
 
 stdinShow :: Val -> String
-stdinShow v = case v of
-  Scalar sc  -> " " <> show sc <> "f32 "
-  Dummy -> "f32.nan"
-  Pair v2 v1 -> stdinShow v2 <> " " <> stdinShow v1
-  Tensor ls  -> "[" <> ( ls
-                         |> map stdinShow
-                         |> intercalate ", "
-                        ) <> "]"
-  _ -> show v
+stdinShow (Scalar sc)  = " " <> show sc <> "f32 "
+stdinShow Dummy        = " f32.nan "
+stdinShow (Pair v2 v1) = stdinShow v2 <> " " <> stdinShow v1
+stdinShow (Tensor ls)  = " [" <> ( ls
+                                 |> map stdinShow
+                                 |> intercalate ", "
+                                 ) <> "] "
+stdinShow v = show v
 
 data Arity
   = Atom Int
