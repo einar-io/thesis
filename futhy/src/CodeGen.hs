@@ -43,13 +43,13 @@ genLineOfCode outputArity fun =
       let newLineOfCode = "let" <> " fun" <> show (counter+1) <> " = (" <> fun <> ")" <> "\n"
       in ((), (program <> newLineOfCode, outputArity, counter+1)))
 
-biop :: BilOp -> Arity -> Arity -> String
-biop LossFunction a1 a2 = "lossFunction" <> arityAnnotation a1 a2
-biop Outer      a1 a2 = "outer" <> arityAnnotation a1 a2
-biop DotProd    a1 a2 = "inner" <> arityAnnotation a1 a2
-biop MatrixMult a1 a2 = "inner" <> arityAnnotation a1 a2
-biop VecMatProd a1 a2 = "inner" <> arityAnnotation a1 a2
-biop MatVecProd a1 a2 = "inner" <> arityAnnotation a1 a2
+bilOp :: BilOp -> Arity -> Arity -> String
+bilOp LossFunction a1 a2 = "lossFunction" <> arityAnnotation a1 a2
+bilOp Outer      a1 a2 = "outer" <> arityAnnotation a1 a2
+bilOp DotProd    a1 a2 = "inner" <> arityAnnotation a1 a2
+bilOp MatrixMult a1 a2 = "inner" <> arityAnnotation a1 a2
+bilOp VecMatProd a1 a2 = "inner" <> arityAnnotation a1 a2
+bilOp MatVecProd a1 a2 = "inner" <> arityAnnotation a1 a2
 
 arityAnnotation :: Arity -> Arity -> String
 arityAnnotation a1 a2 = "_" <> show a1 <> "_" <> show a2
@@ -66,8 +66,8 @@ codeGenLFun Add (APair a3 a2) = genLineOfCode a2 ("add_" <> show a3 <> "_" <> sh
 codeGenLFun Neg a = genLineOfCode a ("neg_" <> show a)
 codeGenLFun (Red (List _)) (Atom 0) = error "Red not meaningful for an Atom 0 argument"
 codeGenLFun (Red (List ls)) a@(Atom n) = genLineOfCode a ("reduce_" <> show n <> " " <> show ls <> " " <> show (getReduceResultDim ls))
-codeGenLFun (LSec v op) a = genLineOfCode (biopOutputArity op a (getArity v)) (biop op (getArity v) a <> " " <> show v)
-codeGenLFun (RSec op v) a = genLineOfCode (biopOutputArity op (getArity v) a) ("flip " <> biop op a (getArity v) <> " " <> show v)
+codeGenLFun (LSec v op) a = genLineOfCode (bilOpOutputArity op a (getArity v)) (bilOp op (getArity v) a <> " " <> show v)
+codeGenLFun (RSec op v) a = genLineOfCode (bilOpOutputArity op (getArity v) a) ("flip " <> bilOp op a (getArity v) <> " " <> show v)
 codeGenLFun (Comp lf3 lf2) a1 =
     do codeGenLFun lf2 a1
        (id2, a2) <- getLastFunIdAndArity
@@ -107,14 +107,14 @@ codeGenLFun (Lplus _ _) _     = error "Lplus should have been desugared!"
               -- missing impl
 codeGenLFun (Red _) _         = error "This relation not implemented in CodeGen"
 
-biopOutputArity :: BilOp -> Arity -> Arity -> Arity
-biopOutputArity LossFunction (Atom 1) (Atom 1) = Atom 0
-biopOutputArity Outer        (Atom n2) (Atom n1) = Atom $ n2+n1
-biopOutputArity DotProd      (Atom n2) (Atom n1) = Atom $ n2+n1-2
-biopOutputArity MatrixMult   (Atom n2) (Atom n1) = Atom $ n2+n1-2
-biopOutputArity VecMatProd   (Atom n2) (Atom n1) = Atom $ n2+n1-2
-biopOutputArity MatVecProd   (Atom n2) (Atom n1) = Atom $ n2+n1-2
-biopOutputArity b a1 a2 = error $ "You called " <> show b <> " with illegal arities: " <> show a1 <> " and " <> show a2
+bilOpOutputArity :: BilOp -> Arity -> Arity -> Arity
+bilOpOutputArity LossFunction (Atom 1) (Atom 1) = Atom 0
+bilOpOutputArity Outer        (Atom n2) (Atom n1) = Atom $ n2+n1
+bilOpOutputArity DotProd      (Atom n2) (Atom n1) = Atom $ n2+n1-2
+bilOpOutputArity MatrixMult   (Atom n2) (Atom n1) = Atom $ n2+n1-2
+bilOpOutputArity VecMatProd   (Atom n2) (Atom n1) = Atom $ n2+n1-2
+bilOpOutputArity MatVecProd   (Atom n2) (Atom n1) = Atom $ n2+n1-2
+bilOpOutputArity b a1 a2 = error $ "You called " <> show b <> " with illegal arities: " <> show a1 <> " and " <> show a2
 
 genTypeDeclaration :: Arity -> String
 genTypeDeclaration (Atom 0) = "f32"
@@ -166,8 +166,8 @@ codeGenLFunP NegP _  a = genLineOfCode a ("ignoreDummyVal neg_" <> show a)
 codeGenLFunP (RedP (List _)) _ (Atom 0) = error "Red not meaningful for an Atom 0 argument"
 codeGenLFunP (RedP (List ls)) _ a1@(Atom n) = genLineOfCode a1 ("ignoreDummyVal (reduce_" <> show n <> " " <> show ls <> " " <> show (getReduceResultDim ls) <> ")")
 
-codeGenLFunP (LSecP op) v a = genLineOfCode (biopOutputArity op a (getArity v)) $ "uncurry " <> (biop op (getArity v) a)
-codeGenLFunP (RSecP op) v a = genLineOfCode (biopOutputArity op (getArity v) a) $ "uncurry " <> ("(flip " <> biop op a (getArity v)) <> ")"
+codeGenLFunP (LSecP op) v a = genLineOfCode (bilOpOutputArity op a (getArity v)) $ "uncurry " <> (bilOp op (getArity v) a)
+codeGenLFunP (RSecP op) v a = genLineOfCode (bilOpOutputArity op (getArity v) a) $ "uncurry " <> ("(flip " <> bilOp op a (getArity v)) <> ")"
 
 codeGenLFunP (CompP lfp3 lfp2) (Pair v3 v2) a1 =
       do codeGenLFunP lfp2 v2 a1
