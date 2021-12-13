@@ -41,12 +41,12 @@ dotprod x y = let (a, b) = (mkR1 x, mkR1 y)
               in Scalar $ sum $ failableZipWith (*) a b
 
 vecmatmul :: Val -> Val -> Val
-vecmatmul v m = let (u, mm) = (mkR1 v, mkR2 m)
-                in mkT1 [sum $ failableZipWith (*) u mi | mi <- mm]
+vecmatmul v m = let (a, b) = (mkR1 v, mkR2 m)
+                in mkT1 [sum $ failableZipWith (*) bi a | bi <- transpose b]
 
 matvecmul :: Val -> Val -> Val
-matvecmul x y = let (a, b) = (mkR2 x, mkR1 y)
-                in mkT1 [sum $ failableZipWith (*) ai b | ai <- transpose a]
+matvecmul m v = let (b, a) = (mkR2 m, mkR1 v)
+                in mkT1 [sum $ failableZipWith (*) bi a | bi <- b]
 
 matmul :: Val -> Val -> Val
 matmul x y = let (a, b) = (mkR2 x, mkR2 y)

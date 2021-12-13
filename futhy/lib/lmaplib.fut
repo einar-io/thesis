@@ -59,8 +59,8 @@ let outer_2_3 (x: [][]r) (y: [][][]r) : *[][][][][]r = mapl outer_1_3 x y
 
 -- inner products
 let inner_1_1 [n] (v : [n]r) (u : [n]r) : r = reduce (+) 0.0f32 (map2 (*) v u)
-let inner_1_2 [n][m] (v : [n]r) (b : [m][n]r) : [m]r = map (\u -> inner_1_1 v u) b
-let inner_2_1 [n][m] (a : [n][m]r) (u : [n]r) : [m]r = map (\v -> inner_1_1 v u) <| transpose a
+let inner_1_2 [n][m] (v : [n]r) (b : [n][m]r) : [m]r = map (\u -> inner_1_1 v u) <| transpose b
+let inner_2_1 [n][m] (a : [m][n]r) (u : [n]r) : [m]r = map (\v -> inner_1_1 v u) a
 let inner_2_2 [n][m][p] (a: [n][m]f32) (b: [m][p]f32) : [n][p]f32 = map (\v -> map (\u -> inner_1_1 v u)  <| transpose b) a
 
 -- used to calculate the neural network example

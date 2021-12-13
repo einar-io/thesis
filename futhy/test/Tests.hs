@@ -208,32 +208,32 @@ dotprodTests =
 
 vecmatTests :: [([Char], LFun, Val, Val)]
 vecmatTests =
-  [ ("LSec 3 * 2x3 -> 2"
-          , LSec (Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]) VecMatProd
-          , Tensor [ Tensor [Scalar 5.0, Scalar 6.0, Scalar 7.0]
-                   , Tensor [Scalar 7.0, Scalar 8.0, Scalar 8.0]]
-          , Tensor [Scalar 38.0, Scalar 47.0])
-  , ("RSec 3 * 2x3 -> 2"
-          , RSec VecMatProd (Tensor [ Tensor [Scalar 5.0, Scalar 6.0, Scalar 7.0]
-                                    , Tensor [Scalar 7.0, Scalar 8.0, Scalar 7.0]])
+  [ ("LSec 3x1 * 3x2 -> 1x2"
+          , LSec (mkT1 [1,2,3]) VecMatProd
+          , mkT2 [[1,2]
+                 ,[3,4]
+                 ,[5,6]]
+          , Tensor [Scalar 22.0, Scalar 28.0])
+  , ("RSec 3x1 * 3x2 -> 2x1"
+          , RSec VecMatProd (Tensor [ Tensor [Scalar 1.0, Scalar 2.0]
+                                    , Tensor [Scalar 3.0, Scalar 4.0]
+                                    , Tensor [Scalar 5.0, Scalar 6.0]])
           , Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]
-          , Tensor [Scalar 38.0, Scalar 44.0])
+          , Tensor [Scalar 22.0, Scalar 28.0])
   ]
 
 matvecTests :: [([Char], LFun, Val, Val)]
 matvecTests =
-  [ ("LSec 3x2 * 3 -> 2"
-          , LSec (Tensor [ Tensor [Scalar 5.0, Scalar 6.0]
-                         , Tensor [Scalar 5.0, Scalar 6.0]
-                         , Tensor [Scalar 7.0, Scalar 8.0]]) MatVecProd
+  [ ("LSec 2x3 * 3 -> 2"
+          , LSec (Tensor [ Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]
+                         , Tensor [Scalar 4.0, Scalar 5.0, Scalar 6.0]]) MatVecProd
           , Tensor [ Scalar 1.0, Scalar 2.0, Scalar 2.0]
-          , Tensor [ Scalar 29.0, Scalar 34.0])
+          , Tensor [ Scalar 11.0, Scalar 26.0])
   , ("RSec 3x2 * 3 -> 2"
           , RSec MatVecProd (Tensor [Scalar 1.0, Scalar 2.0, Scalar 2.0])
-          ,  Tensor [ Tensor [Scalar 5.0, Scalar 6.0]
-                    , Tensor [Scalar 7.0, Scalar 8.0]
-                    , Tensor [Scalar 7.0, Scalar 8.0]]
-          , Tensor [Scalar 33.0, Scalar 38.0])
+          , Tensor [ Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]
+                   , Tensor [Scalar 4.0, Scalar 5.0, Scalar 6.0]]
+          , Tensor [Scalar 11.0, Scalar 26.0])
   ]
 
 matmulTests :: [([Char], LFun, Val, Val)]
