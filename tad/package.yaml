@@ -1,4 +1,4 @@
-name: futhy
+name: tad
 dependencies:
   - base >= 4.7 && < 5
   - containers
@@ -36,7 +36,7 @@ library:
   source-dirs: src
 
 executables:
-  futhy-exe:
+  tad-exe:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
@@ -45,7 +45,7 @@ executables:
     #- -with-rtsopts=-N
     - -with-rtsopts=-A32m
     dependencies:
-    - futhy
+    - tad
 
 tests:
   integration-tests:
@@ -54,7 +54,7 @@ tests:
     ghc-options:
     - -main-is Tests
     dependencies:
-    - futhy
+    - tad
     - tasty
     - tasty-hunit
 #    - QuickCheck
@@ -73,7 +73,7 @@ benchmarks:
     - -main-is Benchmarks
     #- -threaded
     dependencies:
-    - futhy
+    - tad
     - tasty
     - tasty-bench
     - tasty-hunit

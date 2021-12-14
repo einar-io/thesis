@@ -1,3 +1,3 @@
-# Changelog for futhy
+# Changelog for tad
 
 ## Unreleased changes
