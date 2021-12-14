@@ -50,7 +50,7 @@ genLmapBenchmark :: Int -> Benchmark
 genLmapBenchmark i = benchInterpretor (show i) (LMap (Scale 2.0)) (rndVecVals i)
 
 genZipBenchmark :: Int -> Benchmark
-genZipBenchmark i = benchInterpretor (show i) (Zip [Scale 2.0]) (Tensor [rndVecVals i])
+genZipBenchmark i = benchInterpretor (show i) (Zip [Scale 2.0]) (Vector [rndVecVals i])
 
 genReduceBenchmark :: Int -> Benchmark
 genReduceBenchmark i = benchInterpretor (show i) (Red <| rndRelCap i i (i `div` 4)) (rndVecVals i)
@@ -189,10 +189,10 @@ genRandomUnsafeScalar :: Val
 genRandomUnsafeScalar = Scalar 2
 
 genVector :: Int -> Val
-genVector n = Tensor $ repeatToList genRandomUnsafeScalar n
+genVector n = Vector $ repeatToList genRandomUnsafeScalar n
 
 genSqrMtx :: Int -> Val
-genSqrMtx n = Tensor $ repeatToList (genVector n) n
+genSqrMtx n = Vector $ repeatToList (genVector n) n
 
 makeNNForwardModeInput :: Int -> Val
 makeNNForwardModeInput i =
@@ -304,4 +304,3 @@ main = do
  -
  - genNN layers  inputsize
  -}
-

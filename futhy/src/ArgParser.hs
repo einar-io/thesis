@@ -9,7 +9,7 @@ data Opts = Opts
   , backend :: String
   , quiet :: Bool
   , version :: Bool
-  , license :: Bool } 
+  , license :: Bool }
 
 data Input
   = InFile FilePath
@@ -18,8 +18,8 @@ data Output
   = OutFile FilePath
 
 inputP :: Parser Input
-inputP = 
-  InFile <$> 
+inputP =
+  InFile <$>
       strOption
       ( long "input"
       <> short 'i'
@@ -28,8 +28,8 @@ inputP =
       <> metavar "FILE" )
 
 outputP :: Parser Output
-outputP = 
-  OutFile <$> 
+outputP =
+  OutFile <$>
       strOption
       ( long "output"
       <> short 'o'
@@ -38,7 +38,7 @@ outputP =
       <> metavar "FILE" )
 
 cliparser :: Parser Opts
-cliparser = Opts 
+cliparser = Opts
   <$> inputP
   <*> outputP
   <*> strOption
@@ -59,4 +59,3 @@ cliparser = Opts
       ( long "license"
       <> short 'l'
       <> help "Show license." )
-

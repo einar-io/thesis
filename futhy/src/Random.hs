@@ -21,7 +21,7 @@ rndVecRealNumbers :: Int -> [RealNumber]
 rndVecRealNumbers len = take len <| randoms (mkStdGen seed) :: [RealNumber]
 
 vecToVal :: [RealNumber] -> Val
-vecToVal = Tensor . map Scalar
+vecToVal = Vector . map Scalar
 
 rndVecVals :: Int -> Val
 rndVecVals = vecToVal . rndVecRealNumbers

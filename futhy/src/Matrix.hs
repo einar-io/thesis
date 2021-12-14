@@ -49,15 +49,15 @@ scalar2real :: Val -> RealNumber
 scalar2real (Scalar s) = s
 scalar2real _ = error "Called scalar2real with something other than a scalar"
 
-tensor2reals :: Val -> [RealNumber]
-tensor2reals (Tensor vs) = map scalar2real vs
-tensor2reals _ = error "Called tensor2reals with something other than a tensor fo scalars"
+vector2reals :: Val -> [RealNumber]
+vector2reals (Vector vs) = map scalar2real vs
+vector2reals _ = error "Called vector2reals with something other than a Vector fo scalars"
 
 tnsr2mtx :: Val -> Shape -> Matrix RealNumber
--- Tensor must be of rank 2 to be trivially convertable to a matrix.
-tnsr2mtx (Tensor ts@(Tensor _:_)) _shp = matrix (length ts) (ts |> map tensor2reals |> concat)
--- tnsr2mtx (SparseTensor ss@(SparseTensor kvs)) shp = tnsr2mtx (sparse2dense ss) shp
-tnsr2mtx _ _ = error "Called tnsr2mtx with something not a tensor of tensors of scalars"
+-- Vector must be of rank 2 to be trivially convertable to a matrix.
+tnsr2mtx (Vector ts@(Vector _:_)) _shp = matrix (length ts) (ts |> map vector2reals |> concat)
+-- tnsr2mtx (SparseVector ss@(SparseVector kvs)) shp = tnsr2mtx (sparse2dense ss) shp
+tnsr2mtx _ _ = error "Called tnsr2mtx with something not a Vector of Vectors of scalars"
 
 -- injects
 inl :: Matrix RealNumber -> [LeftRightMultipliers]
@@ -115,10 +115,10 @@ compaction (lfns, rfns) (m, _n) =
 
 genZero :: [Int] -> Val
 genZero [] = Scalar 0
-genZero (n:ns) = Tensor <| replicate n (genZero ns)
+genZero (n:ns) = Vector <| replicate n (genZero ns)
 
 s = Scalar
-t = Tensor
+t = Vector
 
 genStdBasis :: [Int] -> [Val]
 genStdBasis [] = [s 1]
@@ -135,7 +135,7 @@ getMatrixRep lfun shp =
       mapped = mapM (interpret lfun) vss
    in case mapped of
         Left _ -> undefined
-        Right mtx -> Tensor mtx
+        Right mtx -> Vector mtx
 
 runMeRobert :: Val
 runMeRobert = getMatrixRep (Zip [Scale 42, Scale 2]) [2,2]

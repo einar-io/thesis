@@ -65,20 +65,20 @@ caramelizeLFun sfl = case sfl of
   Snd           -> sfl
 
 caramelizeVal :: Val -> Val
-caramelizeVal v = v -- restructuring values is possible - future work. We might allow tensors of pairs to be sugar for pairs of tensors.
+caramelizeVal v = v -- restructuring values is possible - future work. We might allow Vectors of pairs to be sugar for pairs of Vectors.
 
 {- maybe TODO, if we desugar inner paras in zips
 caramelizeValbak :: Val -> Val
 caramelizeValbak v1 = case v1 of
   -- recursive case - list of >=1 elements
-  Tensor ((Pair v3 v2):t@(_:_)) ->
-    let (Pair (Tensor ls3) (Tensor ls2)) = caramelizeVal $ Tensor t
-    in Pair (Tensor $ (caramelizeVal v3):ls3) (Tensor $ (caramelizeVal v2):ls2)
+  Vector ((Pair v3 v2):t@(_:_)) ->
+    let (Pair (Vector ls3) (Vector ls2)) = caramelizeVal $ Vector t
+    in Pair (Vector $ (caramelizeVal v3):ls3) (Vector $ (caramelizeVal v2):ls2)
 
   -- base case - list of single element
-  Tensor ((Pair v3 v2):_) -> Pair (Tensor [caramelizeVal v3]) (Tensor [caramelizeVal v2])
+  Vector ((Pair v3 v2):_) -> Pair (Vector [caramelizeVal v3]) (Vector [caramelizeVal v2])
 
-  Tensor ls -> Tensor $ map caramelizeVal ls
+  Vector ls -> Vector $ map caramelizeVal ls
   Pair v3 v2 -> Pair (caramelizeVal v3) (caramelizeVal v2)
   Scalar _ -> v1
   Zero     -> v1
@@ -119,7 +119,7 @@ extractLFunConsts lf = case lf of
                    let (lf3i, v3) = extractLFunConsts lf3 in
                    (CompP lf3i lf2i, (Pair v3 v2))
   Zip lfs       -> let ((h:_), vis) = unzip $ map extractLFunConsts lfs in
-                   (ZipP h, Tensor vis) -- HACK: doesnt keep tensor constraints
+                   (ZipP h, Vector vis) -- HACK: doesnt keep Vector constraints
 
   Prj _ _       -> error "Proj should be desugared"
   Lplus _ _     -> error "LPlus should be desugared"

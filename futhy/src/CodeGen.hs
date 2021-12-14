@@ -189,7 +189,7 @@ codeGenLFunP (LMapP lfp2) v a1@(Atom n) =
          genLineOfCode a1 ("constPassingMap" <> id2)
 
 codeGenLFunP (ZipP _) _ (Atom 0) = error "Zip not meaningful for an Atom 0 argument"
-codeGenLFunP (ZipP lfp2) (Tensor (hv:_)) a1@(Atom n) =
+codeGenLFunP (ZipP lfp2) (Vector (hv:_)) a1@(Atom n) =
       do codeGenLFunP lfp2 hv $ Atom $ n-1
          (id2, _) <- getLastFunIdAndArity
          genLineOfCode a1 ("constPassingMap2" <> id2)
