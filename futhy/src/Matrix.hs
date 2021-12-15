@@ -1,26 +1,26 @@
 {-# LANGUAGE LambdaCase #-}
 
 module Matrix
-  ( Shape
-  , LeftRightMultipliers
-  , lfun2mtcs
-  , tnsr2mtx
-  , compaction
-  , (@@) -- matmul
-  , genStdBasis
-  , getMatrixRep
+  ( Shape,
+    LeftRightMultipliers,
+    lfun2mtcs,
+    tnsr2mtx,
+    compaction,
+    (@@), -- matmul
+    genStdBasis,
+    getMatrixRep,
   )
-  where
+where
 
-import Prelude hiding ((<>))
-import Types
-import Numeric.LinearAlgebra hiding ((|>))
 import Flow
 import Interpreter (interpret)
+import Numeric.LinearAlgebra hiding ((|>))
+import Types
+import Prelude hiding ((<>))
 
 type Shape = (Int, Int)
-type LeftRightMultipliers = ([Matrix RealNumber], [Matrix RealNumber])
 
+type LeftRightMultipliers = ([Matrix RealNumber], [Matrix RealNumber])
 
 {- MODULE DESCRIPTION
  - This module contains machinery for converting LFuns to matrices
@@ -55,16 +55,16 @@ tensor2reals _ = error "Called tensor2reals with something other than a tensor f
 
 tnsr2mtx :: Val -> Shape -> Matrix RealNumber
 -- Tensor must be of rank 2 to be trivially convertable to a matrix.
-tnsr2mtx (Tensor ts@(Tensor _:_)) _shp = matrix (length ts) (ts |> map tensor2reals |> concat)
+tnsr2mtx (Tensor ts@(Tensor _ : _)) _shp = matrix (length ts) (ts |> map tensor2reals |> concat)
 -- tnsr2mtx (SparseTensor ss@(SparseTensor kvs)) shp = tnsr2mtx (sparse2dense ss) shp
 tnsr2mtx _ _ = error "Called tnsr2mtx with something not a tensor of tensors of scalars"
 
 -- injects
 inl :: Matrix RealNumber -> [LeftRightMultipliers]
-inl l = [([l],[])]
+inl l = [([l], [])]
 
 inr :: Matrix RealNumber -> [LeftRightMultipliers]
-inr r = [([],[r])]
+inr r = [([], [r])]
 
 diagmtx :: RealNumber -> Int -> [LeftRightMultipliers]
 diagmtx s m = inl <| scale s <| ident m
@@ -72,36 +72,29 @@ diagmtx s m = inl <| scale s <| ident m
 lfun2mtcs :: LFun -> Shape -> [LeftRightMultipliers]
 {- Note that matmult with Id, KZero, Scale s and Neg are commutative, so it
  - does not matter which side we multiply from. -}
-lfun2mtcs Id        (m, _n) = diagmtx   1  m
-lfun2mtcs (Scale s) (m, _n) = diagmtx   s  m
-lfun2mtcs Neg       (m, _n) = diagmtx (-1) m
-lfun2mtcs KZero     (m, _n) = diagmtx   0  m
-
+lfun2mtcs Id (m, _n) = diagmtx 1 m
+lfun2mtcs (Scale s) (m, _n) = diagmtx s m
+lfun2mtcs Neg (m, _n) = diagmtx (-1) m
+lfun2mtcs KZero (m, _n) = diagmtx 0 m
 lfun2mtcs (LSec m bilop) shp =
   let multiplier = inl <| tnsr2mtx m shp
-  in case bilop of
-  Outer      -> undefined
-  MatrixMult -> multiplier
-  DotProd    -> multiplier
-
+   in case bilop of
+        Outer -> undefined
+        MatrixMult -> multiplier
+        DotProd -> multiplier
 lfun2mtcs (RSec bilop m) shp =
   let multiplier = inr <| tnsr2mtx m shp
-  in case bilop of
-  Outer      -> undefined
-  MatrixMult -> multiplier
-  DotProd    -> multiplier
-
+   in case bilop of
+        Outer -> undefined
+        MatrixMult -> multiplier
+        DotProd -> multiplier
 lfun2mtcs (Comp l r) shp =
-  let [(ll,lr)] = lfun2mtcs l shp
-      [(rl,rr)] = lfun2mtcs r shp
+  let [(ll, lr)] = lfun2mtcs l shp
+      [(rl, rr)] = lfun2mtcs r shp
    in [(ll ++ rl, lr ++ rr)]
-
 lfun2mtcs (Zip lfs) shp = concatMap (`lfun2mtcs` shp) lfs
-
 lfun2mtcs (LMap _lf) _shp = undefined -- Postponed.  Needs length operated on.
-
 lfun2mtcs (Para _fl _fr) _shp = undefined -- this requires a design for tuples.
-
 lfun2mtcs _ _ = undefined
 
 -- We can only reduce, when the matrix multiplication is on the same side.
@@ -113,21 +106,23 @@ compaction (lfns, rfns) (m, _n) =
   let fmm = foldr (@@) (ident m)
    in ([fmm lfns], [fmm rfns])
 
+s = Scalar
+
+t = Tensor
+
 genZero :: [Int] -> Val
 genZero [] = Scalar 0
-genZero (n:ns) = Tensor <| replicate n (genZero ns)
-
-s = Scalar
-t = Tensor
+genZero (n : ns) = Tensor <| replicate n (genZero ns)
 
 genStdBasis :: [Int] -> [Val]
 genStdBasis [] = [s 1]
 genStdBasis (n : ns) = do
   i <- [0 .. n - 1]
   v <- genStdBasis ns
-  return $ t $ replicate i (genZero ns) ++ [v] ++ replicate (n-i-1) (genZero ns)
-
-genBasis = genStdBasis
+  return <| Tensor
+    <| replicate i (genZero ns)
+    ++ [v]
+    ++ replicate (n - i - 1) (genZero ns)
 
 getMatrixRep :: LFun -> [Int] -> Val
 getMatrixRep lfun shp =
@@ -137,5 +132,4 @@ getMatrixRep lfun shp =
         Left _ -> undefined
         Right mtx -> Tensor mtx
 
-runMeRobert :: Val
-runMeRobert = getMatrixRep (Zip [Scale 42, Scale 2]) [2,2]
+genBasis = genStdBasis
