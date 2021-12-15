@@ -126,8 +126,8 @@ basicTests =
         , Pair (Scalar 1.0) (Scalar 1.0))
   , ("Id vector"
         , Id
-        , Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]
-        , Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0])
+        , Vector [Scalar 1.0, Scalar 2.0, Scalar 3.0]
+        , Vector [Scalar 1.0, Scalar 2.0, Scalar 3.0])
   , ("Comp id and scale"
         , Comp Id (Scale 7.0)
         , Scalar 10.0
@@ -138,8 +138,8 @@ basicTests =
         , Scalar (-140.0))
   , ("Comp scale scale scale on vector"
         , Comp  (Comp  (Scale 3.0) (Scale 7.0)) (Scale 8.0)
-        , Tensor [Scalar 1.0, Scalar 2.0]
-        , Tensor [Scalar 168.0, Scalar 336.0])
+        , Vector [Scalar 1.0, Scalar 2.0]
+        , Vector [Scalar 168.0, Scalar 336.0])
   , ("Para"
         , Comp  (Para  (Scale 3.0) (Scale 7.0)) Dup
         , Scalar 1.0
@@ -178,179 +178,179 @@ scaleTests =
         , Scalar 15.0)
   , ("Scale vector"
         , Scale 3.0
-        , Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]
-        , Tensor [Scalar 3.0, Scalar 6.0, Scalar 9.0])
+        , Vector [Scalar 1.0, Scalar 2.0, Scalar 3.0]
+        , Vector [Scalar 3.0, Scalar 6.0, Scalar 9.0])
   , ("Scale matrix"
         , Scale 3.0
-        , Tensor [ Tensor [Scalar 1.0, Scalar 2.0]
-                 , Tensor [Scalar 3.0, Scalar 4.0]]
-        , Tensor [ Tensor [Scalar 3.0, Scalar 6.0]
-                 , Tensor [Scalar 9.0, Scalar 12.0]])
-  , ("Scale R3 tensor"
+        , Vector [ Vector [Scalar 1.0, Scalar 2.0]
+                 , Vector [Scalar 3.0, Scalar 4.0]]
+        , Vector [ Vector [Scalar 3.0, Scalar 6.0]
+                 , Vector [Scalar 9.0, Scalar 12.0]])
+  , ("Scale R3 Vector"
         , Scale 3.0
-        , Tensor [ Tensor [ Tensor [Scalar 1.0, Scalar 2.0]
-                          , Tensor [Scalar 3.0, Scalar 4.0]]
-                 , Tensor [ Tensor [Scalar 5.0, Scalar 6.0]
-                          , Tensor [Scalar 7.0, Scalar 8.0]]]
-        , Tensor [ Tensor [ Tensor [Scalar 3.0, Scalar 6.0]
-                          , Tensor [Scalar 9.0, Scalar 12.0]]
-                 , Tensor [ Tensor [Scalar 15.0, Scalar 18.0]
-                          , Tensor [Scalar 21.0, Scalar 24.0]]])
+        , Vector [ Vector [ Vector [Scalar 1.0, Scalar 2.0]
+                          , Vector [Scalar 3.0, Scalar 4.0]]
+                 , Vector [ Vector [Scalar 5.0, Scalar 6.0]
+                          , Vector [Scalar 7.0, Scalar 8.0]]]
+        , Vector [ Vector [ Vector [Scalar 3.0, Scalar 6.0]
+                          , Vector [Scalar 9.0, Scalar 12.0]]
+                 , Vector [ Vector [Scalar 15.0, Scalar 18.0]
+                          , Vector [Scalar 21.0, Scalar 24.0]]])
   ]
 
 dotprodTests :: [([Char], LFun, Val, Val)]
 dotprodTests =
   [ ("[1,2,3] * [4,5,6] = 32"
-        , LSec (Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]) DotProd
-        , Tensor [Scalar 4.0, Scalar 5.0, Scalar 6.0]
+        , LSec (Vector [Scalar 1.0, Scalar 2.0, Scalar 3.0]) DotProd
+        , Vector [Scalar 4.0, Scalar 5.0, Scalar 6.0]
         , Scalar 32.0)
   ]
 
 vecmatTests :: [([Char], LFun, Val, Val)]
 vecmatTests =
-  [ ("LSec 3 * 2x3 -> 2"
-          , LSec (Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]) VecMatProd
-          , Tensor [ Tensor [Scalar 5.0, Scalar 6.0, Scalar 7.0]
-                   , Tensor [Scalar 7.0, Scalar 8.0, Scalar 8.0]]
-          , Tensor [Scalar 38.0, Scalar 47.0])
-  , ("RSec 3 * 2x3 -> 2"
-          , RSec VecMatProd (Tensor [ Tensor [Scalar 5.0, Scalar 6.0, Scalar 7.0]
-                                    , Tensor [Scalar 7.0, Scalar 8.0, Scalar 7.0]])
-          , Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]
-          , Tensor [Scalar 38.0, Scalar 44.0])
+  [ ("LSec 3x1 * 3x2 -> 1x2"
+          , LSec (mkT1 [1,2,3]) VecMatProd
+          , mkT2 [[1,2]
+                 ,[3,4]
+                 ,[5,6]]
+          , Vector [Scalar 22.0, Scalar 28.0])
+  , ("RSec 3x1 * 3x2 -> 2x1"
+          , RSec VecMatProd (Vector [ Vector [Scalar 1.0, Scalar 2.0]
+                                    , Vector [Scalar 3.0, Scalar 4.0]
+                                    , Vector [Scalar 5.0, Scalar 6.0]])
+          , Vector [Scalar 1.0, Scalar 2.0, Scalar 3.0]
+          , Vector [Scalar 22.0, Scalar 28.0])
   ]
 
 matvecTests :: [([Char], LFun, Val, Val)]
 matvecTests =
-  [ ("LSec 3x2 * 3 -> 2"
-          , LSec (Tensor [ Tensor [Scalar 5.0, Scalar 6.0]
-                         , Tensor [Scalar 5.0, Scalar 6.0]
-                         , Tensor [Scalar 7.0, Scalar 8.0]]) MatVecProd
-          , Tensor [ Scalar 1.0, Scalar 2.0, Scalar 2.0]
-          , Tensor [ Scalar 29.0, Scalar 34.0])
+  [ ("LSec 2x3 * 3 -> 2"
+          , LSec (Vector [ Vector [Scalar 1.0, Scalar 2.0, Scalar 3.0]
+                         , Vector [Scalar 4.0, Scalar 5.0, Scalar 6.0]]) MatVecProd
+          , Vector [ Scalar 1.0, Scalar 2.0, Scalar 2.0]
+          , Vector [ Scalar 11.0, Scalar 26.0])
   , ("RSec 3x2 * 3 -> 2"
-          , RSec MatVecProd (Tensor [Scalar 1.0, Scalar 2.0, Scalar 2.0])
-          ,  Tensor [ Tensor [Scalar 5.0, Scalar 6.0]
-                    , Tensor [Scalar 7.0, Scalar 8.0]
-                    , Tensor [Scalar 7.0, Scalar 8.0]]
-          , Tensor [Scalar 33.0, Scalar 38.0])
+          , RSec MatVecProd (Vector [Scalar 1.0, Scalar 2.0, Scalar 2.0])
+          , Vector [ Vector [Scalar 1.0, Scalar 2.0, Scalar 3.0]
+                   , Vector [Scalar 4.0, Scalar 5.0, Scalar 6.0]]
+          , Vector [Scalar 11.0, Scalar 26.0])
   ]
 
 matmulTests :: [([Char], LFun, Val, Val)]
 matmulTests =
   [ ("LSec 2x2 * 2x2 -> 2x2"
-          , LSec (Tensor [ Tensor [Scalar 1.0, Scalar 2.0]
-                         , Tensor [Scalar 3.0, Scalar 4.0]]) MatrixMult
-          , Tensor [ Tensor [Scalar 5.0, Scalar 6.0]
-                   , Tensor [Scalar 7.0, Scalar 8.0]]
-          , Tensor [ Tensor [Scalar 19.0, Scalar 22.0]
-                   , Tensor [Scalar 43.0, Scalar 50.0]])
+          , LSec (Vector [ Vector [Scalar 1.0, Scalar 2.0]
+                         , Vector [Scalar 3.0, Scalar 4.0]]) MatrixMult
+          , Vector [ Vector [Scalar 5.0, Scalar 6.0]
+                   , Vector [Scalar 7.0, Scalar 8.0]]
+          , Vector [ Vector [Scalar 19.0, Scalar 22.0]
+                   , Vector [Scalar 43.0, Scalar 50.0]])
   , ("LSec 2x3 * 3x2 -> 2x2"
-          , LSec (Tensor [ Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]
-                         , Tensor [Scalar 4.0, Scalar 5.0, Scalar 6.0]]) MatrixMult
-          , Tensor [ Tensor [Scalar 7.0, Scalar 8.0]
-                   , Tensor [Scalar 9.0, Scalar 10.0]
-                   , Tensor [Scalar 11.0, Scalar 12.0]]
-          , Tensor [ Tensor [Scalar 58.0, Scalar 64.0]
-                   , Tensor [Scalar 139.0, Scalar 154.0]])
+          , LSec (Vector [ Vector [Scalar 1.0, Scalar 2.0, Scalar 3.0]
+                         , Vector [Scalar 4.0, Scalar 5.0, Scalar 6.0]]) MatrixMult
+          , Vector [ Vector [Scalar 7.0, Scalar 8.0]
+                   , Vector [Scalar 9.0, Scalar 10.0]
+                   , Vector [Scalar 11.0, Scalar 12.0]]
+          , Vector [ Vector [Scalar 58.0, Scalar 64.0]
+                   , Vector [Scalar 139.0, Scalar 154.0]])
   , ("LSec 3x2 * 2x3 -> 3x3"
-          , LSec (Tensor [ Tensor [Scalar 7.0, Scalar 8.0]
-                         , Tensor [Scalar 9.0, Scalar 10.0]
-                         , Tensor [Scalar 11.0, Scalar 12.0]]) MatrixMult
-          , Tensor [ Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]
-                    , Tensor [Scalar 4.0, Scalar 5.0, Scalar 6.0]]
-          , Tensor [ Tensor [Scalar 39.0, Scalar 54.0, Scalar 69.0]
-                   , Tensor [Scalar 49.0, Scalar 68.0, Scalar 87.0]
-                   , Tensor [Scalar 59.0, Scalar 82.0, Scalar 105.0]])
+          , LSec (Vector [ Vector [Scalar 7.0, Scalar 8.0]
+                         , Vector [Scalar 9.0, Scalar 10.0]
+                         , Vector [Scalar 11.0, Scalar 12.0]]) MatrixMult
+          , Vector [ Vector [Scalar 1.0, Scalar 2.0, Scalar 3.0]
+                    , Vector [Scalar 4.0, Scalar 5.0, Scalar 6.0]]
+          , Vector [ Vector [Scalar 39.0, Scalar 54.0, Scalar 69.0]
+                   , Vector [Scalar 49.0, Scalar 68.0, Scalar 87.0]
+                   , Vector [Scalar 59.0, Scalar 82.0, Scalar 105.0]])
 
 
   , ("RSec 2x2 * 2x2 -> 2x2"
-          , RSec MatrixMult (Tensor [ Tensor [Scalar 1.0, Scalar 2.0]
-                         , Tensor [Scalar 3.0, Scalar 4.0]])
-          , Tensor [ Tensor [Scalar 5.0, Scalar 6.0]
-                   , Tensor [Scalar 7.0, Scalar 8.0]]
-          , Tensor [ Tensor [Scalar 23.0, Scalar 34.0]
-                   , Tensor [Scalar 31.0, Scalar 46.0]])
+          , RSec MatrixMult (Vector [ Vector [Scalar 1.0, Scalar 2.0]
+                         , Vector [Scalar 3.0, Scalar 4.0]])
+          , Vector [ Vector [Scalar 5.0, Scalar 6.0]
+                   , Vector [Scalar 7.0, Scalar 8.0]]
+          , Vector [ Vector [Scalar 23.0, Scalar 34.0]
+                   , Vector [Scalar 31.0, Scalar 46.0]])
   , ("RSec 2x3 * 3x2 -> 2x2"
-          , RSec MatrixMult (Tensor [ Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]
-                         , Tensor [Scalar 4.0, Scalar 5.0, Scalar 6.0]])
-          , Tensor [ Tensor [Scalar 7.0, Scalar 8.0]
-                   , Tensor [Scalar 9.0, Scalar 10.0]
-                   , Tensor [Scalar 11.0, Scalar 12.0]]
-          , Tensor [ Tensor [Scalar 39.0, Scalar 54.0, Scalar 69.0]
-                   , Tensor [Scalar 49.0, Scalar 68.0, Scalar 87.0]
-                   , Tensor [Scalar 59.0, Scalar 82.0, Scalar 105.0]])
+          , RSec MatrixMult (Vector [ Vector [Scalar 1.0, Scalar 2.0, Scalar 3.0]
+                         , Vector [Scalar 4.0, Scalar 5.0, Scalar 6.0]])
+          , Vector [ Vector [Scalar 7.0, Scalar 8.0]
+                   , Vector [Scalar 9.0, Scalar 10.0]
+                   , Vector [Scalar 11.0, Scalar 12.0]]
+          , Vector [ Vector [Scalar 39.0, Scalar 54.0, Scalar 69.0]
+                   , Vector [Scalar 49.0, Scalar 68.0, Scalar 87.0]
+                   , Vector [Scalar 59.0, Scalar 82.0, Scalar 105.0]])
   , ("RSec 3x2 * 2x3 -> 3x3"
-          , RSec MatrixMult (Tensor [ Tensor [Scalar 7.0, Scalar 8.0]
-                         , Tensor [Scalar 9.0, Scalar 10.0]
-                         , Tensor [Scalar 11.0, Scalar 12.0]])
-          , Tensor [ Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]
-                   , Tensor [Scalar 4.0, Scalar 5.0, Scalar 6.0]]
-          , Tensor [ Tensor [Scalar 58.0, Scalar 64.0]
-                   , Tensor [Scalar 139.0, Scalar 154.0]])
+          , RSec MatrixMult (Vector [ Vector [Scalar 7.0, Scalar 8.0]
+                         , Vector [Scalar 9.0, Scalar 10.0]
+                         , Vector [Scalar 11.0, Scalar 12.0]])
+          , Vector [ Vector [Scalar 1.0, Scalar 2.0, Scalar 3.0]
+                   , Vector [Scalar 4.0, Scalar 5.0, Scalar 6.0]]
+          , Vector [ Vector [Scalar 58.0, Scalar 64.0]
+                   , Vector [Scalar 139.0, Scalar 154.0]])
   ]
 
 
 outerTests :: [([Char], LFun, Val, Val)]
 outerTests =
   [ ("1 {outer product} 1 -> 2"
-          , LSec (Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]) Outer
-          , Tensor [Scalar 5.0, Scalar 2.0, Scalar 3.0]
-          , Tensor [ Tensor [Scalar 5.0, Scalar 2.0, Scalar 3.0]
-                   , Tensor [Scalar 10.0, Scalar 4.0, Scalar 6.0]
-                   , Tensor [Scalar 15.0, Scalar 6.0, Scalar 9.0]])
+          , LSec (Vector [Scalar 1.0, Scalar 2.0, Scalar 3.0]) Outer
+          , Vector [Scalar 5.0, Scalar 2.0, Scalar 3.0]
+          , Vector [ Vector [Scalar 5.0, Scalar 2.0, Scalar 3.0]
+                   , Vector [Scalar 10.0, Scalar 4.0, Scalar 6.0]
+                   , Vector [Scalar 15.0, Scalar 6.0, Scalar 9.0]])
   ,  ("2 {outer product} 1 -> 2"
-          , LSec (Tensor [Scalar 1.0, Scalar 2.0]) Outer
+          , LSec (Vector [Scalar 1.0, Scalar 2.0]) Outer
           , Scalar 3.0
-          , Tensor [Scalar 3.0, Scalar 6.0])
+          , Vector [Scalar 3.0, Scalar 6.0])
   , ("1 {outer product} 2 -> 2"
           , LSec (Scalar 2.0) Outer
-          , Tensor [Scalar 2.0, Scalar 3.0]
-          , Tensor [Scalar 4.0, Scalar 6.0])
+          , Vector [Scalar 2.0, Scalar 3.0]
+          , Vector [Scalar 4.0, Scalar 6.0])
   , ("2 {outer product} 2 -> 2x3"
-          , LSec (Tensor [Scalar 2.0, Scalar 3.0]) Outer
-          , Tensor [Scalar 4.0, Scalar 5.0]
-          , Tensor [ Tensor [Scalar 8.0, Scalar 10.0]
-                   , Tensor [Scalar 12.0, Scalar 15.0]])
+          , LSec (Vector [Scalar 2.0, Scalar 3.0]) Outer
+          , Vector [Scalar 4.0, Scalar 5.0]
+          , Vector [ Vector [Scalar 8.0, Scalar 10.0]
+                   , Vector [Scalar 12.0, Scalar 15.0]])
   , ("2 {outer product} 3 -> 2x3"
-          , LSec (Tensor [Scalar 2.0, Scalar 3.0]) Outer
-          , Tensor [Scalar 4.0, Scalar 5.0, Scalar 6.0]
-          , Tensor [ Tensor [Scalar 8.0, Scalar 10.0, Scalar 12.0]
-                   , Tensor [Scalar 12.0, Scalar 15.0, Scalar 18.0]])
+          , LSec (Vector [Scalar 2.0, Scalar 3.0]) Outer
+          , Vector [Scalar 4.0, Scalar 5.0, Scalar 6.0]
+          , Vector [ Vector [Scalar 8.0, Scalar 10.0, Scalar 12.0]
+                   , Vector [Scalar 12.0, Scalar 15.0, Scalar 18.0]])
   , ("3 {outer product} 2 -> 3x2"
-          , RSec Outer (Tensor [Scalar 2.0, Scalar 3.0])
-          , Tensor [Scalar 4.0, Scalar 5.0, Scalar 6.0]
-          , Tensor [ Tensor [Scalar 8.0, Scalar 12.0]
-                   , Tensor [Scalar 10.0, Scalar 15.0]
-                   , Tensor [Scalar 12.0, Scalar 18.0]])
+          , RSec Outer (Vector [Scalar 2.0, Scalar 3.0])
+          , Vector [Scalar 4.0, Scalar 5.0, Scalar 6.0]
+          , Vector [ Vector [Scalar 8.0, Scalar 12.0]
+                   , Vector [Scalar 10.0, Scalar 15.0]
+                   , Vector [Scalar 12.0, Scalar 18.0]])
  , ("3 * 3x3 -> 3x3x3"
-          , LSec (Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]) Outer
-          , Tensor [ Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]
-                   , Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]
-                   , Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]]
-          , Tensor [ Tensor [ Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]
-                            , Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]
-                            , Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]]
-                   , Tensor [ Tensor [Scalar 2.0, Scalar 4.0, Scalar 6.0]
-                            , Tensor [Scalar 2.0, Scalar 4.0, Scalar 6.0]
-                            , Tensor [Scalar 2.0, Scalar 4.0, Scalar 6.0]]
-                   , Tensor [ Tensor [Scalar 3.0, Scalar 6.0, Scalar 9.0]
-                            , Tensor [Scalar 3.0, Scalar 6.0, Scalar 9.0]
-                            , Tensor [Scalar 3.0, Scalar 6.0, Scalar 9.0]]])
+          , LSec (Vector [Scalar 1.0, Scalar 2.0, Scalar 3.0]) Outer
+          , Vector [ Vector [Scalar 1.0, Scalar 2.0, Scalar 3.0]
+                   , Vector [Scalar 1.0, Scalar 2.0, Scalar 3.0]
+                   , Vector [Scalar 1.0, Scalar 2.0, Scalar 3.0]]
+          , Vector [ Vector [ Vector [Scalar 1.0, Scalar 2.0, Scalar 3.0]
+                            , Vector [Scalar 1.0, Scalar 2.0, Scalar 3.0]
+                            , Vector [Scalar 1.0, Scalar 2.0, Scalar 3.0]]
+                   , Vector [ Vector [Scalar 2.0, Scalar 4.0, Scalar 6.0]
+                            , Vector [Scalar 2.0, Scalar 4.0, Scalar 6.0]
+                            , Vector [Scalar 2.0, Scalar 4.0, Scalar 6.0]]
+                   , Vector [ Vector [Scalar 3.0, Scalar 6.0, Scalar 9.0]
+                            , Vector [Scalar 3.0, Scalar 6.0, Scalar 9.0]
+                            , Vector [Scalar 3.0, Scalar 6.0, Scalar 9.0]]])
   , ("3x3 * 3 -> 3x3x3"
-          , LSec (Tensor [ Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]
-                         , Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]
-                         , Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]]) Outer
-          , Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]
-          , Tensor [ Tensor [ Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]
-                            , Tensor [Scalar 2.0, Scalar 4.0, Scalar 6.0]
-                            , Tensor [Scalar 3.0, Scalar 6.0, Scalar 9.0]]
-                   , Tensor [ Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]
-                            , Tensor [Scalar 2.0, Scalar 4.0, Scalar 6.0]
-                            , Tensor [Scalar 3.0, Scalar 6.0, Scalar 9.0]]
-                   , Tensor [ Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]
-                            , Tensor [Scalar 2.0, Scalar 4.0, Scalar 6.0]
-                            , Tensor [Scalar 3.0, Scalar 6.0, Scalar 9.0]]])
+          , LSec (Vector [ Vector [Scalar 1.0, Scalar 2.0, Scalar 3.0]
+                         , Vector [Scalar 1.0, Scalar 2.0, Scalar 3.0]
+                         , Vector [Scalar 1.0, Scalar 2.0, Scalar 3.0]]) Outer
+          , Vector [Scalar 1.0, Scalar 2.0, Scalar 3.0]
+          , Vector [ Vector [ Vector [Scalar 1.0, Scalar 2.0, Scalar 3.0]
+                            , Vector [Scalar 2.0, Scalar 4.0, Scalar 6.0]
+                            , Vector [Scalar 3.0, Scalar 6.0, Scalar 9.0]]
+                   , Vector [ Vector [Scalar 1.0, Scalar 2.0, Scalar 3.0]
+                            , Vector [Scalar 2.0, Scalar 4.0, Scalar 6.0]
+                            , Vector [Scalar 3.0, Scalar 6.0, Scalar 9.0]]
+                   , Vector [ Vector [Scalar 1.0, Scalar 2.0, Scalar 3.0]
+                            , Vector [Scalar 2.0, Scalar 4.0, Scalar 6.0]
+                            , Vector [Scalar 3.0, Scalar 6.0, Scalar 9.0]]])
   ]
 
 lplusTests :: [([Char], LFun, Val, Val)]
@@ -361,8 +361,8 @@ lplusTests =
         , Scalar 10.0)
   , ("lplus_1"
         , Lplus  (Scale 3.0) (Scale 7.0)
-        , Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]
-        , Tensor [Scalar 10.0, Scalar 20.0, Scalar 30.0])
+        , Vector [Scalar 1.0, Scalar 2.0, Scalar 3.0]
+        , Vector [Scalar 10.0, Scalar 20.0, Scalar 30.0])
   ]
 
 negTests :: [([Char], LFun, Val, Val)]
@@ -375,46 +375,46 @@ negTests =
         , Neg
         , Scalar (-5.0)
         , Scalar 5.0)
-  , ("Neg dense tensor"
+  , ("Neg dense Vector"
         , Neg
-        , Tensor [Tensor [Scalar 8.0, Scalar 12.0], Tensor [Scalar 10.0, Scalar 15.0], Tensor [Scalar 12.0, Scalar 18.0]]
-        , Tensor [Tensor [Scalar (-8.0), Scalar (-12.0)], Tensor [Scalar (-10.0), Scalar (-15.0)], Tensor [Scalar (-12.0), Scalar (-18.0)]])
+        , Vector [Vector [Scalar 8.0, Scalar 12.0], Vector [Scalar 10.0, Scalar 15.0], Vector [Scalar 12.0, Scalar 18.0]]
+        , Vector [Vector [Scalar (-8.0), Scalar (-12.0)], Vector [Scalar (-10.0), Scalar (-15.0)], Vector [Scalar (-12.0), Scalar (-18.0)]])
   ]
 
 lmapTests :: [([Char], LFun, Val, Val)]
 lmapTests =
   [ ("LMap: map to zero"
           , LMap KZero
-          , Tensor [Scalar (-1), Scalar 1, Scalar 2, Scalar 3]
-          , Tensor [Scalar (-0), Scalar 0, Scalar 0, Scalar 0])
+          , Vector [Scalar (-1), Scalar 1, Scalar 2, Scalar 3]
+          , Vector [Scalar (-0), Scalar 0, Scalar 0, Scalar 0])
   ]
 
 zipTests :: [([Char], LFun, Val, Val)]
 zipTests =
   [ ("Zip: simple Scales"
           , Zip [Scale 2, Scale 3, Scale 4, Scale 6]
-          , Tensor [Scalar (-1), Scalar 1,Scalar 2,Scalar 3]
-          , Tensor [Scalar (-2), Scalar 3,Scalar 8, Scalar 18])
+          , Vector [Scalar (-1), Scalar 1,Scalar 2,Scalar 3]
+          , Vector [Scalar (-2), Scalar 3,Scalar 8, Scalar 18])
   , ("Zip: dot products"
-          , Zip [LSec (Tensor [Scalar 1.0, Scalar 2.0, Scalar 3.0]) DotProd, LSec (Tensor [Scalar 4.0, Scalar 5.0, Scalar 6.0]) DotProd, LSec (Tensor [Scalar 7.0, Scalar 8.0, Scalar 9.0]) DotProd]
-          , Tensor [Tensor [Scalar 10, Scalar 11, Scalar 12], Tensor [Scalar 13, Scalar 14, Scalar 15], Tensor [Scalar 16, Scalar 17, Scalar 18]]
-          , Tensor [Scalar 68, Scalar 212, Scalar 410])
+          , Zip [LSec (Vector [Scalar 1.0, Scalar 2.0, Scalar 3.0]) DotProd, LSec (Vector [Scalar 4.0, Scalar 5.0, Scalar 6.0]) DotProd, LSec (Vector [Scalar 7.0, Scalar 8.0, Scalar 9.0]) DotProd]
+          , Vector [Vector [Scalar 10, Scalar 11, Scalar 12], Vector [Scalar 13, Scalar 14, Scalar 15], Vector [Scalar 16, Scalar 17, Scalar 18]]
+          , Vector [Scalar 68, Scalar 212, Scalar 410])
   , ("Zip: dup"
           , Zip [Dup, Dup, Dup]
-          , Tensor [Scalar (-1), Scalar 1,Scalar 3]
-          , Tensor [Pair (Scalar (-1)) (Scalar (-1)), Pair (Scalar 1) (Scalar 1),Pair (Scalar 3) (Scalar 3)])
+          , Vector [Scalar (-1), Scalar 1,Scalar 3]
+          , Vector [Pair (Scalar (-1)) (Scalar (-1)), Pair (Scalar 1) (Scalar 1),Pair (Scalar 3) (Scalar 3)])
   , ("Zip: comp add dup"
           , Zip [Comp Add Dup, Comp Add Dup, Comp Add Dup]
-          , Tensor [Scalar (-1), Scalar 1,Scalar 3]
-          , Tensor [Scalar (-2), Scalar 2, Scalar 6])
+          , Vector [Scalar (-1), Scalar 1,Scalar 3]
+          , Vector [Scalar (-2), Scalar 2, Scalar 6])
   , ("Zip: comp dup scale"
           , Zip [Comp Dup (Scale 2), Comp Dup (Scale 2), Comp Dup (Scale 2)]
-          , Tensor [Scalar (-1), Scalar 1,Scalar 3]
-          , Tensor [Pair (Scalar (-2)) (Scalar (-2)), Pair (Scalar 2) (Scalar 2),Pair (Scalar 6) (Scalar 6)])
+          , Vector [Scalar (-1), Scalar 1,Scalar 3]
+          , Vector [Pair (Scalar (-2)) (Scalar (-2)), Pair (Scalar 2) (Scalar 2),Pair (Scalar 6) (Scalar 6)])
   , ("Para: Zip scale Zip scale"
           , Para (Zip [Scale 1, Scale 3,Scale 3]) (Zip [Scale 2,Scale 4, Scale 4])
-          , Pair (Tensor [Scalar (-1), Scalar 5, Scalar 7]) (Tensor [Scalar (-2), Scalar 6, Scalar 8])
-          , Pair (Tensor [Scalar (-1), Scalar 15, Scalar 21]) (Tensor [Scalar (-4), Scalar 24, Scalar 32]))
+          , Pair (Vector [Scalar (-1), Scalar 5, Scalar 7]) (Vector [Scalar (-2), Scalar 6, Scalar 8])
+          , Pair (Vector [Scalar (-1), Scalar 15, Scalar 21]) (Vector [Scalar (-4), Scalar 24, Scalar 32]))
   ]
 
 addTests :: [(String, LFun, Val, Val)]
@@ -434,10 +434,10 @@ addTests =
     ,  Pair (Scalar 3) (Scalar 5)
     ,  Scalar 8
     )
-  , ("Add: dense tensor and dense tensor"
+  , ("Add: dense Vector and dense Vector"
     ,  Add
-    ,  Pair (Tensor [Scalar 2, Scalar 3, Scalar 5]) (Tensor [Scalar 13, Scalar 7, Scalar 11])
-    ,  Tensor [Scalar 15, Scalar 10, Scalar 16]
+    ,  Pair (Vector [Scalar 2, Scalar 3, Scalar 5]) (Vector [Scalar 13, Scalar 7, Scalar 11])
+    ,  Vector [Scalar 15, Scalar 10, Scalar 16]
     )
   ]
 

@@ -1,0 +1,17 @@
+open import "lmaplib"
+
+let fun1 = (uncurry (flip inner_2_1))
+let fun2 = (uncurry inner_2_1)
+let fun3 = (constPassingPara fun2 fun1)
+let fun4 = (ignoreDummyVal add_1_1)
+let fun5 = (constPassingComp fun4 fun3)
+let fun6 = (ignoreDummyVal id)
+let fun7 = (constPassingPara fun6 fun5)
+let fun8 = (ignoreDummyVal add_1_1)
+let fun9 = (constPassingComp fun8 fun7)
+let fun10 = (uncurry outer_0_0)
+let fun11 = (constPassingMap2 fun10)
+let fun12 = (constPassingComp fun11 fun9)
+let fun13 = (uncurry lossFunction_1_1)
+let fun14 = (constPassingComp fun13 fun12)
+entry main (arg1: []f32) (arg2: []f32) (arg3: [][]f32) = fun14 (([2.0f32, 2.0f32], ([0.41997434161402614f32, 7.065082485316443e-2f32], (f32.nan, (f32.nan, (f32.nan, ([[2.0f32, 2.0f32], [2.0f32, 2.0f32]], [2.0f32, 2.0f32])))))), (arg1, (arg2, arg3)))

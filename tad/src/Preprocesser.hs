@@ -7,36 +7,29 @@ optimize lf = let lf2 = optimizeRun lf in
 
 optimizeRun :: LFun -> LFun
 optimizeRun lf = case lf of
-
   -- id simp
   Comp x Id -> optimizeRun x
   Comp Id x -> optimizeRun x
   Para Id Id -> Id
-
   -- restructuring comps
     -- make comp-trees flat and weighed to the right
     -- have as few Para as possible by combining them
       -- this way, we as few rules as possible
   Comp (Comp x y) z -> optimizeRun $ Comp x $ Comp y z
-
   Comp (Para x y) (Para a b) -> optimizeRun $ Para (Comp x a) (Comp y b)
   Comp (Para x y) (Comp (Para a b) c) -> optimizeRun $ Comp (Para (Comp x a) (Comp y b)) c
-
-
   -- combining operations
-
   -- Two scalar operations are the same as one
   Comp (Scale r1) (Scale r2) -> Scale $ r1*r2
   Comp (Scale r1) (Comp (Scale r2) x) -> optimizeRun $ Comp (Scale $ r1*r2) x
-
   -- otherwise ~
   Comp x y -> Comp (optimizeRun x) (optimizeRun y)
   Para x y -> Para (optimizeRun x) (optimizeRun y)
-
+  LMap x -> LMap (optimizeRun x)
+  Zip xs -> Zip (map optimizeRun xs)
   -- leaves
   Lplus _ _ -> error "LPlus should be desugared!"
   Prj _ _ -> error "Projection should be desugared"
-
   Id -> lf
   Dup -> lf
   KZero -> lf
@@ -47,79 +40,51 @@ optimizeRun lf = case lf of
   Snd -> lf
   Red _ -> lf
   Add -> lf
-  LMap _ -> lf
-  Zip _ -> lf
   Neg -> lf
-
-
-caramelizeVal :: Val -> Val
-caramelizeVal v = case v of
-  _ -> v
 
 caramelizeLFun :: LFun -> LFun
 caramelizeLFun sfl = case sfl of
+  KZero         -> LSec (Scalar 0.0) Outer
+  Scale r       -> LSec (Scalar r) Outer
+  Para sf2 sf1  -> Para (caramelizeLFun sf2) (caramelizeLFun sf1)
+  Comp sf2 sf1  -> Comp (caramelizeLFun sf2) (caramelizeLFun sf1)
+  LMap sf1      -> LMap $ caramelizeLFun sf1
+  Zip sfs       -> Zip $ map caramelizeLFun sfs
+  Lplus sf2 sf1 -> Comp (Comp Add (Para (caramelizeLFun sf2) (caramelizeLFun sf1))) Dup
+  Prj 2 1       -> Fst
+  Prj 2 2       -> Snd
+  Prj _ _       -> error "Failed to desugar invalid projection"
   Id            -> sfl
   Dup           -> sfl
   Neg           -> sfl
-  KZero         -> LSec (Scalar 0.0) Outer
-  Scale rn      -> LSec (Scalar rn) Outer
   LSec _ _      -> sfl
   RSec _ _      -> sfl
-  Para sf2 sf1  -> Para (caramelizeLFun sf2) (caramelizeLFun sf1)
-  Comp sf2 sf1  -> Comp (caramelizeLFun sf2) (caramelizeLFun sf1)
-  Prj 2 1       -> Fst
-  Prj 2 2       -> Snd
-  Prj _ _       -> error "invalid projection attempted desugar"
-  Lplus sf2 sf1 -> Comp (Comp Add (Para (caramelizeLFun sf2) (caramelizeLFun sf1))) Dup
   Red _         -> sfl
   Add           -> sfl
   Fst           -> sfl
   Snd           -> sfl
-  LMap sf1      -> LMap $ caramelizeLFun sf1
-  Zip sfs       -> Zip $ map caramelizeLFun sfs
 
+caramelizeVal :: Val -> Val
+caramelizeVal v = v -- restructuring values is possible - future work. We might allow Vectors of pairs to be sugar for pairs of Vectors.
 
 {- maybe TODO, if we desugar inner paras in zips
 caramelizeValbak :: Val -> Val
 caramelizeValbak v1 = case v1 of
   -- recursive case - list of >=1 elements
-  Tensor ((Pair v3 v2):t@(_:_)) ->
-    let (Pair (Tensor ls3) (Tensor ls2)) = caramelizeVal $ Tensor t
-    in Pair (Tensor $ (caramelizeVal v3):ls3) (Tensor $ (caramelizeVal v2):ls2)
+  Vector ((Pair v3 v2):t@(_:_)) ->
+    let (Pair (Vector ls3) (Vector ls2)) = caramelizeVal $ Vector t
+    in Pair (Vector $ (caramelizeVal v3):ls3) (Vector $ (caramelizeVal v2):ls2)
 
   -- base case - list of single element
-  Tensor ((Pair v3 v2):_) -> Pair (Tensor [caramelizeVal v3]) (Tensor [caramelizeVal v2])
+  Vector ((Pair v3 v2):_) -> Pair (Vector [caramelizeVal v3]) (Vector [caramelizeVal v2])
 
-  Tensor ls -> Tensor $ map caramelizeVal ls
+  Vector ls -> Vector $ map caramelizeVal ls
   Pair v3 v2 -> Pair (caramelizeVal v3) (caramelizeVal v2)
   Scalar _ -> v1
   Zero     -> v1
-
-caramelizeLFunbak :: LFun -> LFun
-caramelizeLFunbak sfl = case sfl of
-  Id            -> sfl
-  Dup           -> sfl
-  Neg           -> sfl
-  KZero         -> LSec (Scalar 0.0) Outer
-  Scale rn      -> LSec (Scalar rn) Outer
-  LSec _ _      -> sfl
-  RSec _ _      -> sfl
-  Para sf2 sf1  -> Para (caramelizeLFun sf2) (caramelizeLFun sf1)
-  Comp sf2 sf1  -> Comp (caramelizeLFun sf2) (caramelizeLFun sf1)
-  Prj 2 1       -> Fst
-  Prj 2 2       -> Snd
-  Prj _ _       -> error "invalid projection attempted desugar"
-  Lplus sf2 sf1 -> Comp (Comp Add (Para (caramelizeLFun sf2) (caramelizeLFun sf1))) Dup
-  Red _         -> sfl
-  Add           -> sfl
-  Fst           -> sfl
-  Snd           -> sfl
-  LMap sf1      -> LMap $ caramelizeLFun sf1
-  Zip ls@(h:t@(_:_)) -> Zip $ map caramelizeLFun sfs
-  Zip ls@(h:_) -> Zip $ map caramelizeLFun sfs
 -}
 
-data LFunP -- expr
+data LFunP
   = IdP
   | DupP
   | FstP
@@ -153,10 +118,8 @@ extractLFunConsts lf = case lf of
   Comp lf3 lf2  -> let (lf2i, v2) = extractLFunConsts lf2 in
                    let (lf3i, v3) = extractLFunConsts lf3 in
                    (CompP lf3i lf2i, (Pair v3 v2))
-                   -- assumes that the lfsis are identical
-                   -- TODO: assert it!
   Zip lfs       -> let ((h:_), vis) = unzip $ map extractLFunConsts lfs in
-                   (ZipP h, Tensor vis) -- HACK: doesnt keep tensor constraints
+                   (ZipP h, Vector vis) -- HACK: doesnt keep Vector constraints
 
   Prj _ _       -> error "Proj should be desugared"
   Lplus _ _     -> error "LPlus should be desugared"

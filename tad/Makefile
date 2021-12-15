@@ -19,6 +19,9 @@ test:
 tags:
 	hasktags .
 
+clean:
+	rm -rf build/*
+
 t: test
 
 e: tags

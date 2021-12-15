@@ -33,49 +33,49 @@ not _ name vin vout shp =
 
 
 a :: Val
-a = Tensor [ Tensor [Scalar 0, Scalar 1]
-           , Tensor [Scalar 2, Scalar 3]
+a = Vector [ Vector [Scalar 0, Scalar 1]
+           , Vector [Scalar 2, Scalar 3]
            ]
 
 b :: Val
-b = Tensor [ Tensor [Scalar 2, Scalar 3]
-           , Tensor [Scalar 5, Scalar 7]
+b = Vector [ Vector [Scalar 2, Scalar 3]
+           , Vector [Scalar 5, Scalar 7]
            ]
 
 c :: Val
-c = Tensor [ Tensor [Scalar 23, Scalar 31]
-           , Tensor [Scalar 57, Scalar 74]
+c = Vector [ Vector [Scalar 23, Scalar 31]
+           , Vector [Scalar 57, Scalar 74]
            ]
 
 -- Hand calculation:
 ab :: Val
-ab = Tensor [ Tensor [Scalar  5, Scalar  7]
-            , Tensor [Scalar 19, Scalar 27]
+ab = Vector [ Vector [Scalar  5, Scalar  7]
+            , Vector [Scalar 19, Scalar 27]
             ]
 
 ba :: Val
-ba = Tensor [ Tensor [Scalar  5, Scalar  7]
-            , Tensor [Scalar 19, Scalar 27]
+ba = Vector [ Vector [Scalar  5, Scalar  7]
+            , Vector [Scalar 19, Scalar 27]
             ]
 
 neye :: Val
-neye = Tensor [ Tensor [Scalar (-1), Scalar 0   ]
-              , Tensor [Scalar 0,    Scalar (-1)]
+neye = Vector [ Vector [Scalar (-1), Scalar 0   ]
+              , Vector [Scalar 0,    Scalar (-1)]
               ]
 
 eye :: Val
-eye = Tensor [ Tensor [Scalar 1, Scalar 0]
-             , Tensor [Scalar 0, Scalar 1]
+eye = Vector [ Vector [Scalar 1, Scalar 0]
+             , Vector [Scalar 0, Scalar 1]
              ]
 
 diag818 :: Val
-diag818 = Tensor [ Tensor [Scalar 818, Scalar 0]
-                 , Tensor [Scalar 0, Scalar 818]
+diag818 = Vector [ Vector [Scalar 818, Scalar 0]
+                 , Vector [Scalar 0, Scalar 818]
                  ]
 
 zero :: Val
-zero = Tensor [ Tensor [Scalar 0, Scalar 0]
-              , Tensor [Scalar 0, Scalar 0]
+zero = Vector [ Vector [Scalar 0, Scalar 0]
+              , Vector [Scalar 0, Scalar 0]
               ]
 
 shp2x2 :: (Int, Int)
@@ -164,49 +164,49 @@ genStdBasisTests =
   testGroup "genStdBasis"
     [ goodBasisTests "genStdBasis [2]"
       (genStdBasis [2])
-      [ Tensor [Scalar 1.0, Scalar 0.0]
-             , Tensor [Scalar 0.0, Scalar 1.0]
+      [ Vector [Scalar 1.0, Scalar 0.0]
+             , Vector [Scalar 0.0, Scalar 1.0]
              ]
     , goodBasisTests "genStdBasis [2,2]"
       (genStdBasis [2,2])
-      [ Tensor [ Tensor [Scalar 1.0, Scalar 0.0]
-                      , Tensor [Scalar 0.0, Scalar 0.0]
+      [ Vector [ Vector [Scalar 1.0, Scalar 0.0]
+                      , Vector [Scalar 0.0, Scalar 0.0]
              ]
-             , Tensor [ Tensor [Scalar 0.0, Scalar 1.0]
-                      , Tensor [Scalar 0.0, Scalar 0.0]
+             , Vector [ Vector [Scalar 0.0, Scalar 1.0]
+                      , Vector [Scalar 0.0, Scalar 0.0]
              ]
-             , Tensor [ Tensor [Scalar 0.0, Scalar 0.0]
-                      , Tensor [Scalar 1.0, Scalar 0.0]
+             , Vector [ Vector [Scalar 0.0, Scalar 0.0]
+                      , Vector [Scalar 1.0, Scalar 0.0]
              ]
-             , Tensor [ Tensor [Scalar 0.0, Scalar 0.0]
-                      , Tensor [Scalar 0.0, Scalar 1.0]
+             , Vector [ Vector [Scalar 0.0, Scalar 0.0]
+                      , Vector [Scalar 0.0, Scalar 1.0]
              ]
       ]
     , goodBasisTests "genStdBasis [3,2]"
       (genStdBasis [3,2])
-       [Tensor [ Tensor [Scalar 1.0, Scalar 0.0]
-              ,Tensor [Scalar 0.0, Scalar 0.0]
-              ,Tensor [Scalar 0.0, Scalar 0.0]
+       [Vector [ Vector [Scalar 1.0, Scalar 0.0]
+              ,Vector [Scalar 0.0, Scalar 0.0]
+              ,Vector [Scalar 0.0, Scalar 0.0]
               ]
-              ,Tensor [Tensor [Scalar 0.0, Scalar 1.0]
-              ,Tensor [Scalar 0.0, Scalar 0.0]
-              ,Tensor [Scalar 0.0, Scalar 0.0]
+              ,Vector [Vector [Scalar 0.0, Scalar 1.0]
+              ,Vector [Scalar 0.0, Scalar 0.0]
+              ,Vector [Scalar 0.0, Scalar 0.0]
               ]
-              ,Tensor [Tensor [Scalar 0.0, Scalar 0.0]
-              ,Tensor [Scalar 1.0, Scalar 0.0]
-              ,Tensor [Scalar 0.0, Scalar 0.0]
+              ,Vector [Vector [Scalar 0.0, Scalar 0.0]
+              ,Vector [Scalar 1.0, Scalar 0.0]
+              ,Vector [Scalar 0.0, Scalar 0.0]
               ]
-              ,Tensor [Tensor [Scalar 0.0, Scalar 0.0]
-              ,Tensor [Scalar 0.0, Scalar 1.0]
-              ,Tensor [Scalar 0.0, Scalar 0.0]
+              ,Vector [Vector [Scalar 0.0, Scalar 0.0]
+              ,Vector [Scalar 0.0, Scalar 1.0]
+              ,Vector [Scalar 0.0, Scalar 0.0]
               ]
-              ,Tensor [Tensor [Scalar 0.0, Scalar 0.0]
-              ,Tensor [Scalar 0.0, Scalar 0.0]
-              ,Tensor [Scalar 1.0, Scalar 0.0]
+              ,Vector [Vector [Scalar 0.0, Scalar 0.0]
+              ,Vector [Scalar 0.0, Scalar 0.0]
+              ,Vector [Scalar 1.0, Scalar 0.0]
               ]
-              ,Tensor [Tensor [Scalar 0.0, Scalar 0.0]
-              ,Tensor [Scalar 0.0, Scalar 0.0]
-              ,Tensor [Scalar 0.0, Scalar 1.0]
+              ,Vector [Vector [Scalar 0.0, Scalar 0.0]
+              ,Vector [Scalar 0.0, Scalar 0.0]
+              ,Vector [Scalar 0.0, Scalar 1.0]
               ]
       ]
     ]

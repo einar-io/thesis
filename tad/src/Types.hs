@@ -17,9 +17,9 @@ data Val
   = Scalar RealNumber
   | Zero
   | Dummy
-  | Tensor [Val] -- Vector [Val]
+  | Vector [Val] -- Vector [Val]
   | Pair Val Val
-  | SparseTensor [(Index, Val)]
+  | SparseVector [(Index, Val)]
   deriving
     ( Eq
     , Generic
@@ -28,18 +28,18 @@ data Val
 
 instance Num Val where
  (Scalar n1) + (Scalar n2) = Scalar (n1 + n2)
- (Tensor vs1) + (Tensor vs2) = Tensor (zipWith (+) vs1 vs2)
+ (Vector vs1) + (Vector vs2) = Vector (zipWith (+) vs1 vs2)
  Zero + v = v
  v + Zero = v
  _ + _ = undefined
  (Scalar n1) * (Scalar n2) = Scalar (n1 * n2)
- (Tensor vs1) * (Tensor vs2) = Tensor (zipWith (*) vs1 vs2)
+ (Vector vs1) * (Vector vs2) = Vector (zipWith (*) vs1 vs2)
  Zero * _ = Zero
  _ * Zero = Zero
  _ * _ = undefined
  negate (Scalar n) = Scalar (-n)
- negate (Tensor vs) = Tensor (map negate vs)
- negate (SparseTensor pivs) = SparseTensor $ map (\(idx, v) -> (idx, negate v)) pivs
+ negate (Vector vs) = Vector (map negate vs)
+ negate (SparseVector pivs) = SparseVector $ map (\(idx, v) -> (idx, negate v)) pivs
  negate Zero = Zero
  negate (Pair l r) = Pair (negate l) (negate r)
  negate _ = undefined
@@ -51,30 +51,29 @@ instance Num Val where
  fromInteger i = Scalar (fromInteger i)
 
 instance Show Val where
-  show v = case v of
-    Scalar sc -> if sc >= 0.0 then show sc <> "f32" else "(" <> show sc <> "f32" <> ")"
-    Pair v1 v2 -> "(" <> show v1 <> ", " <> show v2 <> ")"
-    Tensor ls -> "["
-                  <> ( ls
-                       |> map show
-                       |> intercalate ", "
-                     )
-                  <> "]"
-    Zero -> show $ Scalar 0
-    Dummy -> "f32.nan"
-    _ -> undefined
+  show (Scalar sc)  = if sc >= 0.0
+                      then show sc <> "f32"
+                      else "(" <> show sc <> "f32" <> ")"
+  show (Pair v1 v2) = "(" <> show v1 <> ", " <> show v2 <> ")"
+  show (Vector ls)  = "["
+                        <> ( ls
+                             |> map show
+                             |> intercalate ", "
+                           )
+                        <> "]"
+  show Zero  = show $ Scalar 0
+  show Dummy = "f32.nan"
+  show _ = undefined
 
 stdinShow :: Val -> String
-stdinShow v = case v of
-  Scalar sc  -> " " <> show sc <> "f32 "
-  Dummy -> "f32.nan"
-  Pair v2 v1 -> stdinShow v2 <> " " <> stdinShow v1
-  Tensor ls  -> "[" <> ( ls
-                         |> map stdinShow
-                         |> intercalate ", "
-                        ) <> "]"
-  _ -> show v
-
+stdinShow (Scalar sc)  = " " <> show sc <> "f32 "
+stdinShow Dummy        = " f32.nan "
+stdinShow (Pair v2 v1) = stdinShow v2 <> " " <> stdinShow v1
+stdinShow (Vector ls)  = " [" <> ( ls
+                                 |> map stdinShow
+                                 |> intercalate ", "
+                                 ) <> "] "
+stdinShow v = show v
 
 data Arity
   = Atom Int
@@ -91,17 +90,17 @@ getArity v = case v of
   Scalar _ -> Atom 0
   Zero -> Atom 0
   Dummy -> Atom 0
-  Tensor (Pair _ _: _) -> error "illegal tensor of pairs!"
-  Tensor (h:_) -> let (Atom i) = getArity h
+  Vector (Pair _ _: _) -> error "illegal Vector of pairs!"
+  Vector (h:_) -> let (Atom i) = getArity h
                   in Atom (i+1)
   Pair v1 v2 -> APair (getArity v1) (getArity v2)
-  Tensor [] -> error "Arity-get failed: empty tensor not allowed"
+  Vector [] -> error "Arity-get failed: empty Vector not allowed"
   _ -> error $ "Arity not implemented for " <> show v
 
 -- These are listed as linear map expressions
 -- https://github.com/diku-dk/caddie/blob/master/src/lin.sig
 -- [POPL, p. 21]
-data LFun -- expr
+data LFun
   -- Arity preserving
   = Id
   | KZero

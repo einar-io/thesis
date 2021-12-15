@@ -10,12 +10,12 @@ import Data.AssocList
 import Flow
 
 denseVecFromSparseVecL :: Val -> Maybe Int -> Val
-denseVecFromSparseVecL (SparseTensor []) _ = undefined
-denseVecFromSparseVecL (SparseTensor alist) Nothing =
+denseVecFromSparseVecL (SparseVector []) _ = undefined
+denseVecFromSparseVecL (SparseVector alist) Nothing =
   let len = maximum <| map fst alist
-   in Tensor <| buildVec alist (len + 1) 0
-denseVecFromSparseVecL (SparseTensor alist) (Just len) =
-   Tensor <| buildVec alist (len + 1) 0
+   in Vector <| buildVec alist (len + 1) 0
+denseVecFromSparseVecL (SparseVector alist) (Just len) =
+   Vector <| buildVec alist (len + 1) 0
 denseVecFromSparseVecL _ _ = undefined
 
 buildVec :: AssocList Int Val -> Int -> Int -> [Val]
@@ -26,9 +26,9 @@ buildVec al len i
 -- general implementation - outer product, no contraction
 outer :: Val -> Val -> Val
 outer   (Scalar xs)   (Scalar ys) = Scalar $ xs * ys
-outer x@(Scalar  _)   (Tensor ys) = Tensor $ map (outer x) ys
-outer   (Tensor xs) y@(Scalar  _) = Tensor $ map (outer y) xs
-outer   (Tensor xs) y@(Tensor  _) = Tensor $ map (outer y) xs
+outer x@(Scalar  _)   (Vector ys) = Vector $ map (outer x) ys
+outer   (Vector xs) y@(Scalar  _) = Vector $ map (outer y) xs
+outer   (Vector xs) y@(Vector  _) = Vector $ map (outer y) xs
 outer _ _                         = error "outer case undefined"
 
 failableZipWith :: (Show a, Show b) => (a -> b -> c) -> [a] -> [b] -> [c]
@@ -41,12 +41,12 @@ dotprod x y = let (a, b) = (mkR1 x, mkR1 y)
               in Scalar $ sum $ failableZipWith (*) a b
 
 vecmatmul :: Val -> Val -> Val
-vecmatmul v m = let (u, mm) = (mkR1 v, mkR2 m)
-                in mkT1 [sum $ failableZipWith (*) u mi | mi <- mm]
+vecmatmul v m = let (a, b) = (mkR1 v, mkR2 m)
+                in mkT1 [sum $ failableZipWith (*) bi a | bi <- transpose b]
 
 matvecmul :: Val -> Val -> Val
-matvecmul x y = let (a, b) = (mkR2 x, mkR1 y)
-                in mkT1 [sum $ failableZipWith (*) ai b | ai <- transpose a]
+matvecmul m v = let (b, a) = (mkR2 m, mkR1 v)
+                in mkT1 [sum $ failableZipWith (*) bi a | bi <- b]
 
 matmul :: Val -> Val -> Val
 matmul x y = let (a, b) = (mkR2 x, mkR2 y)
@@ -55,7 +55,7 @@ matmul x y = let (a, b) = (mkR2 x, mkR2 y)
 
 lossfunction :: Val -> Val -> Val
 lossfunction x y = let (a, b) = (mkR1 x, mkR1 y)
-                       yminusout = Tensor $ failableZipWith (\ai bi -> Scalar $ ai - bi) a b
+                       yminusout = Vector $ failableZipWith (\ai bi -> Scalar $ ai - bi) a b
                     in dotprod yminusout yminusout
 
 applyOp :: BilOp -> Val -> Val -> Val
@@ -79,7 +79,7 @@ vectorspacePlus :: Val -> Val -> Val
 vectorspacePlus Zero r@(Scalar _)         = r
 vectorspacePlus l@(Scalar _) Zero         = l
 vectorspacePlus (Scalar l) (Scalar r)     = Scalar $ l + r
-vectorspacePlus (Tensor ls) (Tensor rs)   = Tensor $ zipWith vectorspacePlus ls rs
+vectorspacePlus (Vector ls) (Vector rs)   = Vector $ zipWith vectorspacePlus ls rs
 vectorspacePlus (Pair ll lr) (Pair rl rr) = Pair (ll `vectorspacePlus` rl) (lr `vectorspacePlus` rr)
 vectorspacePlus _ _                       = error "vectorspacePlus case undefined"
 
@@ -87,7 +87,7 @@ vectorspacePlus _ _                       = error "vectorspacePlus case undefine
 {- vecLookup, flipLookup, keepValues, compact, reduce are all helper functions to the reduce operator -}
 {- Safely dereferences a vector unlike the (!!) operator. -}
 vecLookup :: Index -> Val -> Maybe Val
-vecLookup idx (Tensor v) = nth idx v
+vecLookup idx (Vector v) = nth idx v
 vecLookup _   _          = Nothing
 
 {- This is needed for the red operation -}
@@ -138,7 +138,7 @@ interpret (Red (List [])) _ = Left "Reduction relations can not be empty"
 interpret (Red (List r )) v = let l = map snd r |> maximum |> Just in
                                     Right
                                     <| flip denseVecFromSparseVecL l
-                                    <| SparseTensor
+                                    <| SparseVector
                                     <| reduce r v
 interpret (Red r) v = Left <| "Invalid argument to Red.  rel: "
                       ++ show r
@@ -147,14 +147,14 @@ interpret (Red r) v = Left <| "Invalid argument to Red.  rel: "
 
 interpret Neg v = return (negate v)
 
-interpret (LMap fn) (Tensor vs) = do vals <- mapM (interpret fn) vs
-                                     return (Tensor vals)
+interpret (LMap fn) (Vector vs) = do vals <- mapM (interpret fn) vs
+                                     return (Vector vals)
 
-interpret (LMap _) _ = Left "Must LMap over a Tensor (Vector)"
+interpret (LMap _) _ = Left "Must LMap over a Vector (Vector)"
 
-interpret (Zip fs) (Tensor vs) = if length fs == length vs
+interpret (Zip fs) (Vector vs) = if length fs == length vs
                                  then do vals <- zipWithM interpret fs vs
-                                         return (Tensor vals)
+                                         return (Vector vals)
                                  else Left "Invalid argument pair to Zip.  Lists of LFUNS and VLIST must have same length."
 
 interpret (Zip _) _ = Left "Wrong use of zip!"
@@ -162,10 +162,10 @@ interpret (Zip _) _ = Left "Wrong use of zip!"
 interpret Add (Pair Zero vr) = return vr
 interpret Add (Pair vl Zero) = return vl
 interpret Add (Pair (Scalar l) (Scalar r)) = return $ Scalar (l+r)
-interpret Add (Pair (Tensor l) (Tensor r)) = if length l == length r
+interpret Add (Pair (Vector l) (Vector r)) = if length l == length r
                                        then do vs <- zipWithM (\x y -> interpret Add (Pair x y)) l r
-                                               return (Tensor vs)
-                                       else Left "Invalid pair of tensors. Lists values do not have same length."
+                                               return (Vector vs)
+                                       else Left "Invalid pair of Vectors. Lists values do not have same length."
 interpret Add _       = Left "Invalid argument to Add"
 interpret (Prj _ _) _ = Left "Projection should have been desugared"
 
