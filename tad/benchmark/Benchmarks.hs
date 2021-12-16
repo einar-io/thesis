@@ -25,98 +25,57 @@ import Dataset
 import Matrix
 import Control.Monad
 
-{-
-benchInterpretor :: String -> LFun -> Val -> Benchmark
-benchInterpretor name lf1 vin1 =
-  let (lf, vin, _vout) = caramelizeTestParams (lf1, vin1, Zero)
-   in bench name <| nf (interpret lf) vin
-
-mainOld :: IO ()
-mainOld = defaultMain
-  [ genBs "Reduce" genReduceBenchmark 4
-  , genBs "Scale" genScaleBenchmark 5
-  , genBs "LMap" genLmapBenchmark 5
-  , genBs "Zip" genZipBenchmark 5
-  --, reduce
-  ]
-
-genBs :: String -> (Int -> Benchmark) -> Int ->  Benchmark
-genBs n f i = bgroup n $ map f $ powersof10 i
-
-genScaleBenchmark :: Int -> Benchmark
-genScaleBenchmark i = benchInterpretor (show i) (Scale 2.0) (rndVecVals i)
-
-genLmapBenchmark :: Int -> Benchmark
-genLmapBenchmark i = benchInterpretor (show i) (LMap (Scale 2.0)) (rndVecVals i)
-
-genZipBenchmark :: Int -> Benchmark
-genZipBenchmark i = benchInterpretor (show i) (Zip [Scale 2.0]) (Vector [rndVecVals i])
-
-genReduceBenchmark :: Int -> Benchmark
-genReduceBenchmark i = benchInterpretor (show i) (Red <| rndRelCap i i (i `div` 4)) (rndVecVals i)
-
-{- Old-flavour benchmarks for testing GPU -}
-
-benchCompiler :: String -> LFun -> Val -> Benchmark
-benchCompiler name lf1 vin1 =
-  let (lf, vin, _vout) = caramelizeTestParams (lf1, vin1, Zero)
-   in bench name
-      <| nfIO
-      <| runStrArg (show lf) OPENCL (show vin)
-
-
--}
 
 {- New-flavour benchmarks for testing GPU -}
-{-
 scaleSym :: Bench
 scaleSym backend runs inputLen =
   let lfn = Scale 7.0
-   in benchmark "ScaleSym" inputLen backend runs lfn (rndVecVals inputLen)
+      pgmfile = "scaleSym_" ++ show inputLen ++ ".fut"
+      dataset = "dataset_"  ++ show inputLen ++ ".val"
+   in benchmark pgmfile dataset backend runs lfn (rndVecVals inputLen)
 
 scaleMtx :: Bench
 scaleMtx backend runs inputLen =
   let lfn = Scale 59.0
       mtx = getMatrixRep lfn [inputLen]
       mlfn = LSec mtx MatrixMult
-   in benchmark "ScaleMtx" inputLen backend runs mlfn (rndVecVals inputLen)
+      pgmfile = "scaleMtx_" ++ show inputLen ++ ".fut"
+      dataset = "dataset_"  ++ show inputLen ++ ".val"
+   in benchmark pgmfile dataset backend runs mlfn (rndVecVals inputLen)
 
 
 lmapSym :: Bench
 lmapSym backend runs inputLen =
   let lfn = LMap (Scale 11.0)
-   in benchmark "LmapSym" inputLen backend runs lfn (rndVecVals inputLen)
+      pgmfile = "lmapSym_" ++ show inputLen ++ ".fut"
+      dataset = "dataset_" ++ show inputLen ++ ".val"
+   in benchmark pgmfile dataset backend runs lfn (rndVecVals inputLen)
 
 lmapMtx :: Bench
 lmapMtx backend runs inputLen =
   let lfn = Scale 59.0
       mtx = getMatrixRep lfn [inputLen]
       mlfn = LSec mtx MatrixMult
-   in benchmark "LmapMtx" inputLen backend runs mlfn (rndVecVals inputLen)
+      pgmfile = "lmapMtx_" ++ show inputLen ++ ".fut"
+      dataset = "dataset_" ++ show inputLen ++ ".val"
+   in benchmark pgmfile dataset backend runs mlfn (rndVecVals inputLen)
 
 
 zipSym :: Bench
 zipSym backend runs inputLen =
   let lfn = Zip (replicate inputLen (Scale 17.0))
-   in benchmark "ZipSym" inputLen backend runs lfn (rndVecVals inputLen)
--}
+      pgmfile = "zipSym_"  ++ show inputLen ++ ".fut"
+      dataset = "dataset_" ++ show inputLen ++ ".val"
+   in benchmark pgmfile dataset backend runs lfn (rndVecVals inputLen)
 
-{- This is not working due to the variation in output length of red.
 zipMtx :: Bench
 zipMtx backend runs inputLen =
   let lfn = Zip (replicate inputLen (Scale 17.0))
       mtx = getMatrixRep lfn [inputLen]
       mlfn = LSec mtx MatrixMult
-   in benchmark "zipMtx" inputLen backend runs mlfn (rndVecVals inputLen)
-
--- Alternative notation
-zipMtx :: Bench
-zipMtx backend runs inputLen =
-  let lfn = Zip (replicate inputLen (Scale 17.0))
-            |> flip getMatrixRep [inputLen]
-            |> flip LSec MatrixMult
-   in benchmark "zipMtx" inputLen backend runs lfn (rndVecVals inputLen)
--}
+      pgmfile = "zipMtx_"  ++ show inputLen ++ ".fut"
+      dataset = "dataset_" ++ show inputLen ++ ".val"
+   in benchmark pgmfile dataset backend runs mlfn (rndVecVals inputLen)
 
 {-
 <zfnmxt> That coupled with the fact that your relation length is logarithmic
@@ -126,14 +85,19 @@ constant regardless of the input size
 <zfnmxt> As a rule, I'd make my input, output, and relation size all about the
 same (up] to a few smallish constant factors). Then you should see runtimes
 scale better.
+-}
+
 redSym :: Bench
 redSym backend runs inputLen =
   let relLen = inputLen
       maxIdx = inputLen
       maxVal = 100
       lfn = Red <| rndRelCap relLen maxIdx maxVal
-   in benchmark "redSym" inputLen backend runs lfn (rndVecVals inputLen)
+      pgmfile = "redSym_"  ++ show inputLen ++ ".fut"
+      dataset = "dataset_" ++ show inputLen ++ ".val"
+   in benchmark pgmfile dataset backend runs lfn (rndVecVals inputLen)
 
+{-
 redMtx :: Bench
 redMtx backend runs inputLen =
   let relLen = inputLen
@@ -238,13 +202,12 @@ transposeLFun other               = error <| "Transposition of `" ++ show other 
 main :: IO ()
 main = do
 
-  let backend = C
-  let oom = (1, 10) -- ordersOfMagnitude of 2 of the datasets.  Should be more than 10
+  let backend = OPENCL
+  let oom = (1, 16) -- ordersOfMagnitude of 2 of the datasets.  Should be more than 10
   let noRuns = 1
 
   initDatasets oom
 
- {-
   scaleSymMeas <- doBenchmarks scaleSym backend noRuns (9, 16)
   scaleMtxMeas <- doBenchmarks scaleMtx backend noRuns (5, 11)
   _ <- plotMeasurements "Scale" [ ("Symbolic", "blue", scaleSymMeas)
@@ -270,20 +233,20 @@ main = do
   _ <- plotMeasurements "Red" [ ("Symbolic", "blue", redSymMeas)
                               --, ("Matrix"  , "red" , redMtxMeas)
                               ]
-  -}
 
 
-  nn1LayerMeas <- doBenchmarks (nn 1) backend noRuns (1, 11)
+
   {-
+  nn1LayerMeas <- doBenchmarks (nn 1) backend noRuns (5, 11)
   nn2LayerMeas <- doBenchmarks "2 NNLayer" (nnB 2) backend noRuns (2, 8)
   nn4LayerMeas <- doBenchmarks "4 NNLayer" (nnB 4) backend noRuns (2, 8)
-  -}
   _ <- plotMeasurements "Neural Networks"
     [ ("1-Layer Neural Network", "blue", nn1LayerMeas)
    {- , ("2-Layer Neural Network", "red", nn2LayerMeas)
     , ("4-Layer Neural Network", "green", nn4LayerMeas)
     -}
     ]
+  -}
 
 
   {-
