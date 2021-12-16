@@ -72,14 +72,14 @@ runAllTests = testGroup "All features" <| concat
   [ [genStdBasisTests]
   , (map testFeature allFeatures)
   , [matrixTests]
-  --, [optimizerTests]
+  , [optimizerTests]
   ]
 
 testFeature :: (String, [(String, LFun, Val, Val)]) -> TestTree
 testFeature (n,l) = testGroup n $ map (\(name, lf, vin, vout) -> goodCaseStaged name (lf, vin, vout)) l
 
 allFeatures :: [(String, [(String, LFun, Val, Val)])]
-allFeatures = {-wipFeatures <>-} doneFeatures
+allFeatures = wipFeatures <> doneFeatures
 
 wipFeatures :: [(String, [(String, LFun, Val, Val)])]
 wipFeatures = [ ("reduceTests", reduceTests)
@@ -88,11 +88,11 @@ wipFeatures = [ ("reduceTests", reduceTests)
               ]
 
 doneFeatures :: [(String, [(String, LFun, Val, Val)])]
-doneFeatures = [ --("basic", basicTests)
-               --, ("addTests", addTests)
-               --, ("tupleTests", tupleTests)
-               --, ("miscTests", miscTests)
-                ("dotprod", dotprodTests)
+doneFeatures = [ ("basic", basicTests)
+               , ("addTests", addTests)
+               , ("tupleTests", tupleTests)
+               , ("miscTests", miscTests)
+               , ("dotprod", dotprodTests)
                , ("vecmatmul", vecmatTests)
                , ("matvecmul", matvecTests)
                , ("matmul", matmulTests)
@@ -462,22 +462,22 @@ addTests =
 --      $ quickCheckWith stdArgs { maxSuccess = 1 } propInterpretorCodeGenrEqual
 --    ]
 
---goodCaseOptimizer :: TestName -> LFun -> LFun -> TestTree
---goodCaseOptimizer name vin vout = testCase name $ optimize vin @?= vout
+goodCaseOptimizer :: TestName -> LFun -> LFun -> TestTree
+goodCaseOptimizer name vin vout = testCase name $ optimize vin @?= vout
 
---optimizerTests :: TestTree
---optimizerTests =
---  testGroup "Optimizer"
---    [ goodCaseOptimizer "Comp Id Id -> Id"
---      (Comp (Comp Id (Comp Id Id)) (Comp Id Id))
---      (Id)
---    , goodCaseOptimizer "Combining many scales"
---      (Comp (Comp (Scale 2.0) (Comp (Scale 2.0) (Comp (Comp (Scale 2.0) (Comp (Scale 2.0) (Scale 2.0))) (Comp (Scale 2.0) (Scale 2.0))))) (Comp (Scale 2.0) (Scale 2.0)))
---      (Scale 512.0)
---   , goodCaseOptimizer "Combining many paras"
---      (Comp (Comp (Para (Scale 2.0) (Scale 2.0)) (Comp (Para (Scale 2.0) (Scale 2.0)) (Comp (Comp (Para (Scale 2.0) (Scale 2.0)) (Comp (Para (Scale 2.0) (Scale 2.0)) (Para (Scale 2.0) (Scale 2.0)))) (Comp (Para (Scale 2.0) (Scale 2.0)) (Para (Scale 2.0) (Scale 2.0)))))) (Comp (Para (Scale 2.0) (Scale 2.0)) (Para (Scale 2.0) (Scale 2.0))))
---      (Para (Scale 512.0) (Scale 512.0))
---    , goodCaseOptimizer "Flattening"
---      (Comp (Comp (KZero) (Comp (KZero) (Comp (Comp (KZero) (Comp (KZero) (KZero))) (Comp (KZero) (KZero))))) (Comp (KZero) (KZero)))
---      (Comp KZero (Comp KZero (Comp KZero (Comp KZero (Comp KZero (Comp KZero (Comp KZero (Comp KZero KZero))))))))
---    ]
+optimizerTests :: TestTree
+optimizerTests =
+  testGroup "Optimizer"
+    [ goodCaseOptimizer "Comp Id Id -> Id"
+      (Comp (Comp Id (Comp Id Id)) (Comp Id Id))
+      (Id)
+    , goodCaseOptimizer "Combining many scales"
+      (Comp (Comp (Scale 2.0) (Comp (Scale 2.0) (Comp (Comp (Scale 2.0) (Comp (Scale 2.0) (Scale 2.0))) (Comp (Scale 2.0) (Scale 2.0))))) (Comp (Scale 2.0) (Scale 2.0)))
+      (Scale 512.0)
+   , goodCaseOptimizer "Combining many paras"
+      (Comp (Comp (Para (Scale 2.0) (Scale 2.0)) (Comp (Para (Scale 2.0) (Scale 2.0)) (Comp (Comp (Para (Scale 2.0) (Scale 2.0)) (Comp (Para (Scale 2.0) (Scale 2.0)) (Para (Scale 2.0) (Scale 2.0)))) (Comp (Para (Scale 2.0) (Scale 2.0)) (Para (Scale 2.0) (Scale 2.0)))))) (Comp (Para (Scale 2.0) (Scale 2.0)) (Para (Scale 2.0) (Scale 2.0))))
+      (Para (Scale 512.0) (Scale 512.0))
+    , goodCaseOptimizer "Flattening"
+      (Comp (Comp (KZero) (Comp (KZero) (Comp (Comp (KZero) (Comp (KZero) (KZero))) (Comp (KZero) (KZero))))) (Comp (KZero) (KZero)))
+      (Comp KZero (Comp KZero (Comp KZero (Comp KZero (Comp KZero (Comp KZero (Comp KZero (Comp KZero KZero))))))))
+    ]
