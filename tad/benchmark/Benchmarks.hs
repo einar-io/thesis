@@ -208,6 +208,7 @@ main = do
 
   initDatasets oom
 
+  {-
   scaleSymMeas <- doBenchmarks scaleSym backend noRuns (9, 16)
   scaleMtxMeas <- doBenchmarks scaleMtx backend noRuns (5, 11)
   _ <- plotMeasurements "Scale" [ ("Symbolic", "blue", scaleSymMeas)
@@ -233,11 +234,12 @@ main = do
   _ <- plotMeasurements "Red" [ ("Symbolic", "blue", redSymMeas)
                               --, ("Matrix"  , "red" , redMtxMeas)
                               ]
+  -}
 
 
 
+  nn1LayerMeas <- doBenchmarks (nn 1) backend noRuns (5, 5)
   {-
-  nn1LayerMeas <- doBenchmarks (nn 1) backend noRuns (5, 11)
   nn2LayerMeas <- doBenchmarks "2 NNLayer" (nnB 2) backend noRuns (2, 8)
   nn4LayerMeas <- doBenchmarks "4 NNLayer" (nnB 4) backend noRuns (2, 8)
   _ <- plotMeasurements "Neural Networks"
