@@ -64,7 +64,7 @@ let inner_2_1 [n][m] (a : [m][n]r) (u : [n]r) : [m]r = map (\v -> inner_1_1 v u)
 let inner_2_2 [n][m][p] (a: [n][m]r) (b: [m][p]r) : [n][p]r = map (\v -> map (\u -> inner_1_1 v u)  <| transpose b) a
 
 -- used to calculate the neural network example
-let lossFunction_1_1 [n] (v : [n]r) (u : [n]r) = inner_1_1 (map2 (-) v u)
+let lossFunction_1_1 [n] (v : [n]r) (u : [n]r) = let w = map2 (-) v u in inner_1_1 w w
 
 -- -- -- neg
 let neg_0 (x :r)       : r        = (-x)
