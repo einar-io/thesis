@@ -115,6 +115,8 @@ reduce r v = map (`flipLookup` v) r
 interpret :: LFun -> Val -> InterpretorOutput Val
 interpret Id v  = Right v
 interpret Dup v = Right $ Pair v v
+interpret Fst v = Right $ proj1 v
+interpret Snd v = Right $ proj2 v
 interpret (Comp lfn rfn) v = do vr <- interpret rfn v
                                 interpret lfn vr
 interpret (Para lfn rfn) v = do vl <- interpret lfn $ proj1 v
@@ -125,8 +127,6 @@ interpret (RSec op r) v = Right $ applyOp op v r
 interpret (Scale s) v   = Right $ outer (Scalar s) v
 interpret KZero _       = Right Zero
 interpret Neg v         = return (negate v)
-interpret Fst v         = Right $ proj1 v
-interpret Snd v         = Right $ proj2 v
 interpret (Lplus lfn rfn) v = do vl <- interpret lfn v
                                  vr <- interpret rfn v
                                  Right $ vl `vectorspacePlus` vr
