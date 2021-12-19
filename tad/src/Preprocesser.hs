@@ -28,7 +28,7 @@ optimizeRun lf = case lf of
   LMap x -> LMap (optimizeRun x)
   Zip xs -> Zip (map optimizeRun xs)
   -- leaves
-  Lplus _ _ -> error "LPlus should be desugared!"
+  LPlus _ _ -> error "LPlus should be desugared!"
   Prj _ _ -> error "Projection should be desugared"
   Id -> lf
   Dup -> lf
@@ -50,7 +50,7 @@ caramelizeLFun sfl = case sfl of
   Comp sf2 sf1  -> Comp (caramelizeLFun sf2) (caramelizeLFun sf1)
   LMap sf1      -> LMap $ caramelizeLFun sf1
   Zip sfs       -> Zip $ map caramelizeLFun sfs
-  Lplus sf2 sf1 -> Comp (Comp Add (Para (caramelizeLFun sf2) (caramelizeLFun sf1))) Dup
+  LPlus sf2 sf1 -> Comp (Comp Add (Para (caramelizeLFun sf2) (caramelizeLFun sf1))) Dup
   Prj 2 1       -> Fst
   Prj 2 2       -> Snd
   Prj _ _       -> error "Failed to desugar invalid projection"
@@ -122,6 +122,6 @@ extractLFunConsts lf = case lf of
                    (ZipP h, Vector vis) -- HACK: doesnt keep Vector constraints
 
   Prj _ _       -> error "Proj should be desugared"
-  Lplus _ _     -> error "LPlus should be desugared"
+  LPlus _ _     -> error "LPlus should be desugared"
   KZero         -> error "KZero should be desugared"
   Scale _       -> error "Scale should be desugared"

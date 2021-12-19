@@ -103,7 +103,7 @@ codeGenLFun (LMap _) _        = error "Meaningless arity given to LMap."
 codeGenLFun KZero _           = error "KZero should have been desugared!"
 codeGenLFun (Scale _) _       = error "Scale should have been desugared!"
 codeGenLFun (Prj _ _) _       = error "Prj should have been desugared!"
-codeGenLFun (Lplus _ _) _     = error "Lplus should have been desugared!"
+codeGenLFun (LPlus _ _) _     = error "LPlus should have been desugared!"
               -- missing impl
 codeGenLFun (Red _) _         = error "This relation not implemented in CodeGen"
 

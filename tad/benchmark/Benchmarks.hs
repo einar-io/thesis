@@ -175,7 +175,7 @@ makeLayers n i = (makeLayer i) `Comp` (makeLayers (n-1) i)
 makeLayer :: Int -> LFun
 makeLayer i = let w = genSqrMtx i
                   x = genVector i
-                  --secondPart = ((((LSec w MatrixMult) `Comp` (Snd `Comp` Fst)) `Lplus` ( `Comp` (Fst `Comp` Fst))) `Lplus` Snd)
+                  --secondPart = ((((LSec w MatrixMult) `Comp` (Snd `Comp` Fst)) `LPlus` ( `Comp` (Fst `Comp` Fst))) `LPlus` Snd)
                   --secondPart = (RSec MatrixMult w)
                in Zip (map (\(Scalar a) -> Scale $ 1 - ((tanh a)^2)) $ map fromIntegral [1..i])
                  `Comp`
@@ -190,7 +190,7 @@ transposeLFun (LSec x MatrixMult) = LSec (transposeVal x) MatrixMult
 transposeLFun (RSec MatrixMult x) = RSec MatrixMult (transposeVal x)
 transposeLFun Fst                 = InjFst
 transposeLFun Snd                 = InjSnd
-transposeLFun (f `Lplus` g)       = (transposeLFun g) `Lplus` (transposeLFun f)
+transposeLFun (f `LPlus` g)       = (transposeLFun g) `LPlus` (transposeLFun f)
 transposeLFun (LSec x DotProd)    = LSec x DotProd
 transposeLFun (RSec DotProd x)    = RSec DotProd x
 transposeLFun Neg                 = Neg

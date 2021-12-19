@@ -153,11 +153,11 @@ basicTests =
         , Scalar 2.0
         , Scalar 4.0)
   , ("Id ^+ K0 $ 6.0 -> 6.0"
-        , Lplus Id KZero
+        , LPlus Id KZero
         , Scalar 6.0
         , Scalar 6.0)
   , ("(Scale (-3.0)) ^+ (Scale 5.0) 7.0 -> 14.0"
-        , Lplus (Scale (-3.0)) (Scale 5.0)
+        , LPlus (Scale (-3.0)) (Scale 5.0)
         , Scalar 7.0
         , Scalar 14.0)
   ]
@@ -356,11 +356,11 @@ outerTests =
 lplusTests :: [([Char], LFun, Val, Val)]
 lplusTests =
   [ ("lplus_0"
-        , Lplus  (Scale 3.0) (Scale 7.0)
+        , LPlus  (Scale 3.0) (Scale 7.0)
         , Scalar 1.0
         , Scalar 10.0)
   , ("lplus_1"
-        , Lplus  (Scale 3.0) (Scale 7.0)
+        , LPlus  (Scale 3.0) (Scale 7.0)
         , Vector [Scalar 1.0, Scalar 2.0, Scalar 3.0]
         , Vector [Scalar 10.0, Scalar 20.0, Scalar 30.0])
   ]

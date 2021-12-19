@@ -127,7 +127,7 @@ interpret (RSec op r) v = Right $ applyOp op v r
 interpret (Scale s) v   = Right $ outer (Scalar s) v
 interpret KZero _       = Right Zero
 interpret Neg v         = return (negate v)
-interpret (Lplus lfn rfn) v = do vl <- interpret lfn v
+interpret (LPlus lfn rfn) v = do vl <- interpret lfn v
                                  vr <- interpret rfn v
                                  Right $ vl `vectorspacePlus` vr
 interpret Add (Pair Zero vr) = return vr
