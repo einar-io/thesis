@@ -52,7 +52,6 @@ matmul :: Val -> Val -> Val
 matmul x y = let (a, b) = (mkR2 x, mkR2 y)
              in mkT2 [[sum $ failableZipWith (*) ai bi | bi <- transpose b] | ai <- a]
 
-
 lossfunction :: Val -> Val -> Val
 lossfunction x y = let (a, b) = (mkR1 x, mkR1 y)
                        yminusout = Vector $ failableZipWith (\ai bi -> Scalar $ ai - bi) a b
@@ -65,7 +64,6 @@ applyOp VecMatProd = vecmatmul
 applyOp MatVecProd = matvecmul
 applyOp MatrixMult = matmul
 applyOp LossFunction = lossfunction
-
 
 proj1 :: Val -> Val
 proj1 (Pair l _) = l
@@ -82,7 +80,6 @@ vectorspacePlus (Scalar l) (Scalar r)     = Scalar $ l + r
 vectorspacePlus (Vector ls) (Vector rs)   = Vector $ zipWith vectorspacePlus ls rs
 vectorspacePlus (Pair ll lr) (Pair rl rr) = Pair (ll `vectorspacePlus` rl) (lr `vectorspacePlus` rr)
 vectorspacePlus _ _                       = error "vectorspacePlus case undefined"
-
 
 {- vecLookup, flipLookup, keepValues, compact, reduce are all helper functions to the reduce operator -}
 {- Safely dereferences a vector unlike the (!!) operator. -}
@@ -115,10 +112,11 @@ reduce r v = map (`flipLookup` v) r
               |> filter (\(_,y) -> y /= [])
               |> map (\(x,y) -> (x,sum y))
 
-
 interpret :: LFun -> Val -> InterpretorOutput Val
 interpret Id v  = Right v
 interpret Dup v = Right $ Pair v v
+interpret Fst v = Right $ proj1 v
+interpret Snd v = Right $ proj2 v
 interpret (Comp lfn rfn) v = do vr <- interpret rfn v
                                 interpret lfn vr
 interpret (Para lfn rfn) v = do vl <- interpret lfn $ proj1 v
@@ -128,12 +126,18 @@ interpret (LSec l op) v = Right $ applyOp op l v
 interpret (RSec op r) v = Right $ applyOp op v r
 interpret (Scale s) v   = Right $ outer (Scalar s) v
 interpret KZero _       = Right Zero
-interpret Fst v         = Right $ proj1 v
-interpret Snd v         = Right $ proj2 v
-interpret (Lplus lfn rfn) v = do vl <- interpret lfn v
+interpret Neg v         = return (negate v)
+interpret (LPlus lfn rfn) v = do vl <- interpret lfn v
                                  vr <- interpret rfn v
                                  Right $ vl `vectorspacePlus` vr
-
+interpret Add (Pair Zero vr) = return vr
+interpret Add (Pair vl Zero) = return vl
+interpret Add (Pair (Scalar l) (Scalar r)) = return $ Scalar (l+r)
+interpret Add (Pair (Vector l) (Vector r)) = if length l == length r
+                                             then do vs <- zipWithM (\x y -> interpret Add (Pair x y)) l r
+                                                     return (Vector vs)
+                                             else Left "Invalid pair of Vectors. Lists values do not have same length."
+interpret Add _       = Left "Invalid argument to Add"
 interpret (Red (List [])) _ = Left "Reduction relations can not be empty"
 interpret (Red (List r )) v = let l = map snd r |> maximum |> Just in
                                     Right
@@ -144,29 +148,14 @@ interpret (Red r) v = Left <| "Invalid argument to Red.  rel: "
                       ++ show r
                       ++ " v: "
                       ++ show v
-
-interpret Neg v = return (negate v)
-
 interpret (LMap fn) (Vector vs) = do vals <- mapM (interpret fn) vs
                                      return (Vector vals)
-
 interpret (LMap _) _ = Left "Must LMap over a Vector (Vector)"
-
 interpret (Zip fs) (Vector vs) = if length fs == length vs
                                  then do vals <- zipWithM interpret fs vs
                                          return (Vector vals)
                                  else Left "Invalid argument pair to Zip.  Lists of LFUNS and VLIST must have same length."
-
 interpret (Zip _) _ = Left "Wrong use of zip!"
-
-interpret Add (Pair Zero vr) = return vr
-interpret Add (Pair vl Zero) = return vl
-interpret Add (Pair (Scalar l) (Scalar r)) = return $ Scalar (l+r)
-interpret Add (Pair (Vector l) (Vector r)) = if length l == length r
-                                       then do vs <- zipWithM (\x y -> interpret Add (Pair x y)) l r
-                                               return (Vector vs)
-                                       else Left "Invalid pair of Vectors. Lists values do not have same length."
-interpret Add _       = Left "Invalid argument to Add"
 interpret (Prj _ _) _ = Left "Projection should have been desugared"
 
 eval :: LFun -> Val -> String

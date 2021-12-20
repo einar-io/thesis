@@ -61,10 +61,10 @@ let outer_2_3 (x: [][]r) (y: [][][]r) : *[][][][][]r = mapl outer_1_3 x y
 let inner_1_1 [n] (v : [n]r) (u : [n]r) : r = reduce (+) 0.0f32 (map2 (*) v u)
 let inner_1_2 [n][m] (v : [n]r) (b : [n][m]r) : [m]r = map (\u -> inner_1_1 v u) <| transpose b
 let inner_2_1 [n][m] (a : [m][n]r) (u : [n]r) : [m]r = map (\v -> inner_1_1 v u) a
-let inner_2_2 [n][m][p] (a: [n][m]f32) (b: [m][p]f32) : [n][p]f32 = map (\v -> map (\u -> inner_1_1 v u)  <| transpose b) a
+let inner_2_2 [n][m][p] (a: [n][m]r) (b: [m][p]r) : [n][p]r = map (\v -> map (\u -> inner_1_1 v u)  <| transpose b) a
 
 -- used to calculate the neural network example
-let lossFunction_1_1 [n] (v : [n]r) (u : [n]r) = inner_1_1 (map2 (-) v u)
+let lossFunction_1_1 [n] (v : [n]r) (u : [n]r) = let w = map2 (-) v u in inner_1_1 w w
 
 -- -- -- neg
 let neg_0 (x :r)       : r        = (-x)

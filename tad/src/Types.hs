@@ -120,7 +120,7 @@ data LFun
   | InjFst
   | InjSnd
   | Add
-  | Lplus LFun LFun -- lifted addition
+  | LPlus LFun LFun -- lifted addition
   | Red Rel
   deriving (Show, Eq)
 
